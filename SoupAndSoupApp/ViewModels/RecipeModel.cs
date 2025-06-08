@@ -31,7 +31,7 @@ public class RecipeModel: ReactiveObject
 
     public ICommand? DeleteReceiptCommand { get; set; }
 
-    public ObservableCollection<IngredientByReceiptModel> RecipeIngredients { get; set; } = new();
+    public ObservableCollection<IngredientModel> RecipeIngredients { get; set; } = new();
     
     private decimal _unitCost;
     private Bitmap? _imagePath;

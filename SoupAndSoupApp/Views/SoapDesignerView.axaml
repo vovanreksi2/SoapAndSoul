@@ -116,7 +116,9 @@
         <Style Selector="Border.WeightBorder">
             <Setter Property="Background" Value="{StaticResource ReceiptDetailPrimarySolidColorBrush}" />
             <Setter Property="CornerRadius" Value="5" />
-            <Setter Property="Opacity" Value="50" />
+            <Setter Property="Opacity" Value="0.2" />
+            <Setter Property="Width" Value="100" />
+            <Setter Property="Height" Value="100" />
         </Style>
 
         <!--  StackPanel  -->
@@ -129,13 +131,13 @@
         <!--  TextBlock for label  -->
         <Style Selector="TextBlock.WeightLabelText">
             <Setter Property="HorizontalAlignment" Value="Center" />
-            <Setter Property="FontSize" Value="20" />
+            <Setter Property="FontSize" Value="16" />
         </Style>
 
         <!--  TextBlock for value  -->
         <Style Selector="TextBlock.WeightValueText">
             <Setter Property="HorizontalAlignment" Value="Center" />
-            <Setter Property="FontSize" Value="30" />
+            <Setter Property="FontSize" Value="18" />
             <Setter Property="FontWeight" Value="Bold" />
         </Style>
     </UserControl.Styles>
@@ -192,7 +194,7 @@
         <Border Grid.Column="1" Classes="MainCard">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition MinWidth="100" MaxWidth="450" />
+                    <ColumnDefinition MinWidth="100" MaxWidth="350" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
@@ -291,15 +293,16 @@
                     <StackPanel Grid.Row="3" Margin="0,20">
                         <TextBlock Classes="ReceiptTitle" Text="Інгредієнти" />
 
-                        <ItemsControl Margin="0,10" ItemsSource="{Binding SelectedReceipt.RecipeIngredients}">
+                        <ItemsControl Margin="0,10" ItemsSource="{Binding SelectedIngredients}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Grid Margin="0,10" ColumnDefinitions="80 * 70 100">
+                                    <Grid Margin="0,10" ColumnDefinitions="80 * 70">
                                         <Border
                                             Grid.ColumnSpan="4"
                                             Height="80"
                                             Background="{StaticResource ReceiptDetailPrimarySolidColorBrush}"
-                                            CornerRadius="10" />
+                                            CornerRadius="10"
+                                            Opacity="0.2" />
 
                                         <Border
                                             Grid.Column="0"
@@ -339,17 +342,9 @@
                                                 FontSize="20"
                                                 Text="{Binding Amount, StringFormat='{}{0:F0}кап'}" />
 
-                                             
+
                                         </StackPanel>
 
-                                        <TextBlock
-                                            Grid.Column="3"
-                                            HorizontalAlignment="Right"
-                                            VerticalAlignment="Center"
-                                            FontSize="20">
-                                            <Run Text="{Binding Cost, StringFormat='{}{0:F2}'}" />
-                                            <Run Foreground="Gray" Text="₴" />
-                                        </TextBlock>
                                     </Grid>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>

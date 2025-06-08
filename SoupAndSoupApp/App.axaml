@@ -10,7 +10,7 @@
         <SolidColorBrush x:Key="PrimarySolidColorBrush" Color="#6366F1" />
         <SolidColorBrush x:Key="MainBackgroundSolidColorBrush" Color="#FFF9FAFB" />
         <SolidColorBrush x:Key="IngredientBorderSolidColorBrush" Color="LightGray" />
-        <SolidColorBrush x:Key="ReceiptDetailPrimarySolidColorBrush" Color="#F2F2F2" />
+        <SolidColorBrush x:Key="ReceiptDetailPrimarySolidColorBrush" Color="#b57edc" />
 
         <!--  Кольори Material  -->
         <Color x:Key="MaterialPrimaryColor">#7C3AED</Color>
