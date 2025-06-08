@@ -1,0 +1,410 @@
+<UserControl
+    x:Class="SoupAndSoupApp.Views.SoapDesignerView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:components="clr-namespace:SoupAndSoupApp.Components"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="clr-namespace:SoupAndSoupApp.ViewModels"
+    d:DesignHeight="1200"
+    d:DesignWidth="1600"
+    x:DataType="vm:SoapDesignerViewModel"
+    mc:Ignorable="d">
+
+    <Design.DataContext>
+        <vm:SoapDesignerViewModel />
+    </Design.DataContext>
+
+    <UserControl.Resources>
+        <DataTemplate x:Key="ReceiptItemTemplate" x:DataType="vm:RecipeModel">
+            <Grid ColumnDefinitions="*, 30">
+                <TextBlock
+                    Margin="0,0,10,0"
+                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ListBoxItem}}"
+                    Text="{Binding Name}"
+                    TextWrapping="WrapWithOverflow" />
+
+                <Button
+                    Grid.Column="1"
+                    Classes="lbButton delete-button"
+                    Command="{Binding DeleteReceiptCommand}"
+                    CommandParameter="{Binding .}" />
+            </Grid>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <UserControl.Styles>
+
+        <Style Selector="Border.MainCard">
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="Margin" Value="10,20" />
+            <Setter Property="Padding" Value="20 20 20 0" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="BoxShadow" Value="0 0 8 0 #33000000" />
+        </Style>
+
+        <Style Selector="TextBlock">
+            <Setter Property="FontFamily" Value="Inter" />
+        </Style>
+
+        <Style Selector="TextBlock.SectionTitle">
+            <Setter Property="FontSize" Value="25" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="TextWrapping" Value="WrapWithOverflow" />
+        </Style>
+
+
+        <Style Selector="TextBlock.ReceiptTitle">
+            <Setter Property="FontFamily" Value="Sans-serif" />
+            <Setter Property="FontSize" Value="22" />
+            <Setter Property="Foreground" Value="#111827" />
+            <Setter Property="TextWrapping" Value="WrapWithOverflow" />
+        </Style>
+
+
+        <!--  Перенести в один темплейт  -->
+
+        <Style Selector="ListBox.LbReceipts">
+            <Setter Property="VerticalAlignment" Value="Top" />
+            <Setter Property="ItemTemplate" Value="{StaticResource ReceiptItemTemplate}" />
+            <Setter Property="SelectionMode" Value="Single" />
+        </Style>
+
+        <Style Selector="ListBox.LbReceipts > ListBoxItem">
+            <Setter Property="Padding" Value="15 15 0 15" />
+            <Setter Property="Background" Value="White" />
+            <Setter Property="FontSize" Value="20" />
+        </Style>
+
+        <!--  Перевірити ще раз кольори. При виділенні, зовсім не те, що потрібно.  -->
+        <Style Selector="ListBox.LbReceipts ListBoxItem:selected">
+            <Setter Property="Foreground" Value="{StaticResource PrimarySolidColorBrush}" />
+            <Setter Property="BorderThickness" Value="3,0,0,0" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="BorderBrush" Value="#6366F1" />
+            <Setter Property="Padding" Value="12,15,0,15" />
+        </Style>
+
+        <Style Selector="ListBox.LbReceipts > ListBoxItem:selected /template/ ContentPresenter">
+            <Setter Property="Background" Value="#d0d1fa" />
+        </Style>
+
+        <Style Selector="ListBox.LbReceipts > ListBoxItem:not(:selected):pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#F3F4F6" />
+        </Style>
+
+        <!--  Buttons  -->
+        <Style Selector="Button.SaveButton">
+            <Setter Property="Height" Value="45" />
+            <Setter Property="Margin" Value=" 5 5" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Background" Value="{StaticResource PrimarySolidColorBrush}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="FontSize" Value="18" />
+            <Setter Property="Foreground" Value="White" />
+
+        </Style>
+
+        <!--  Buttons end  -->
+
+
+        <!--  Border  -->
+        <Style Selector="Border.WeightBorder">
+            <Setter Property="Background" Value="{StaticResource ReceiptDetailPrimarySolidColorBrush}" />
+            <Setter Property="CornerRadius" Value="5" />
+            <Setter Property="Opacity" Value="50" />
+        </Style>
+
+        <!--  StackPanel  -->
+        <Style Selector="StackPanel.WeightStackPanel">
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Orientation" Value="Vertical" />
+        </Style>
+
+        <!--  TextBlock for label  -->
+        <Style Selector="TextBlock.WeightLabelText">
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="FontSize" Value="20" />
+        </Style>
+
+        <!--  TextBlock for value  -->
+        <Style Selector="TextBlock.WeightValueText">
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="FontSize" Value="30" />
+            <Setter Property="FontWeight" Value="Bold" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid Background="{StaticResource MainBackgroundSolidColorBrush}" ShowGridLines="False">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Border Classes="MainCard">
+            <Grid
+                ColumnDefinitions="Auto Auto"
+                RowDefinitions="Auto 50 *"
+                ShowGridLines="False">
+
+                <WrapPanel>
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        Classes="SectionTitle"
+                        Text="Рецепти" />
+                    <Button
+                        Height="35"
+                        Margin="40,0,0,0"
+                        HorizontalContentAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        Background="{StaticResource PrimarySolidColorBrush}"
+                        BorderBrush="Transparent"
+                        BorderThickness="0"
+                        Command="{Binding NewReceiptCommand}"
+                        Content="+ Новий Рецепт"
+                        CornerRadius="8"
+                        FontSize="16"
+                        Foreground="White" />
+                </WrapPanel>
+
+                <TextBox
+                    Grid.Row="1"
+                    Grid.Column="0"
+                    Margin="0,30,0,0"
+                    Text="Знайти рецепт" />
+
+                <ListBox
+                    Grid.Row="2"
+                    Grid.Column="0"
+                    Margin="0,20,0,0"
+                    Classes="LbReceipts"
+                    ItemsSource="{Binding Recipes}"
+                    SelectedItem="{Binding SelectedReceipt}" />
+
+            </Grid>
+        </Border>
+
+        <Border Grid.Column="1" Classes="MainCard">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition MinWidth="100" MaxWidth="450" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Grid Grid.Column="0" ShowGridLines="False">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="2*" MaxHeight="300" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="3*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TextBlock
+                        Grid.Row=" 0"
+                        Margin="0,0,0,30"
+                        Classes="SectionTitle"
+                        Text="Опис рецепта" />
+
+                    <Border
+                        Grid.Row="1"
+                        Background="LightBlue"
+                        BorderBrush="{StaticResource IngredientBorderSolidColorBrush}"
+                        BorderThickness="2"
+                        BoxShadow="0 0 8 0 #33000000"
+                        CornerRadius="10" />
+
+                    <Image
+                        Grid.Row="1"
+                        Source="{Binding SelectedReceipt.ImagePath}"
+                        Stretch="UniformToFill" />
+
+                    <Grid
+                        Grid.Row="2"
+                        Margin="0,20,0,0"
+                        ColumnDefinitions="* * *"
+                        DataContext="{Binding SelectedReceipt}"
+                        RowDefinitions="Auto Auto 3*"
+                        ShowGridLines="False">
+                        <TextBlock
+                            Grid.Column="0"
+                            Grid.ColumnSpan="2"
+                            Classes="ReceiptTitle"
+                            Text="{Binding Name}" />
+                        <Button
+                            Grid.Row="0"
+                            Grid.Column="2"
+                            HorizontalAlignment="Right"
+                            Classes="edit-button" />
+
+                        <TextBlock
+                            Grid.Row="1"
+                            Grid.Column="0"
+                            Grid.ColumnSpan="3"
+                            Margin="0,5,0,0"
+                            HorizontalAlignment="Stretch"
+                            FontSize="15"
+                            Foreground="Gray"
+                            Text="{Binding Description}"
+                            TextAlignment="Left"
+                            TextWrapping="WrapWithOverflow" />
+
+                        <Border
+                            Grid.Row="2"
+                            Grid.Column="0"
+                            Margin="0,15,10,0"
+                            Classes="WeightBorder">
+                            <StackPanel Classes="WeightStackPanel">
+                                <TextBlock Classes="WeightLabelText" Text="Вага" />
+                                <TextBlock Classes="WeightValueText" Text="{Binding Amount, StringFormat='{}{0:F0} г'}" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border
+                            Grid.Row="2"
+                            Grid.Column="1"
+                            Margin="10,15,10,0"
+                            Classes="WeightBorder">
+                            <StackPanel Classes="WeightStackPanel">
+                                <TextBlock Classes="WeightLabelText" Text="Собівартість" />
+                                <TextBlock Classes="WeightValueText" Text="{Binding UnitCost, StringFormat='{}{0:F0} грн'}" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border
+                            Grid.Row="2"
+                            Grid.Column="2"
+                            Margin="10,15,0,0"
+                            Classes="WeightBorder">
+                            <StackPanel Classes="WeightStackPanel">
+                                <TextBlock Classes="WeightLabelText" Text="Тривалість" />
+                                <TextBlock Classes="WeightValueText" Text="{Binding PreparationTime, StringFormat='{}{0} хв'}" />
+                            </StackPanel>
+                        </Border>
+
+                    </Grid>
+
+                    <StackPanel Grid.Row="3" Margin="0,20">
+                        <TextBlock Classes="ReceiptTitle" Text="Інгредієнти" />
+
+                        <ItemsControl Margin="0,10" ItemsSource="{Binding SelectedReceipt.RecipeIngredients}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,10" ColumnDefinitions="80 * 70 100">
+                                        <Border
+                                            Grid.ColumnSpan="4"
+                                            Height="80"
+                                            Background="{StaticResource ReceiptDetailPrimarySolidColorBrush}"
+                                            CornerRadius="10" />
+
+                                        <Border
+                                            Grid.Column="0"
+                                            Width="72"
+                                            Height="72"
+                                            Margin="10,0,0,0"
+                                            ClipToBounds="True"
+                                            CornerRadius="10">
+                                            <Image
+                                                Width="70"
+                                                Height="70"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Source="{Binding ImagePath}"
+                                                Stretch="UniformToFill" />
+
+                                        </Border>
+
+                                        <TextBlock
+                                            Grid.Column="1"
+                                            Margin="10,0"
+                                            VerticalAlignment="Center"
+                                            FontSize="16"
+                                            FontWeight="DemiBold"
+                                            Text="{Binding Name}"
+                                            TextWrapping="WrapWithOverflow" />
+
+
+                                        <StackPanel
+                                            Grid.Column="2"
+                                            HorizontalAlignment="Left"
+                                            VerticalAlignment="Center"
+                                            Orientation="Horizontal">
+                                            <TextBox
+                                                HorizontalAlignment="Right"
+                                                VerticalAlignment="Top"
+                                                FontSize="20"
+                                                Text="{Binding Amount, Mode=TwoWay, StringFormat='{}{0:F0}'}" />
+
+                                            <TextBlock
+                                                HorizontalAlignment="Left"
+                                                VerticalAlignment="Center"
+                                                FontSize="20"
+                                                Text="{Binding CountTitle}" />
+                                        </StackPanel>
+
+
+                                        <TextBlock
+                                            Grid.Column="3"
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Center"
+                                            FontSize="20">
+                                            <Run Text="{Binding Cost, StringFormat='{}{0:F2}'}" />
+                                            <Run Foreground="Gray" Text="₴" />
+                                        </TextBlock>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="4">
+                        <Button
+                            Classes="SaveButton"
+                            Command="{Binding SaveReceiptCommand}"
+                            CommandParameter="{Binding SelectedReceipt}"
+                            Content="Зберегти" />
+                        <Button Classes="SaveButton" Content="Зберегти як новий" />
+                    </StackPanel>
+                </Grid>
+
+                <Grid
+                    Margin="30,0,0,0"
+                    Column="1"
+                    RowDefinitions="Auto *"
+                    ShowGridLines="False">
+                    <TextBlock
+                        Grid.Row="0"
+                        Classes="SectionTitle"
+                        Text="Інгредієнти" />
+
+                    <ScrollViewer
+                        Grid.Row="1"
+                        Margin="0,30,0,0"
+                        AllowAutoHide="True">
+                        <ItemsControl ItemsSource="{Binding SoapGroups}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+
+                                    <!--  TODO: Update for getting title from type  -->
+                                    <components:IngredientItemsControl
+                                        GroupTitle="{Binding Title}"
+                                        Ingredients="{Binding Ingredients}"
+                                        NewItemCommand="{Binding NewIngredientCommand}"
+                                        Type="{Binding Type}" />
+
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
+
+            </Grid>
+        </Border>
+    </Grid>
+
+</UserControl>

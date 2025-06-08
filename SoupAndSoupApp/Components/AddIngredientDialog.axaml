@@ -1,0 +1,296 @@
+<Window
+    x:Class="SoupAndSoupApp.AddIngredientDialog"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:viewModels="clr-namespace:SoupAndSoupApp.ViewModels"
+    Title="{Binding WindowTitle}"
+    Width="480"
+    Height="620"
+    d:DesignHeight="600"
+    d:DesignWidth="480"
+    x:DataType="viewModels:AddIngredientDialogViewModel"
+    WindowStartupLocation="CenterOwner"
+    mc:Ignorable="d">
+
+    <Design.DataContext>
+        <viewModels:AddIngredientDialogViewModel />
+    </Design.DataContext>
+
+
+    <Window.Resources>
+        <!--  Кольори Material  -->
+        <Color x:Key="MaterialPrimaryColor">#7C3AED</Color>
+        <Color x:Key="MaterialSurfaceColor">#FFFFFF</Color>
+        <Color x:Key="MaterialSurfaceVariantColor">#F4F4F4</Color>
+        <Color x:Key="MaterialOnSurfaceColor">#1A1A1A</Color>
+        <Color x:Key="MaterialOnSurfaceVariantColor">#5F5F5F</Color>
+
+        <SolidColorBrush x:Key="MaterialPrimary" Color="{DynamicResource MaterialPrimaryColor}" />
+        <SolidColorBrush x:Key="MaterialSurface" Color="{DynamicResource MaterialSurfaceColor}" />
+        <SolidColorBrush x:Key="MaterialSurfaceVariant" Color="{DynamicResource MaterialSurfaceVariantColor}" />
+        <SolidColorBrush x:Key="MaterialOnSurface" Color="{DynamicResource MaterialOnSurfaceColor}" />
+        <SolidColorBrush x:Key="MaterialOnSurfaceVariant" Color="{DynamicResource MaterialOnSurfaceVariantColor}" />
+    </Window.Resources>
+
+    <Window.Styles>
+        <Styles>
+
+            <Style Selector="TextBox">
+                <Setter Property="FontSize" Value="16" />
+            </Style>
+
+            <Style Selector="TextBlock">
+                <Setter Property="FontSize" Value="16" />
+            </Style>
+
+            <Style Selector="TextBox.outlined">
+                <Setter Property="BorderBrush" Value="#DADADA" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="Padding" Value="8,4" />
+
+            </Style>
+
+            <Style Selector="Button.outlined">
+                <Setter Property="Background" Value="White" />
+                <Setter Property="BorderBrush" Value="#DADADA" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="Padding" Value="8,6" />
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+            </Style>
+
+            <Style Selector="Button.rounded">
+                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="FontSize" Value="16" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="Padding" Value="20,6" />
+            </Style>
+
+            <Style Selector="Image.uploadPhoto">
+                <Setter Property="HorizontalAlignment" Value="Center" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="Stretch" Value="Uniform" />
+            </Style>
+
+            <Style Selector="Image.uploadPhoto:not(:pointerover)">
+                <Setter Property="Source" Value="/Assets/camera_icon.png" />
+            </Style>
+
+            <Style Selector="Image.uploadPhoto:pointerover">
+                <Setter Property="Source" Value="/Assets/camera_icon_pressed.png" />
+            </Style>
+        </Styles>
+
+    </Window.Styles>
+
+    <Border
+        Padding="32"
+        Background="White"
+        CornerRadius="12">
+        <StackPanel Spacing="24">
+
+            <TextBlock
+                HorizontalAlignment="Center"
+                FontSize="24"
+                FontWeight="SemiBold">
+                <Run Text="Додати нову " />
+                <Run Text="{Binding IngredientTitle}" />
+            </TextBlock>
+
+            <Button
+                Height="170"
+                HorizontalAlignment="Center"
+                Command="{Binding SelectPhotoCommand}"
+                Cursor="Hand"
+                IsVisible="{Binding Photo, Converter={StaticResource NullToFalse}}">
+                <Button.Template>
+                    <ControlTemplate>
+                        <StackPanel HorizontalAlignment="Center" Spacing="8">
+                            <Border
+                                Width="140"
+                                Height="140"
+                                HorizontalAlignment="Center"
+                                Background="#F2F2F2"
+                                CornerRadius="70">
+                                <Image Width="70" Classes="uploadPhoto" />
+                            </Border>
+                            <TextBlock HorizontalAlignment="Center" Foreground="#5F5F5F">
+                                <Run Text="Натисніть, щоб завантажити фото" />
+                            </TextBlock>
+                        </StackPanel>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+
+            <Image
+                Height="200"
+                HorizontalAlignment="Center"
+                IsVisible="{Binding Photo, Converter={StaticResource NullToTrue}}"
+                Source="{Binding Photo}" />
+
+            <!--  Назва  -->
+            <StackPanel>
+                <TextBlock Margin="0,0,0,4">
+                    <Run Text="Назва " />
+                    <Run Text="{Binding IngredientTitle}" />
+                </TextBlock>
+                <TextBox
+                    Height="40"
+                    Classes="outlined"
+                    Text="{Binding Name}"
+                    Watermark="" />
+            </StackPanel>
+
+            <!--  Ціна і кількість  -->
+            <StackPanel
+                HorizontalAlignment="Left"
+                Orientation="Horizontal"
+                Spacing="16">
+                <StackPanel>
+                    <TextBlock Margin="0,0,0,4" Text="{Binding AmountTypeTitle, StringFormat='Кількість ({0})'}" />
+                    <TextBox
+                        Width="80"
+                        Height="40"
+                        Classes="outlined"
+                        Text="{Binding Amount}" />
+                </StackPanel>
+
+                <TextBlock
+                    Margin="8,0"
+                    VerticalAlignment="Bottom"
+                    FontSize="25"
+                    Text="×" />
+
+                <StackPanel>
+                    <TextBlock Margin="0,0,0,4" Text="Ціна (грн)" />
+                    <TextBox
+                        Width="80"
+                        Height="40"
+                        Text="{Binding Price}" />
+                </StackPanel>
+            </StackPanel>
+
+            <!--  Підсумок ціни  -->
+            <Border
+                Padding="12"
+                Background="{DynamicResource MaterialSurfaceVariant}"
+                CornerRadius="8">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Image
+                        Width="20"
+                        Height="20"
+                        Source="/Assets/lightbulb_icon.png" />
+                    <TextBlock FontWeight="Medium" Foreground="{DynamicResource MaterialPrimary}">
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat="Ціна за {0}: {1:F2} грн">
+                                <Binding Path="IngredientTitle" />
+                                <Binding Path="UnitPrice" />
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+
+            <!--  Кнопки  -->
+            <StackPanel
+                Margin="0,20,0,0"
+                HorizontalAlignment="Right"
+                Orientation="Horizontal"
+                Spacing="30">
+                <Button
+                    Classes="outlined"
+                    Command="{Binding CancelCommand}"
+                    Content="Скасувати" />
+                <Button
+                    Background="#7C3AED"
+                    Classes="rounded"
+                    Command="{Binding ConfirmCommand}"
+                    Content="Додати"
+                    Foreground="White" />
+            </StackPanel>
+
+        </StackPanel>
+    </Border>
+
+    <!--<Grid Margin="15,30,15,15" RowDefinitions="300 Auto Auto Auto Auto Auto">
+        <Button
+            HorizontalAlignment="Stretch"
+            Command="{Binding SelectPhotoCommand}"
+            IsVisible="{Binding Photo, Converter={StaticResource NullToFalse}}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Image
+                    Width="250"
+                    Height="250"
+                    HorizontalAlignment="Center"
+                    Source="../Assets/PhotoCamera.png"
+                    Stretch="UniformToFill" />
+                <TextBlock HorizontalAlignment="Center">
+                    <Run Text="Натисніть, щоб завантажити фото " />
+                    <Run Text="{Binding IngredientTitle}" />
+                </TextBlock>
+            </StackPanel>
+        </Button>
+
+        <Image
+            Grid.Row="0"
+            IsVisible="{Binding Photo, Converter={StaticResource NullToTrue}}"
+            Source="{Binding Photo}" />
+
+        <StackPanel
+            Grid.Row="1"
+            Margin="0,10"
+            Spacing="5">
+            <TextBlock>
+                <Run Text="Назва " />
+                <Run Text="{Binding IngredientTitle}" />
+            </TextBlock>
+            <TextBox Text="{Binding Name}" />
+        </StackPanel>
+
+        <TextBlock
+            Grid.Row="2"
+            Margin="0,20,0,0"
+            Text="Ціна (грн)" />
+
+        <StackPanel
+            Grid.Row="3"
+            Orientation="Horizontal"
+            Spacing="5">
+
+            <TextBox
+                Width="60"
+                Text="{Binding Quantity}"
+                Watermark="К-сть" />
+            <TextBlock VerticalAlignment="Bottom" Text="{Binding AmountTypeTitle}" />
+            <TextBlock Margin="20,0" Text="Х" />
+            <TextBox Text="{Binding Price}" />
+            <TextBlock VerticalAlignment="Bottom" Text="грн" />
+        </StackPanel>
+
+
+        <TextBlock
+            Grid.Row="4"
+            Margin="0,20,0,0"
+            FontSize="20"
+            FontWeight="DemiBold">
+            <Run Text="Ціна за грам " />
+            <Run Text="{Binding UnitPrice}" />
+            <Run Text="грн" />
+        </TextBlock>
+
+
+        <StackPanel
+            Grid.Row="5"
+            HorizontalAlignment="Right"
+            Orientation="Horizontal"
+            Spacing="10">
+            <Button Command="{Binding CancelCommand}" Content="Скасувати" />
+            <Button Command="{Binding ConfirmCommand}" Content="Додати" />
+        </StackPanel>
+
+    </Grid>-->
+</Window>

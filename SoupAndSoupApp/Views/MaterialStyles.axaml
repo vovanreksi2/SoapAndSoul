@@ -1,0 +1,56 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Design.PreviewWith>
+        <Border Padding="20">
+            <!--  Add Controls for Previewer Here  -->
+        </Border>
+    </Design.PreviewWith>
+
+    <!--  Add Styles Here  -->
+
+
+    <!--  Стиль TextBox (Filled)  -->
+    <Style Selector="TextBox.filled.material">
+        <Setter Property="Background" Value="{DynamicResource MaterialSurfaceVariant}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="12,6" />
+        <Setter Property="Foreground" Value="{DynamicResource MaterialOnSurface}" />
+    </Style>
+
+    <!--  Outlined TextBox  -->
+    <Style Selector="TextBox.outlined.material">
+        <Setter Property="Background" Value="{DynamicResource MaterialSurface}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource MaterialOnSurfaceVariant}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="12,6" />
+        <Setter Property="Foreground" Value="{DynamicResource MaterialOnSurface}" />
+    </Style>
+
+    <!--  Кнопки  -->
+    <Style Selector="Button.text.material">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource MaterialPrimary}" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="Padding" Value="8,4" />
+    </Style>
+
+    <Style Selector="Button.filled.material">
+        <Setter Property="Background" Value="{DynamicResource MaterialOnSurfaceVariant}" />
+        <Setter Property="Foreground" Value="{DynamicResource MaterialOnSurface}" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="8,4" />
+    </Style>
+
+    <Style Selector="Button.filled.material.primary">
+        <Setter Property="Background" Value="{DynamicResource MaterialPrimary}" />
+        <Setter Property="Foreground" Value="White" />
+    </Style>
+
+    <!--  Elevation imitation  -->
+    <!--
+    <Style Selector=".elevated">
+        <Setter Property="BoxShadow" Value="0,2,8,#26000000" />
+    </Style>-->
+</Styles>

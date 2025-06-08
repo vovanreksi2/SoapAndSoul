@@ -1,0 +1,103 @@
+<Application
+    x:Class="SoupAndSoupApp.App"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="clr-namespace:SoupAndSoupApp.Converters"
+    xmlns:materialIcons="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+    RequestedThemeVariant="Light">
+
+    <Application.Resources>
+        <SolidColorBrush x:Key="PrimarySolidColorBrush" Color="#6366F1" />
+        <SolidColorBrush x:Key="MainBackgroundSolidColorBrush" Color="#FFF9FAFB" />
+        <SolidColorBrush x:Key="IngredientBorderSolidColorBrush" Color="LightGray" />
+        <SolidColorBrush x:Key="ReceiptDetailPrimarySolidColorBrush" Color="#F2F2F2" />
+
+        <!--  Кольори Material  -->
+        <Color x:Key="MaterialPrimaryColor">#7C3AED</Color>
+        <Color x:Key="MaterialSurfaceColor">#FFFFFF</Color>
+        <Color x:Key="MaterialSurfaceVariantColor">#F4F4F4</Color>
+        <Color x:Key="MaterialOnSurfaceColor">#1A1A1A</Color>
+        <Color x:Key="MaterialOnSurfaceVariantColor">#5F5F5F</Color>
+
+        <SolidColorBrush x:Key="MaterialPrimary" Color="{DynamicResource MaterialPrimaryColor}" />
+        <SolidColorBrush x:Key="MaterialSurface" Color="{DynamicResource MaterialSurfaceColor}" />
+        <SolidColorBrush x:Key="MaterialSurfaceVariant" Color="{DynamicResource MaterialSurfaceVariantColor}" />
+        <SolidColorBrush x:Key="MaterialOnSurface" Color="{DynamicResource MaterialOnSurfaceColor}" />
+        <SolidColorBrush x:Key="MaterialOnSurfaceVariant" Color="{DynamicResource MaterialOnSurfaceVariantColor}" />
+
+
+        <converters:OrConverter x:Key="OrConverter" />
+        <converters:NullToBooleanConverter x:Key="NullToTrue" />
+        <converters:NullToBooleanConverter x:Key="NullToFalse" Invert="True" />
+    </Application.Resources>
+
+    <Application.Styles>
+        <FluentTheme />
+        <materialIcons:MaterialIconStyles />
+
+
+
+        <Style Selector="Button.lbButton">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+
+            <Setter Property="IsVisible">
+                <MultiBinding Converter="{StaticResource OrConverter}">
+                    <Binding Path="IsPointerOver" RelativeSource="{RelativeSource AncestorType=ListBoxItem}" />
+                    <Binding Path="IsSelected" RelativeSource="{RelativeSource AncestorType=ListBoxItem}" />
+                </MultiBinding>
+            </Setter>
+        </Style>
+
+
+        <Style Selector="Button.cbButton">
+            <Setter Property="Background" Value="LightGray" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+
+            <Setter Property="IsVisible">
+                <MultiBinding Converter="{StaticResource OrConverter}">
+                    <Binding Path="IsPointerOver" RelativeSource="{RelativeSource AncestorType=ToggleButton}" />
+                </MultiBinding>
+            </Setter>
+        </Style>
+
+        <Style Selector="Button.edit-button">
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <materialIcons:MaterialIcon
+                        Width="22"
+                        Height="22"
+                        Kind="Edit" />
+                </ControlTemplate>
+            </Setter>
+        </Style>
+
+        <Style Selector="Button.delete-button">
+            <Setter Property="Foreground" Value="Black" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <materialIcons:MaterialIcon
+                        Width="22"
+                        Height="22"
+                        Kind="Bin" />
+                </ControlTemplate>
+            </Setter>
+        </Style>
+
+        <Style Selector="Button.delete-button:pointerover">
+            <Setter Property="Foreground" Value="Red" />
+        </Style>
+
+        <Style Selector="Button.edit-button:pointerover">
+            <Setter Property="Foreground" Value="{StaticResource PrimarySolidColorBrush}" />
+        </Style>
+
+
+    </Application.Styles>
+</Application>

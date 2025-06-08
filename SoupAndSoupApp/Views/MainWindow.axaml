@@ -1,0 +1,45 @@
+<Window
+    x:Class="SoupAndSoupApp.Views.MainWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:viewModels="clr-namespace:SoupAndSoupApp.ViewModels"
+    xmlns:views="clr-namespace:SoupAndSoupApp.Views"
+    Title="SoupAndSoupApp"
+    d:DesignHeight="1200"
+    d:DesignWidth="2000"
+    x:DataType="viewModels:MainViewModel"
+    Icon="/Assets/avalonia-logo.ico"
+    WindowState="Maximized"
+    mc:Ignorable="d">
+
+    <Design.DataContext>
+        <viewModels:MainViewModel />
+    </Design.DataContext>
+
+    <Grid ColumnDefinitions="Auto,*">
+        <!--<StackPanel
+            HorizontalAlignment="Right"
+            Background="#ADD8E6"
+            Orientation="Vertical">
+            <Button
+                Width="140"
+                Padding="20"
+                Command="{Binding ShowReceipt}">
+                Рецепт мила
+            </Button>
+            <Button
+                Width="140"
+                Margin="0,10"
+                Padding="10,20"
+                Command="{Binding ShowDesigner}">
+                Рецепт парфумів
+            </Button>
+        </StackPanel>-->
+
+        <ContentControl Grid.Column="1">
+            <views:SoapDesignerView DataContext="{Binding SoapDesignerDataContext}" />
+        </ContentControl>
+    </Grid>
+</Window>
