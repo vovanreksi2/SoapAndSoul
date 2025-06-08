@@ -333,11 +333,11 @@
                                             HorizontalAlignment="Left"
                                             VerticalAlignment="Center"
                                             Orientation="Horizontal">
-                                            <TextBox
+                                            <TextBlock
                                                 HorizontalAlignment="Right"
                                                 VerticalAlignment="Top"
                                                 FontSize="20"
-                                                Text="{Binding Amount, Mode=TwoWay, StringFormat='{}{0:F0}'}" />
+                                                Text="{Binding Amount, StringFormat='{}{0:F0}кап'}" />
 
                                             <TextBlock
                                                 HorizontalAlignment="Left"

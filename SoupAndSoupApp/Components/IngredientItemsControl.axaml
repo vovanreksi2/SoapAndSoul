@@ -67,7 +67,7 @@
                     VerticalAlignment="Center"
                     Background="White"
                     ColumnDefinitions="* 90"
-                    RowDefinitions="110, *">
+                    RowDefinitions="110, *, Auto">
                     <Image
                         Grid.ColumnSpan="2"
                         IsHitTestVisible="False"
@@ -106,6 +106,18 @@
                         TextAlignment="Center"
                         TextWrapping="WrapWithOverflow" />
 
+                    <StackPanel
+                        Grid.Row="2"
+                        Grid.Column="0"
+                        Grid.ColumnSpan="2"
+                        HorizontalAlignment="Stretch"
+                        IsVisible="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=IsChecked}"
+                        Orientation="Horizontal"
+                        Spacing="5">
+                        <Button Content="-" />
+                        <TextBox HorizontalAlignment="Center" Watermark="10" />
+                        <Button Content="+" />
+                    </StackPanel>
                 </Grid>
             </Border>
         </ControlTemplate>
@@ -115,7 +127,7 @@
         <DataTemplate x:Key="IngredientsCBDataTemplate" DataType="models:IngredientModel">
             <ToggleButton
                 Width="150"
-                Height="160"
+                Height="210"
                 Margin="0,0,15,10"
                 Classes="IngredientCheckBox"
                 Cursor="Hand"
