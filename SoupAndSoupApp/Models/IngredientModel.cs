@@ -10,7 +10,8 @@ public class IngredientModel : ReactiveObject
 
     public Bitmap ImagePath { get; set; }
     public string Name { get; set; }
-    public decimal Count { get; set; }
+    public decimal Amount { get; set; }
+    public decimal AmountTitle { get; set; }
     public decimal Cost { get; set; }
 
     public bool IsButton { get; set; }

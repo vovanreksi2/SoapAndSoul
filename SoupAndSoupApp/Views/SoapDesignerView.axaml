@@ -339,13 +339,8 @@
                                                 FontSize="20"
                                                 Text="{Binding Amount, StringFormat='{}{0:F0}кап'}" />
 
-                                            <TextBlock
-                                                HorizontalAlignment="Left"
-                                                VerticalAlignment="Center"
-                                                FontSize="20"
-                                                Text="{Binding CountTitle}" />
+                                             
                                         </StackPanel>
-
 
                                         <TextBlock
                                             Grid.Column="3"
