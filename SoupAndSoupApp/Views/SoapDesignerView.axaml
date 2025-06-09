@@ -94,19 +94,16 @@
         </Style>
 
         <!--  Buttons  -->
-        <Style Selector="Button.SaveButton">
-            <Setter Property="Height" Value="45" />
-            <Setter Property="Margin" Value=" 5 5" />
-            <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Style Selector="Button.MainReceipt">
+            <Setter Property="Height" Value="35" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="Background" Value="{StaticResource PrimarySolidColorBrush}" />
             <Setter Property="BorderBrush" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="CornerRadius" Value="8" />
-            <Setter Property="FontSize" Value="18" />
+            <Setter Property="FontSize" Value="16" />
             <Setter Property="Foreground" Value="White" />
-
         </Style>
 
         <!--  Buttons end  -->
@@ -160,18 +157,10 @@
                         Classes="SectionTitle"
                         Text="Рецепти" />
                     <Button
-                        Height="35"
                         Margin="40,0,0,0"
-                        HorizontalContentAlignment="Center"
-                        VerticalContentAlignment="Center"
-                        Background="{StaticResource PrimarySolidColorBrush}"
-                        BorderBrush="Transparent"
-                        BorderThickness="0"
+                        Classes="MainReceipt"
                         Command="{Binding NewReceiptCommand}"
-                        Content="+ Новий Рецепт"
-                        CornerRadius="8"
-                        FontSize="16"
-                        Foreground="White" />
+                        Content="+ Новий Рецепт" />
                 </WrapPanel>
 
                 <TextBox
@@ -341,14 +330,14 @@
 
                     </StackPanel>
 
-                    <StackPanel Grid.Row="4">
+                    <!--<StackPanel Grid.Row="4">
                         <Button
                             Classes="SaveButton"
                             Command="{Binding SaveReceiptCommand}"
                             CommandParameter="{Binding SelectedReceipt}"
                             Content="Зберегти" />
                         <Button Classes="SaveButton" Content="Зберегти як новий" />
-                    </StackPanel>
+                    </StackPanel>-->
                 </Grid>
 
                 <Grid
@@ -356,10 +345,11 @@
                     Column="1"
                     RowDefinitions="Auto *"
                     ShowGridLines="False">
-                    <TextBlock
-                        Grid.Row="0"
+
+                    <!--<TextBlock
+                        Grid.Row=" 0"
                         Classes="SectionTitle"
-                        Text="Інгредієнти" />
+                        Text="Інгредієнти" />-->
 
                     <ScrollViewer
                         Grid.Row="1"

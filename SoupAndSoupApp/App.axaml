@@ -29,6 +29,7 @@
         <converters:OrConverter x:Key="OrConverter" />
         <converters:NullToBooleanConverter x:Key="NullToTrue" />
         <converters:NullToBooleanConverter x:Key="NullToFalse" Invert="True" />
+        <converters:BooleanNegationConverter x:Key="InvertBool" />
     </Application.Resources>
 
     <Application.Styles>

@@ -3,6 +3,7 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:components="clr-namespace:SoupAndSoupApp.Components"
+    xmlns:converters="clr-namespace:SoupAndSoupApp.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:models="clr-namespace:SoupAndSoupApp.Models"
@@ -15,7 +16,8 @@
     <UserControl.Resources>
 
         <system:Double x:Key="IngredientCheckBoxWidth">150</system:Double>
-        <system:Double x:Key="IngredientCheckBoxHeight">200</system:Double>
+        <system:Double x:Key="IngredientCheckBoxHeight">150</system:Double>
+
 
         <!--  Button  -->
         <ControlTemplate x:Key="MoldButtonControlTemplate">
@@ -69,8 +71,10 @@
                 VerticalAlignment="Stretch"
                 Background="White"
                 ColumnDefinitions="* 90"
-                RowDefinitions="120 80"
-                ShowGridLines="False">
+                RowDefinitions="100 50"
+                ShowGridLines="False"
+                ToolTip.Tip="{Binding Name}">
+
                 <Border
                     x:Name="BackgroundBorder"
                     Grid.Row="0"
@@ -121,12 +125,14 @@
                     Grid.ColumnSpan="2"
                     Margin="5"
                     HorizontalAlignment="Center"
-                    VerticalAlignment="Top"
+                    VerticalAlignment="Center"
                     FontSize="{TemplateBinding FontSize}"
                     FontWeight="{TemplateBinding FontWeight}"
+                    IsVisible="{Binding Path=IsChecked, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource InvertBool}}"
                     Text="{Binding Name}"
                     TextAlignment="Center"
-                    TextWrapping="WrapWithOverflow" />
+                    TextTrimming="CharacterEllipsis"
+                    TextWrapping="NoWrap" />
 
                 <Grid
                     Grid.Row="1"
@@ -147,6 +153,7 @@
                         VerticalAlignment="Stretch"
                         Background="#d0d1fa"
                         BorderThickness="0" />
+
                     <TextBox
                         Grid.Column="1"
                         Margin="0,0,0,2"
@@ -170,7 +177,7 @@
             <ToggleButton
                 Width="{StaticResource IngredientCheckBoxWidth}"
                 Height="{StaticResource IngredientCheckBoxHeight}"
-                Margin="0,0,15,10"
+                Margin="0,0,20,30"
                 Classes="IngredientCheckBox"
                 Cursor="Hand"
                 FontSize="15"
@@ -200,7 +207,7 @@
             <Button
                 Width="{StaticResource IngredientCheckBoxWidth}"
                 Height="{StaticResource IngredientCheckBoxHeight}"
-                Margin="0,0,15,10"
+                Margin="0,0,20,30"
                 Classes="MoldButton"
                 Command="{Binding NewItemCommand, RelativeSource={RelativeSource AncestorType=components:IngredientItemsControl}}"
                 CommandParameter="{Binding Path=Type, RelativeSource={RelativeSource AncestorType=components:IngredientItemsControl}}"
@@ -244,6 +251,39 @@
         </Style>
 
         <!--  Items control end  -->
+
+        <!--  ToolTip  -->
+
+        <Style Selector="ToolTip">
+            <!--  Фон і закруглення  -->
+            <Setter Property="Background" Value="#afeeee" />
+            <Setter Property="Foreground" Value="Black" />
+            <Setter Property="FontSize" Value="18" />
+            <Setter Property="Padding" Value="15" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="MinWidth" Value="100" />
+            <Setter Property="MaxWidth" Value="800" />
+
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Grid>
+                        <Border
+                            Padding="{TemplateBinding Padding}"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="{TemplateBinding CornerRadius}" />
+
+                        <ContentPresenter
+                            Padding="20,0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Content="{TemplateBinding Content}"
+                            TextWrapping="Wrap" />
+                    </Grid>
+
+                </ControlTemplate>
+            </Setter>
+        </Style>
+
     </UserControl.Styles>
 
     <UserControl.DataTemplates>
