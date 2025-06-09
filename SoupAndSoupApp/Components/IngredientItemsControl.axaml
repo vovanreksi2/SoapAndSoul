@@ -72,6 +72,7 @@
                 RowDefinitions="120 80"
                 ShowGridLines="False">
                 <Border
+                    x:Name="BackgroundBorder"
                     Grid.Row="0"
                     Grid.RowSpan="2"
                     Grid.Column="0"
@@ -112,27 +113,7 @@
                         IsHitTestVisible="True" />
                 </StackPanel>
 
-                <Grid
-                    Grid.Row="0"
-                    Grid.Column="0"
-                    Grid.ColumnSpan="2"
-                    Margin="3,0"
-                    HorizontalAlignment="Stretch"
-                    VerticalAlignment="Bottom"
-                    Background="#d0d1fa"
-                    ColumnDefinitions="Auto * Auto"
-                    IsVisible="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=IsChecked}">
 
-                    <Button Content="-" />
-                    <TextBox
-                        Grid.Column="1"
-                        HorizontalAlignment="Stretch"
-                        HorizontalContentAlignment="Center"
-                        Text="{Binding Amount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                        Watermark="10" />
-                    <Button Grid.Column="2" Content="+" />
-
-                </Grid>
 
                 <TextBlock
                     Grid.Row="1"
@@ -146,6 +127,40 @@
                     Text="{Binding Name}"
                     TextAlignment="Center"
                     TextWrapping="WrapWithOverflow" />
+
+                <Grid
+                    Grid.Row="1"
+                    Grid.Column="0"
+                    Grid.ColumnSpan="2"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Bottom"
+                    ColumnDefinitions="Auto * Auto"
+                    IsVisible="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=IsChecked}">
+
+                    <Button
+                        Grid.Column="0"
+                        Content="-"
+                        CornerRadius="0 0 0 12" />
+
+                    <Border
+                        Grid.Column="1"
+                        VerticalAlignment="Stretch"
+                        Background="#d0d1fa"
+                        BorderThickness="0" />
+                    <TextBox
+                        Grid.Column="1"
+                        Margin="0,0,0,2"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Top"
+                        HorizontalContentAlignment="Center"
+                        Text="{Binding Amount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        Watermark="10" />
+                    <Button
+                        Grid.Column="2"
+                        Content="+"
+                        CornerRadius="0 0 12 0" />
+
+                </Grid>
             </Grid>
         </ControlTemplate>
         <!--  End  -->

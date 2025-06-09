@@ -228,25 +228,21 @@
                     <Grid
                         Grid.Row="2"
                         Margin="0,20,0,0"
-                        ColumnDefinitions="* * *"
                         DataContext="{Binding SelectedReceipt}"
                         RowDefinitions="Auto Auto 3*"
                         ShowGridLines="False">
                         <TextBlock
                             Grid.Column="0"
-                            Grid.ColumnSpan="2"
                             Classes="ReceiptTitle"
                             Text="{Binding Name}" />
                         <Button
                             Grid.Row="0"
-                            Grid.Column="2"
                             HorizontalAlignment="Right"
                             Classes="edit-button" />
 
                         <TextBlock
                             Grid.Row="1"
                             Grid.Column="0"
-                            Grid.ColumnSpan="3"
                             Margin="0,5,0,0"
                             HorizontalAlignment="Stretch"
                             FontSize="15"
@@ -255,39 +251,32 @@
                             TextAlignment="Left"
                             TextWrapping="WrapWithOverflow" />
 
-                        <Border
+                        <Grid
                             Grid.Row="2"
                             Grid.Column="0"
-                            Margin="0,15,10,0"
-                            Classes="WeightBorder">
-                            <StackPanel Classes="WeightStackPanel">
+                            ColumnDefinitions="* * *"
+                            ShowGridLines="False">
+                            <Border Grid.Column="0" Classes="WeightBorder" />
+
+                            <StackPanel Grid.Column="0" Classes="WeightStackPanel">
                                 <TextBlock Classes="WeightLabelText" Text="Вага" />
                                 <TextBlock Classes="WeightValueText" Text="{Binding Amount, StringFormat='{}{0:F0} г'}" />
                             </StackPanel>
-                        </Border>
 
-                        <Border
-                            Grid.Row="2"
-                            Grid.Column="1"
-                            Margin="10,15,10,0"
-                            Classes="WeightBorder">
-                            <StackPanel Classes="WeightStackPanel">
-                                <TextBlock Classes="WeightLabelText" Text="Собівартість" />
-                                <TextBlock Classes="WeightValueText" Text="{Binding UnitCost, StringFormat='{}{0:F0} грн'}" />
-                            </StackPanel>
-                        </Border>
+                            <Border Grid.Column="1" Classes="WeightBorder" />
 
-                        <Border
-                            Grid.Row="2"
-                            Grid.Column="2"
-                            Margin="10,15,0,0"
-                            Classes="WeightBorder">
-                            <StackPanel Classes="WeightStackPanel">
+                            <StackPanel Grid.Column="1" Classes="WeightStackPanel">
                                 <TextBlock Classes="WeightLabelText" Text="Тривалість" />
                                 <TextBlock Classes="WeightValueText" Text="{Binding PreparationTime, StringFormat='{}{0} хв'}" />
                             </StackPanel>
-                        </Border>
 
+                            <Border Grid.Column="2" Classes="WeightBorder" />
+
+                            <StackPanel Grid.Column="2" Classes="WeightStackPanel">
+                                <TextBlock Classes="WeightLabelText" Text="Собівартість" />
+                                <TextBlock Classes="WeightValueText" Text="{Binding UnitCost, StringFormat='{}{0:F0} грн'}" />
+                            </StackPanel>
+                        </Grid>
                     </Grid>
 
                     <StackPanel Grid.Row="3" Margin="0,20">

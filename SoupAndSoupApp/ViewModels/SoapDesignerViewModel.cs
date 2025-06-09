@@ -136,7 +136,7 @@ public class SoapDesignerViewModel : ViewModelBase
         EditIngredientCommand = ReactiveCommand.CreateFromTask<IngredientModel>(EditIngredientAsync);
         DeleteIngredientCommand = ReactiveCommand.CreateFromTask<IngredientModel>(DeleteIngredientAsync, Observable.Return(true));
 
-        //FillTestData();
+        FillTestData();
     }
 
 
@@ -181,7 +181,7 @@ public class SoapDesignerViewModel : ViewModelBase
         Recipes.AddRange(recipeModels);
         SelectedReceipt = Recipes.FirstOrDefault();
 
-        //FillTestData();
+        FillTestData();
     }
 
     private void FillTestData()
@@ -225,6 +225,18 @@ public class SoapDesignerViewModel : ViewModelBase
                 Title = "Трав'яні екстракти",
             }
         };
+
+       Recipes.Add(new RecipeModel
+       {
+           Name = "Нова Рецептура",
+           RecipeIngredients = new ObservableCollection<IngredientModel>(),
+           Description = string.Empty,
+           Amount = 0,
+           PreparationTime = 0,
+           UnitCost = 0,
+           ImagePath = ImageHelper.LoadFromResource(NoImage_Receipt_Image)
+       }
+       );
     }
 
 

@@ -18,6 +18,7 @@ public partial class IngredientItemsControl : UserControl
         set => SetValue(IngredientsProperty, value);
     }
 
+
     public static readonly StyledProperty<string> GroupTitleProperty =
         AvaloniaProperty.Register<IngredientItemsControl, string>(nameof(GroupTitle));
     public string GroupTitle
@@ -25,6 +26,7 @@ public partial class IngredientItemsControl : UserControl
         get => GetValue(GroupTitleProperty);
         set => SetValue(GroupTitleProperty, value);
     }
+
 
     public static readonly StyledProperty<ICommand> NewItemCommandProperty =
         AvaloniaProperty.Register<IngredientItemsControl, ICommand>(nameof(NewItemCommandProperty));
@@ -34,6 +36,7 @@ public partial class IngredientItemsControl : UserControl
         set => SetValue(NewItemCommandProperty, value);
     }
 
+
     public static readonly StyledProperty<object> CommandParameterProperty =
         AvaloniaProperty.Register<IngredientItemsControl, object>(nameof(CommandParameterProperty));
     public object CommandParameter
@@ -42,6 +45,7 @@ public partial class IngredientItemsControl : UserControl
         set => SetValue(CommandParameterProperty, value);
     }
 
+
     public static readonly StyledProperty<SoapTypeComponent> TypeProperty =
         AvaloniaProperty.Register<IngredientItemsControl, SoapTypeComponent>(nameof(Type));
     public SoapTypeComponent Type
@@ -49,6 +53,7 @@ public partial class IngredientItemsControl : UserControl
         get => GetValue(TypeProperty);
         set => SetValue(TypeProperty, value);
     }
+
 
     public IngredientItemsControl()
     {
