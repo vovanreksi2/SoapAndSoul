@@ -10,15 +10,20 @@ public class IngredientModel : ReactiveObject
 
     public Bitmap ImagePath { get; set; }
     public string Name { get; set; }
-    public decimal Amount { get; set; }
+
+    public decimal Amount
+    {
+        get => _amount;
+        set => this.RaiseAndSetIfChanged(ref _amount, value);
+    }
+
     public string AmountTitle { get; set; }
     public decimal Cost { get; set; }
 
     public SoapTypeComponent Type { get; set; }
 
     public bool IsButton { get; set; }
-
-    private bool _isSelected;
+    
     public bool IsSelected
     {
         get => _isSelected;
@@ -27,4 +32,7 @@ public class IngredientModel : ReactiveObject
 
     public ICommand EditCommand { get; set; }
     public ICommand DeleteCommand { get; set; }
+
+    private bool _isSelected;
+    private decimal _amount;
 }

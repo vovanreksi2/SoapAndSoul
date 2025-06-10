@@ -8,11 +8,11 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:models="clr-namespace:SoupAndSoupApp.Models"
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
+    xmlns:viewModels="clr-namespace:SoupAndSoupApp.ViewModels"
     d:DesignHeight="450"
     d:DesignWidth="800"
-    x:DataType="models:SoapGroup"
+    x:DataType="models:ComponentGroup"
     mc:Ignorable="d">
-
     <UserControl.Resources>
 
         <system:Double x:Key="IngredientCheckBoxWidth">150</system:Double>
@@ -154,13 +154,15 @@
                         Background="#d0d1fa"
                         BorderThickness="0" />
 
-                    <TextBox
+                    <NumericUpDown
                         Grid.Column="1"
                         Margin="0,0,0,2"
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Top"
                         HorizontalContentAlignment="Center"
-                        Text="{Binding Amount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        AllowSpin="False"
+                        ShowButtonSpinner="False"
+                        Text="{Binding Amount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat='{}{0:F0}'}"
                         Watermark="10" />
                     <Button
                         Grid.Column="2"

@@ -14,6 +14,7 @@ using ReactiveUI;
 using SoupAndSoup.Data.Models;
 using SoupAndSoup.Data.Services;
 using SoupAndSoupApp.Models;
+using Avalonia.Collections;
 
 namespace SoupAndSoupApp.ViewModels;
 
@@ -26,19 +27,17 @@ public class SoapDesignerViewModel : ViewModelBase
     private readonly AddIngredientDialog _addIngredientDialogWindow;
     private readonly AddIngredientDialogViewModel _addIngredientDialogViewModel;
 
-    public const string NoImage_Ingredient_Image = "Assets/efirne-limon.800x600w.jpg";
-    public const string NoImage_Receipt_Image = "Assets/efirne-limon.800x600w.jpg";
+    public const string NoImage_Ingredient_Image = "Assets/65fdbf22-c38e-434a-aca6-859009c6c51d.png";
+    public const string NoImage_Receipt_Image = "Assets/65fdbf22-c38e-434a-aca6-859009c6c51d.png";
 
     public ICommand NewReceiptCommand { get; private set; }
     public ICommand SaveReceiptCommand { get; private set; }
     public ICommand DeleteReceiptCommand { get; private set; }
 
-    public ReactiveCommand<SoapTypeComponent, Unit> NewIngredientCommand { get; private set; }
-    public ReactiveCommand<IngredientModel, Unit> EditIngredientCommand { get; private set; }
-    public ReactiveCommand<IngredientModel, Unit> DeleteIngredientCommand { get; private set; }
+    public ReactiveCommand<SoapTypeComponent, Unit> NewComponentCommand { get; private set; }
+    public ReactiveCommand<IngredientModel, Unit> EditComponentCommand { get; private set; }
+    public ReactiveCommand<IngredientModel, Unit> DeleteComponentCommand { get; private set; }
    
-
-    private bool _isReceiptEditMode;
     public bool IsReceiptEditMode
     {
         get => _isReceiptEditMode;
@@ -48,48 +47,42 @@ public class SoapDesignerViewModel : ViewModelBase
 
     public ObservableCollection<RecipeModel> Recipes { get; } = new();
 
-    public ObservableCollection<IngredientModel> SelectedIngredients { get; } = new();
-
-
-    private RecipeModel? _selectedReceipt;
-    private ObservableCollection<SoapGroup> _soapGroups = new();
-    private ObservableCollection<IngredientModel> _selectedIngredients;
-
-
     public RecipeModel? SelectedReceipt
     {
         get => _selectedReceipt;
         set
         {
-            SelectedIngredients.Clear();
-            SelectedIngredients.AddRange(value.RecipeIngredients);
-
-            //foreach (var soapGroup in SoapGroups)
-            //{
-            //    foreach (var ingredient in soapGroup.Ingredients)
-            //    {
-            //        if (value?.RecipeIngredients.Any(i => i.IngredientId == ingredient.Id) == true)
-            //        {
-            //            ingredient.IsSelected = true;
-            //        }
-            //        else
-            //        {
-            //            ingredient.IsSelected = false;
-            //        }
-            //    }
-            //}
+            foreach (var soapGroup in ComponentGroups)
+            {
+                foreach (var ingredient in soapGroup.Components)
+                {
+                    var recipeIngredient = value?.RecipeIngredients.FirstOrDefault(i => i.Id == ingredient.Id);
+                    if (recipeIngredient is not null)
+                    {
+                        ingredient.IsSelected = true;
+                        ingredient.Amount = recipeIngredient.Amount;
+                    }
+                    else
+                    {
+                        ingredient.IsSelected = false;
+                        ingredient.Amount = 1;
+                    }
+                }
+            }
 
             this.RaiseAndSetIfChanged(ref _selectedReceipt, value);
         }
     }
 
-    public ObservableCollection<SoapGroup> SoapGroups
-    {
-        get => _soapGroups;
-        set => this.RaiseAndSetIfChanged(ref _soapGroups, value);
-    }
+    public ObservableCollection<ComponentGroup> ComponentGroups { get; set; } = new();
+
+    public ObservableCollection<IngredientModel> ComponentsByReceipt { get; } = new();
 
     public Task Initialization { get; private set; }
+
+
+    private bool _isReceiptEditMode;
+    private RecipeModel? _selectedReceipt;
 
 
     public SoapDesignerViewModel()
@@ -132,9 +125,9 @@ public class SoapDesignerViewModel : ViewModelBase
         SaveReceiptCommand = ReactiveCommand.CreateFromTask<RecipeModel>(SaveReceiptAsync);
         DeleteReceiptCommand = ReactiveCommand.CreateFromTask<RecipeModel>(DeleteReceiptAsync);
 
-        NewIngredientCommand = ReactiveCommand.CreateFromTask<SoapTypeComponent>(OpenAddIngredientDialogAsync);
-        EditIngredientCommand = ReactiveCommand.CreateFromTask<IngredientModel>(EditIngredientAsync);
-        DeleteIngredientCommand = ReactiveCommand.CreateFromTask<IngredientModel>(DeleteIngredientAsync, Observable.Return(true));
+        NewComponentCommand = ReactiveCommand.CreateFromTask<SoapTypeComponent>(OpenAddIngredientDialogAsync);
+        EditComponentCommand = ReactiveCommand.CreateFromTask<IngredientModel>(EditIngredientAsync);
+        DeleteComponentCommand = ReactiveCommand.CreateFromTask<IngredientModel>(DeleteIngredientAsync, Observable.Return(true));
 
         FillTestData();
     }
@@ -143,12 +136,12 @@ public class SoapDesignerViewModel : ViewModelBase
     private async Task InitializeAsync()
     {
         var ingredientTypes = await _ingredientTypeService.GetAllAsync();
-        SoapGroups.Clear();
-        SoapGroups.AddRange(ingredientTypes.Select(_ => new SoapGroup
+        ComponentGroups.Clear();
+        ComponentGroups.AddRange(ingredientTypes.Select(_ => new ComponentGroup
         {
             Title = _.Name,
             Type = (SoapTypeComponent)_.Id,
-            NewIngredientCommand = NewIngredientCommand
+            NewComponentCommand = NewComponentCommand
         }));
 
         var ingredients = await _ingredientService.GetAllAsync();
@@ -162,7 +155,7 @@ public class SoapDesignerViewModel : ViewModelBase
 
                     ingredientModel
                         .WhenAnyValue(x => x.IsSelected)
-                        .Skip(1)
+                        
                         .Subscribe(_ => { HandleSelectedComponentChanged(ingredientModel); });
 
                     return ingredientModel;
@@ -170,8 +163,8 @@ public class SoapDesignerViewModel : ViewModelBase
                 .OrderBy(_ => IsLatin(_.Name))
                 .ThenBy(_ => _.Name);
 
-            var soapGroup = SoapGroups.FirstOrDefault(_ => _.Type == (SoapTypeComponent)group.Key.Id);
-            soapGroup?.Ingredients.AddRange(ingredientModels);
+            var soapGroup = ComponentGroups.FirstOrDefault(_ => _.Type == (SoapTypeComponent)group.Key.Id);
+            soapGroup?.Components.AddRange(ingredientModels);
         }
 
 
@@ -186,57 +179,58 @@ public class SoapDesignerViewModel : ViewModelBase
 
     private void FillTestData()
     {
-       SoapGroups = new ObservableCollection<SoapGroup>(){
-            new SoapGroup()
+       ComponentGroups.AddRange( new []
+       {
+            new ComponentGroup()
             {
-                Ingredients = new ObservableCollection<IngredientModel>(FillSoapForms()),
+                Components = new ObservableCollection<IngredientModel>(FillSoapForms()),
                 Type = SoapTypeComponent.Form,
                 Title = "Форми",
             },
-            new SoapGroup()
+            new ComponentGroup()
             {
-                Ingredients = new ObservableCollection<IngredientModel>(FillCraftingBases()),
+                Components = new ObservableCollection<IngredientModel>(FillCraftingBases()),
                 Type = SoapTypeComponent.CraftingBase,
                 Title = "Основа",
             },
 
-            new SoapGroup()
+            new ComponentGroup()
             {
-                Ingredients = new ObservableCollection<IngredientModel>(FillPigments()),
+                Components = new ObservableCollection<IngredientModel>(FillPigments()),
                 Type = SoapTypeComponent.Pigment,
                 Title = "Барвники",
             },
-            new SoapGroup()
+            new ComponentGroup()
             {
-                Ingredients = new ObservableCollection<IngredientModel>(FillFragranceOils()),
+                Components = new ObservableCollection<IngredientModel>(FillFragranceOils()),
                 Type = SoapTypeComponent.FragranceOil,
                 Title = "Ароматизатори",
             },
-            new SoapGroup()
+            new ComponentGroup()
             {
-                Ingredients = new ObservableCollection<IngredientModel>(FillEssentialOils()),
+                Components = new ObservableCollection<IngredientModel>(FillEssentialOils()),
                 Type = SoapTypeComponent.EssentialOil,
                 Title = "Ефірні олії",
             },
-            new SoapGroup()
+            new ComponentGroup()
             {
-                Ingredients = new ObservableCollection<IngredientModel>(FillHerbalExtracts()),
+                Components = new ObservableCollection<IngredientModel>(FillHerbalExtracts()),
                 Type = SoapTypeComponent.HerbalExtract,
                 Title = "Трав'яні екстракти",
             }
-        };
+        });
 
-       Recipes.Add(new RecipeModel
-       {
-           Name = "Нова Рецептура",
-           RecipeIngredients = new ObservableCollection<IngredientModel>(),
-           Description = string.Empty,
-           Amount = 0,
-           PreparationTime = 0,
-           UnitCost = 0,
-           ImagePath = ImageHelper.LoadFromResource(NoImage_Receipt_Image)
-       }
-       );
+       //Recipes.Add(new RecipeModel
+       //{
+       //    Name = "Нова Рецептура",
+       //    RecipeIngredients = new ObservableCollection<IngredientModel>(),
+       //    Description = string.Empty,
+       //    Amount = 0,
+       //    PreparationTime = 0,
+       //    UnitCost = 0,
+       //    ImagePath = ImageHelper.LoadFromResource(NoImage_Receipt_Image)
+       //}
+       //);
     }
 
 
@@ -246,7 +240,8 @@ public class SoapDesignerViewModel : ViewModelBase
         {
             Name = "Нова Рецептура",
             RecipeIngredients = new ObservableCollection<IngredientModel>(),
-            Description = string.Empty
+            Description = string.Empty,
+            ImagePath = ImageHelper.LoadFromResource(NoImage_Receipt_Image),
         };
         Recipes.Add(newRecipe);
         IsReceiptEditMode = false;
@@ -280,7 +275,6 @@ public class SoapDesignerViewModel : ViewModelBase
             SelectedReceipt.Id = createdRecipe.Id;
         }
     }
-     
 
     private async Task<RecipeModel> DeleteReceiptAsync(RecipeModel recipeModel)
     {
@@ -295,7 +289,7 @@ public class SoapDesignerViewModel : ViewModelBase
     
     private async Task OpenAddIngredientDialogAsync(SoapTypeComponent parameter)
     {
-        var soapGroup = SoapGroups.FirstOrDefault(_ => _.Type == parameter);
+        var soapGroup = ComponentGroups.FirstOrDefault(_ => _.Type == parameter);
 
         _addIngredientDialogWindow.DataContext = _addIngredientDialogViewModel;
         _addIngredientDialogViewModel.Init(soapGroup.Type);
@@ -334,7 +328,7 @@ public class SoapDesignerViewModel : ViewModelBase
             Name = saveResult.Name,
             ImagePath = ImageHelper.LoadFromResource(imageUrl)
         };
-        soapGroup.Ingredients.Add(newIngredient);
+        soapGroup.Components.Add(newIngredient);
     }
 
     private async Task DeleteIngredientAsync(IngredientModel ingredient)
@@ -342,12 +336,12 @@ public class SoapDesignerViewModel : ViewModelBase
         var result = await _ingredientService.SoftDeleteAsync(ingredient.Id);
         if (!result) return;
      
-        foreach (var soapGroup in SoapGroups)
+        foreach (var soapGroup in ComponentGroups)
         {
-            var item = soapGroup.Ingredients.FirstOrDefault(i => i.Id == ingredient.Id);
+            var item = soapGroup.Components.FirstOrDefault(i => i.Id == ingredient.Id);
             if (item != null)
             {
-                soapGroup.Ingredients.Remove(item);
+                soapGroup.Components.Remove(item);
             }
         }
     }
@@ -369,34 +363,16 @@ public class SoapDesignerViewModel : ViewModelBase
         }
     }
 
+
     private void HandleSelectedComponentChanged(IngredientModel ingredientModel)
     {
-        //if (SelectedReceipt == null)
-        //{
-        //    return;
-        //}
-
         if (ingredientModel.IsSelected)
         {
-            SelectedIngredients.Add(ingredientModel);
-
-            //if (SelectedReceipt.RecipeIngredients.Any(_ => _.IngredientId == ingredientModel.Id))
-            //    return;
-
-            //SelectedReceipt.RecipeIngredients.Add(new IngredientByReceiptModel
-            //{
-            //    IngredientId = ingredientModel.Id,
-            //    Name = ingredientModel.Name,
-            //    Amount = ingredientModel.Amount,
-            //    Cost = ingredientModel.Cost,
-            //    ImagePath = ingredientModel.ImagePath
-            //});
+            ComponentsByReceipt.Add(ingredientModel);
         }
         else
         {
-            SelectedIngredients.Remove(ingredientModel);
-            //var item = SelectedReceipt.RecipeIngredients.FirstOrDefault(i => i.IngredientId == ingredientModel.Id);
-            //SelectedReceipt.RecipeIngredients.Remove(item);
+            ComponentsByReceipt.Remove(ingredientModel);
         }
 
         ReCalculateUnitCost(SelectedReceipt);
@@ -409,9 +385,10 @@ public class SoapDesignerViewModel : ViewModelBase
             return;
         }
 
-        selectedReceipt.UnitCost = selectedReceipt.RecipeIngredients
-                .Sum(i => i.Cost);
+        selectedReceipt.UnitCost = ComponentsByReceipt
+                .Sum(i => i.Amount * i.Cost);
     }
+
     private decimal CalculateIngredientCost(RecipeIngredient ri)
     {
         if (ri.Ingredient.IngredientType.Id == (int)SoapTypeComponent.Form)
@@ -474,8 +451,8 @@ public class SoapDesignerViewModel : ViewModelBase
             Cost = ingredientModel.Cost,
             IsButton = false,
             IsSelected = false,
-            DeleteCommand = DeleteIngredientCommand,
-            EditCommand = EditIngredientCommand
+            DeleteCommand = DeleteComponentCommand,
+            EditCommand = EditComponentCommand
         };
         return result;
     }

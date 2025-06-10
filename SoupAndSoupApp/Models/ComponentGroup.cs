@@ -4,13 +4,13 @@ using ReactiveUI;
 
 namespace SoupAndSoupApp.Models;
 
-public class SoapGroup: ReactiveObject
+public class ComponentGroup: ReactiveObject
 {
     public SoapTypeComponent Type { get; set; }
 
     public string Title { get; set; } = string.Empty;
     public string ShortTitle { get; set; } = string.Empty;
-    public ObservableCollection<IngredientModel> Ingredients { get; set; } = new()
+    public ObservableCollection<IngredientModel> Components { get; set; } = new()
     {
         new IngredientModel
         {
@@ -19,5 +19,5 @@ public class SoapGroup: ReactiveObject
         }
     };
 
-    public ICommand NewIngredientCommand { get; set; }
+    public ICommand NewComponentCommand { get; set; }
 }
