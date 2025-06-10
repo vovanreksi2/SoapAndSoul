@@ -23,7 +23,6 @@ public class IngredientModel : ReactiveObject
     public SoapTypeComponent Type { get; set; }
 
     public bool IsButton { get; set; }
-    
     public bool IsSelected
     {
         get => _isSelected;
