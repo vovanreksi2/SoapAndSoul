@@ -13,7 +13,7 @@ namespace SoupAndSoupApp.ViewModels
 {
     public class AddIngredientDialogViewModel : ViewModelBase
     {
-        public const string NoImage_Ingredient_Image = "Assets/65fdbf22-c38e-434a-aca6-859009c6c51d.png";
+        public const string NoImage_Component_Image = "Assets/No_Component_Photo.png";
 
         public string? PhotoPath { get; set; }
 
@@ -144,7 +144,7 @@ namespace SoupAndSoupApp.ViewModels
             PhotoPath = null;
             Name = string.Empty;
             NewIngredient = null;
-            Photo = ImageHelper.LoadFromResource(NoImage_Ingredient_Image);
+            Photo = ImageHelper.LoadFromResource(NoImage_Component_Image);
         }
 
         public void Init(IngredientModel ingredient)
