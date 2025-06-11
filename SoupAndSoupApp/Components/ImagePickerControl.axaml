@@ -1,4 +1,4 @@
-<UserControl
+﻿<UserControl
     x:Class="SoupAndSoupApp.ImagePickerControl"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -6,6 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:soupAndSoupApp="clr-namespace:SoupAndSoupApp"
+    x:Name="RootControl"
     d:DesignHeight="450"
     d:DesignWidth="800"
     x:DataType="soupAndSoupApp:ImagePickerControl"
@@ -18,43 +19,60 @@
         <ControlTemplate x:Key="ButtonImageTemplate" TargetType="Button">
             <Border
                 x:Name="RootBorder"
-                Background="Transparent"
-                BorderBrush="{StaticResource IngredientBorderSolidColorBrush}"
-                BorderThickness="2"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
                 BoxShadow="0 0 8 0 #33000000"
-                ClipToBounds="True"
+                Classes="BorderStyle"
                 CornerRadius="{TemplateBinding CornerRadius}">
 
                 <Border.Styles>
-                    <Style Selector="Border:pointerover">
+                    <Style Selector="Border.BorderStyle:pointerover">
                         <Setter Property="BoxShadow" Value="0 0 30 #66000000" />
                     </Style>
                 </Border.Styles>
 
-                <Grid>
+                <Grid RowDefinitions="* *">
                     <Image
-                        x:Name="Image1"
+                        Grid.Row="0"
+                        Grid.RowSpan="2"
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Stretch"
-                        Opacity="{Binding IsHovered, RelativeSource={RelativeSource AncestorType=soupAndSoupApp:ImagePickerControl}, Converter={StaticResource OpacityConverter}}"
-                        Source="{Binding ImageSource, RelativeSource={RelativeSource AncestorType=soupAndSoupApp:ImagePickerControl}}"
+                        Opacity="{Binding #RootControl.IsHovered, Converter={StaticResource OpacityConverter}}"
+                        Source="{Binding #RootControl.ImageSource}"
                         Stretch="UniformToFill" />
 
                     <Image
+                        Grid.Row="1"
                         MaxWidth="70"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Bottom"
-                        IsVisible="{Binding IsHovered, RelativeSource={RelativeSource AncestorType=soupAndSoupApp:ImagePickerControl}, Converter={StaticResource InvertBool}}"
+                        IsVisible="{Binding #RootControl.IsHovered, Converter={StaticResource InvertBool}}"
                         Opacity="0.4"
                         Source="../Assets/camera_icon.png" />
 
                     <Image
+                        Grid.Row="0"
                         MaxWidth="70"
                         HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        IsVisible="{Binding IsHovered, RelativeSource={RelativeSource AncestorType=soupAndSoupApp:ImagePickerControl}}"
-                        Opacity="1"
+                        VerticalAlignment="Bottom"
+                        IsVisible="{Binding #RootControl.IsHovered}"
                         Source="../Assets/camera_icon_pressed.png" />
+
+                    <Border
+                        Grid.Row="1"
+                        Padding="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Top"
+                        Background="LightGray"
+                        CornerRadius="{TemplateBinding CornerRadius}"
+                        IsVisible="{Binding #RootControl.IsHovered}">
+                        <TextBlock
+                            FontSize="20"
+                            Foreground="{StaticResource PrimarySolidColorBrush}"
+                            Text="Змінити фото" />
+                    </Border>
+
                 </Grid>
             </Border>
         </ControlTemplate>
@@ -66,11 +84,19 @@
             <Setter Property="HorizontalAlignment" Value="Stretch" />
             <Setter Property="VerticalAlignment" Value="Stretch" />
             <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Margin" Value="10" />
             <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Background" Value="White" />
+            <Setter Property="BorderBrush" Value="{StaticResource IngredientBorderSolidColorBrush}" />
+            <Setter Property="BorderThickness" Value="2" />
+
             <Setter Property="Template" Value="{StaticResource ButtonImageTemplate}" />
         </Style>
     </UserControl.Styles>
 
-    <Button x:Name="MainButton" Classes="button-image" />
+    <Button
+        x:Name="MainButton"
+        Classes="button-image"
+        ClipToBounds="False" />
 
 </UserControl>
