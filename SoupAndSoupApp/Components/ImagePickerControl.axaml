@@ -38,26 +38,43 @@
                         Grid.RowSpan="2"
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Stretch"
-                        Opacity="{Binding #RootControl.IsHovered, Converter={StaticResource OpacityConverter}}"
+                        Opacity="{Binding #RootControl.IsPointerOver, Converter={StaticResource OpacityConverter}, ConverterParameter='From1To0.4'}"
                         Source="{Binding #RootControl.ImageSource}"
-                        Stretch="UniformToFill" />
+                        Stretch="UniformToFill">
+                        <Image.Transitions>
+                            <Transitions>
+                                <DoubleTransition Property="Opacity" Duration="0:0:0.2" />
+                            </Transitions>
+                        </Image.Transitions>
+                    </Image>
 
                     <Image
                         Grid.Row="1"
                         MaxWidth="70"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Bottom"
-                        IsVisible="{Binding #RootControl.IsHovered, Converter={StaticResource InvertBool}}"
-                        Opacity="0.4"
-                        Source="../Assets/camera_icon.png" />
+                        Opacity="{Binding #RootControl.IsPointerOver, Converter={StaticResource OpacityConverter}, ConverterParameter='From0.4To0'}"
+                        Source="../Assets/camera_icon.png">
+                        <Image.Transitions>
+                            <Transitions>
+                                <DoubleTransition Property="Opacity" Duration="0:0:0.2" />
+                            </Transitions>
+                        </Image.Transitions>
+                    </Image>
 
                     <Image
                         Grid.Row="0"
                         MaxWidth="70"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Bottom"
-                        IsVisible="{Binding #RootControl.IsHovered}"
-                        Source="../Assets/camera_icon_pressed.png" />
+                        Opacity="{Binding #RootControl.IsPointerOver, Converter={StaticResource OpacityConverter}, ConverterParameter='From0To1'}"
+                        Source="../Assets/camera_icon_pressed.png">
+                        <Image.Transitions>
+                            <Transitions>
+                                <DoubleTransition Property="Opacity" Duration="0:0:0.2" />
+                            </Transitions>
+                        </Image.Transitions>
+                    </Image>
 
                     <Border
                         Grid.Row="1"
@@ -66,7 +83,13 @@
                         VerticalAlignment="Top"
                         Background="LightGray"
                         CornerRadius="{TemplateBinding CornerRadius}"
-                        IsVisible="{Binding #RootControl.IsHovered}">
+                        Opacity="{Binding #RootControl.IsPointerOver, Converter={StaticResource OpacityConverter}, ConverterParameter='From0To1'}">
+                        <Border.Transitions>
+                            <Transitions>
+                                <DoubleTransition Property="Opacity" Duration="0:0:0.2" />
+                            </Transitions>
+                        </Border.Transitions>
+
                         <TextBlock
                             FontSize="20"
                             Foreground="{StaticResource PrimarySolidColorBrush}"
@@ -80,6 +103,16 @@
     </UserControl.Resources>
 
     <UserControl.Styles>
+        <Style Selector="Rectangle.red">
+            <Setter Property="Height" Value="100" />
+            <Setter Property="Width" Value="100" />
+            <Setter Property="Fill" Value="Red" />
+            <Setter Property="Opacity" Value="0.5" />
+        </Style>
+        <Style Selector="Rectangle.red:pointerover">
+            <Setter Property="Opacity" Value="1" />
+        </Style>
+
         <Style Selector="Button.button-image">
             <Setter Property="HorizontalAlignment" Value="Stretch" />
             <Setter Property="VerticalAlignment" Value="Stretch" />
@@ -89,14 +122,12 @@
             <Setter Property="Background" Value="White" />
             <Setter Property="BorderBrush" Value="{StaticResource IngredientBorderSolidColorBrush}" />
             <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="ClipToBounds" Value="False" />
 
             <Setter Property="Template" Value="{StaticResource ButtonImageTemplate}" />
         </Style>
     </UserControl.Styles>
 
-    <Button
-        x:Name="MainButton"
-        Classes="button-image"
-        ClipToBounds="False" />
+    <Button Classes="button-image" />
 
 </UserControl>
