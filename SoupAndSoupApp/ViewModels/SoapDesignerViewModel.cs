@@ -138,7 +138,6 @@ public class SoapDesignerViewModel : ViewModelBase
         //FillTestData();
     }
 
-
     private async Task InitializeAsync()
     {
         var ingredientTypes = await _ingredientTypeService.GetAllAsync();
@@ -160,6 +159,7 @@ public class SoapDesignerViewModel : ViewModelBase
         //FillTestData();
        
     }
+
 
     private void FillTestData()
     {
@@ -371,16 +371,6 @@ public class SoapDesignerViewModel : ViewModelBase
 
         receipt.UnitCost = ComponentsByReceipt.Sum(i => i.Amount * i.Cost);
     }
-
-    private decimal CalculateIngredientCost(RecipeIngredient ri)
-    {
-        if (ri.Ingredient.IngredientType.Id == (int)SoapTypeComponent.Form)
-        {
-            return 0;
-        }
-        return ri.Ingredient.Cost * ri.Amount;
-    }
-
 
     private RecipeModel MapRecipe(Recipe recipe)
     {
