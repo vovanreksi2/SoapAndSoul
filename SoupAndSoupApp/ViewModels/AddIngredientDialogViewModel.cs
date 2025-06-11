@@ -13,11 +13,9 @@ namespace SoupAndSoupApp.ViewModels
 {
     public class AddIngredientDialogViewModel : ViewModelBase
     {
-        public string? PhotoPath
-        {
-            get => _photoPath;
-            set => _photoPath = value;
-        }
+        public const string NoImage_Ingredient_Image = "Assets/65fdbf22-c38e-434a-aca6-859009c6c51d.png";
+
+        public string? PhotoPath { get; set; }
 
         public Bitmap? Photo
         {
@@ -146,7 +144,7 @@ namespace SoupAndSoupApp.ViewModels
             PhotoPath = null;
             Name = string.Empty;
             NewIngredient = null;
-            Photo = null;
+            Photo = ImageHelper.LoadFromResource(NoImage_Ingredient_Image);
         }
 
         public void Init(IngredientModel ingredient)
@@ -191,7 +189,6 @@ namespace SoupAndSoupApp.ViewModels
         private decimal _unitPrice;
         private string _name = "";
         private Bitmap? _photo = null;
-        private string? _photoPath;
         private readonly ReactiveCommand<Unit, Unit> _selectPhotoCommand;
         private readonly ReactiveCommand<Unit, NewIngredientDto?> _confirmCommand;
         private readonly ReactiveCommand<Unit, NewIngredientDto?> _cancelCommand;

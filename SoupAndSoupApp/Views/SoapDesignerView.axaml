@@ -260,7 +260,8 @@
                     <soupAndSoupApp:ImagePickerControl
                         Grid.Row="1"
                         Classes="button-image"
-                        ImageSource="{Binding SelectedReceipt.ImagePath}" />
+                        ImageSource="{Binding SelectedReceipt.ImagePath}"
+                        NewImagePath="{Binding NewImagePath, Mode=OneWayToSource}" />
 
                     <Grid
                         Grid.Row="2"

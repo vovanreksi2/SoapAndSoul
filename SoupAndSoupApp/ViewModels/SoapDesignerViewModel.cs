@@ -14,7 +14,6 @@ using ReactiveUI;
 using SoupAndSoup.Data.Models;
 using SoupAndSoup.Data.Services;
 using SoupAndSoupApp.Models;
-using Avalonia.Collections;
 
 namespace SoupAndSoupApp.ViewModels;
 
@@ -37,13 +36,26 @@ public class SoapDesignerViewModel : ViewModelBase
     public ReactiveCommand<SoapTypeComponent, Unit> NewComponentCommand { get; private set; }
     public ReactiveCommand<IngredientModel, Unit> EditComponentCommand { get; private set; }
     public ReactiveCommand<IngredientModel, Unit> DeleteComponentCommand { get; private set; }
-   
+
+
     public bool IsReceiptEditMode
     {
         get => _isReceiptEditMode;
         set => this.RaiseAndSetIfChanged(ref _isReceiptEditMode, value);
     }
 
+    public string NewImagePath
+    {
+        get => _newImagePath;
+        set
+        {
+            if (_newImagePath == value) return;
+            if (SelectedReceipt != null) 
+                SelectedReceipt.ImagePath = ImageHelper.LoadFromResource(value);
+
+            this.RaiseAndSetIfChanged(ref _newImagePath, value);
+        }
+    }
 
     public ObservableCollection<RecipeModel> Recipes { get; } = new();
 
@@ -89,6 +101,7 @@ public class SoapDesignerViewModel : ViewModelBase
 
     private bool _isReceiptEditMode;
     private RecipeModel? _selectedReceipt;
+    private string _newImagePath;
 
 
     public SoapDesignerViewModel()

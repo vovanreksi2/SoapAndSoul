@@ -9,7 +9,6 @@
     x:Name="RootControl"
     d:DesignHeight="450"
     d:DesignWidth="800"
-    x:DataType="soupAndSoupApp:ImagePickerControl"
     mc:Ignorable="d">
 
     <UserControl.Resources>
@@ -128,6 +127,6 @@
         </Style>
     </UserControl.Styles>
 
-    <Button Classes="button-image" />
+    <Button x:Name="MainButton" Classes="button-image" />
 
 </UserControl>
