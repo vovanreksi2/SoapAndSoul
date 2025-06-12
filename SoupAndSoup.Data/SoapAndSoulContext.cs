@@ -36,9 +36,9 @@ public class SoapAndSoulContext : DbContext
                 .HasForeignKey(i => i.IngredientTypeId);
 
             // Relationship: Ingredient -> AmountTypes
-            entity.HasMany(i => i.AmountTypes)
-                .WithMany(it => it.Ingredients)
-                .UsingEntity(j => j.ToTable("IngredientAmountTypes"));
+            entity.HasOne(i=>i.AmountType)
+                .WithMany(at => at.Ingredients)
+                .HasForeignKey(i => i.AmountTypeId);
         });
 
         modelBuilder.Entity<RecipeIngredient>(entity =>

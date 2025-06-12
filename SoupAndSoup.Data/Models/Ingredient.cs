@@ -19,8 +19,8 @@ public class Ingredient
     public int IngredientTypeId { get; set; }
     public IngredientType IngredientType { get; set; }
 
-
-    public ICollection<AmountType> AmountTypes { get; set; } = new List<AmountType>();
+    public int? AmountTypeId { get; set; }
+    public AmountType? AmountType { get; set; } 
 
     public ICollection<RecipeIngredient> RecipeIngredients { get; set; } = new List<RecipeIngredient>();
 

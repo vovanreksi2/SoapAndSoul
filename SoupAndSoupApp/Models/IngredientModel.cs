@@ -18,7 +18,7 @@ public class IngredientModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _amount, value);
     }
 
-    public ICollection<MeasureTypeModel> AmountsTitle { get; set; }
+    public MeasureTypeModel MeasureType { get; set; }
     public decimal Cost { get; set; }
 
     public SoapTypeComponent Type { get; set; }

@@ -196,7 +196,7 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <TextBlock
-                        Grid.Row=" 0"
+                        Grid.Row="0"
                         Margin="0,0,0,30"
                         Classes="SectionTitle"
                         Text="Опис рецепта" />
@@ -316,25 +316,27 @@
                                             VerticalAlignment="Center"
                                             Orientation="Horizontal">
                                             <TextBlock
-                                                HorizontalAlignment="Right"
-                                                VerticalAlignment="Top"
-                                                FontSize="20"
-                                                Text="{Binding Amount, StringFormat='{}{0:F0}'}" >
-                                                </
-                                            
+                                                Grid.Column="1"
+                                                Margin="10,0"
+                                                VerticalAlignment="Center"
+                                                FontSize="16"
+                                                FontWeight="DemiBold"
+                                                TextWrapping="WrapWithOverflow">
+                                                <Run Text="{Binding Amount}" />
+                                                <Run Text="{Binding MeasureType.Title}" />
+                                            </TextBlock>
                                         </StackPanel>
 
                                     </Grid>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-
                     </StackPanel>
                 </Grid>
 
                 <Grid
+                    Grid.Column="1"
                     Margin="30,0,0,0"
-                    Column="1"
                     RowDefinitions="Auto *"
                     ShowGridLines="False">
 
