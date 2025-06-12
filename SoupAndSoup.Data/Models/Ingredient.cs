@@ -14,6 +14,10 @@ public class Ingredient
 
     public bool IsActive { get; set; } = true;
 
+    public int DefaultAmount { get; set; }
+
+    public int Amount { get; set; }
+    public decimal Price { get; set; }
 
     // Foreign key to IngredientTypes
     public int IngredientTypeId { get; set; }

@@ -60,6 +60,12 @@ namespace SoupAndSoupApp.ViewModels
             set => this.RaiseAndSetIfChanged(ref _unitPrice, value);
         }
 
+        public decimal DefaultAmount
+        {
+            get => _defaultAmount;
+            set => this.RaiseAndSetIfChanged(ref _defaultAmount, value);
+        }
+
         public string IngredientTitle
         {
             get => _ingredientTitle;
@@ -74,21 +80,18 @@ namespace SoupAndSoupApp.ViewModels
 
         #region MeasureTypeModel
 
-        // Колекція типів вимірювання (грам, мл і т.д.)
         public ObservableCollection<MeasureTypeModel> MeasureTypes { get; } = new();
 
-        // Вибраний тип
-        private MeasureTypeModel? _selectedMeasureType;
 
+        private MeasureTypeModel? _selectedMeasureType;
         public MeasureTypeModel? SelectedMeasureType
         {
             get => _selectedMeasureType;
             set => this.RaiseAndSetIfChanged(ref _selectedMeasureType, value);
         }
 
-        // Властивість, що інформує, чи є кілька типів (для UI)
-        private bool _hasMultipleMeasureTypes;
 
+        private bool _hasMultipleMeasureTypes;
         public bool HasMultipleMeasureTypes
         {
             get => _hasMultipleMeasureTypes;
@@ -119,7 +122,11 @@ namespace SoupAndSoupApp.ViewModels
                 {
                     Name = Name,
                     Cost = UnitPrice,
-                    ImagePath = PhotoPath ?? string.Empty
+                    ImagePath = PhotoPath ?? string.Empty,
+                    MeasureType = SelectedMeasureType,
+                    Amount = Amount,
+                    Price = Price,
+                    DefaultAmount = Amount
                 };
                 _dialog?.Hide();
                 return (NewIngredientDto?)null;
@@ -189,12 +196,14 @@ namespace SoupAndSoupApp.ViewModels
 
         public void Init(IngredientModel ingredient)
         {
-            Price = 0;
-            Amount = 0;
+            Price = ingredient.CostPrice;
+            Amount = ingredient.Amount;
             Name = ingredient.Name;
             UnitPrice = ingredient.Cost;
             NewIngredient = null;
             Photo = ingredient.ImagePath;
+
+            DefaultAmount = ingredient.DefaultAmount;
         }
 
         private void ReCalculateUnitPrice(decimal amount, decimal price)
@@ -241,6 +250,7 @@ namespace SoupAndSoupApp.ViewModels
             }
         }
 
+
         private readonly Window? _dialog;
         private decimal _amount;
         private decimal _price;
@@ -253,6 +263,7 @@ namespace SoupAndSoupApp.ViewModels
         private readonly ReactiveCommand<Unit, NewIngredientDto?> _cancelCommand;
         private string _ingredientTitle;
         private string _windowTitle;
+        private decimal _defaultAmount;
     }
 
     public enum MeasureType

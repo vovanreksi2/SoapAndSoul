@@ -291,16 +291,21 @@ public class SoapDesignerViewModel : ViewModelBase
             return;
         }
 
+        var newIngredientDto = _addIngredientDialogViewModel.NewIngredient;
         var ingredient = new Ingredient
         {
-            Cost = _addIngredientDialogViewModel.NewIngredient.Cost,
-            Name = _addIngredientDialogViewModel.NewIngredient.Name,
+            Cost = newIngredientDto.Cost,
+            Name = newIngredientDto.Name,
             IngredientTypeId = (int)soapGroup.Type,
+            AmountTypeId = newIngredientDto.MeasureType.Id,
+            DefaultAmount = (int)newIngredientDto.DefaultAmount,
+            Amount = (int)newIngredientDto.Amount,
+            Price = newIngredientDto.Price,
             Images = new List<IngredientImage>
             {
                 new()
                 {
-                    ImageUrl = _addIngredientDialogViewModel.NewIngredient.ImagePath
+                    ImageUrl = newIngredientDto.ImagePath
                 }
             }
         };
@@ -375,15 +380,6 @@ public class SoapDesignerViewModel : ViewModelBase
         receipt.UnitCost = ComponentsByReceipt.Sum(i => i.Amount * i.Cost);
     }
 
-    private decimal CalculateIngredientCost(RecipeIngredient ri)
-    {
-        if (ri.Ingredient.IngredientType.Id == (int)SoapTypeComponent.Form)
-        {
-            return 0;
-        }
-        return ri.Ingredient.Cost * ri.Amount;
-    }
-
 
     private RecipeModel MapRecipe(Recipe recipe)
     {
@@ -434,8 +430,12 @@ public class SoapDesignerViewModel : ViewModelBase
         {
             Id = ingredientModel.Id,
             Name = ingredientModel.Name,
-            Amount = 1,
+            Amount = ingredientModel.Amount,
             Cost = ingredientModel.Cost,
+
+            DefaultAmount = ingredientModel.DefaultAmount,
+            CostPrice = ingredientModel.Price,
+
             DeleteCommand = DeleteComponentCommand,
             EditCommand = EditComponentCommand,
             Type = (SoapTypeComponent)ingredientModel.IngredientType.Id,

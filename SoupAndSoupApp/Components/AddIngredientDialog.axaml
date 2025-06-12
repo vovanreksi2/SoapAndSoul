@@ -7,8 +7,8 @@
     xmlns:viewModels="clr-namespace:SoupAndSoupApp.ViewModels"
     Title="{Binding WindowTitle}"
     Width="480"
-    Height="640"
-    d:DesignHeight="640"
+    Height="695"
+    d:DesignHeight="695"
     d:DesignWidth="480"
     x:DataType="viewModels:AddIngredientDialogViewModel"
     WindowStartupLocation="CenterOwner"
@@ -91,7 +91,7 @@
         Padding="32"
         Background="White"
         CornerRadius="12">
-        <StackPanel Spacing="24">
+        <StackPanel Spacing="20">
 
             <TextBlock
                 HorizontalAlignment="Center"
@@ -145,11 +145,10 @@
                     Watermark="" />
             </StackPanel>
 
-            <StackPanel Margin="10" Spacing="5">
-
+            <!--  Тип кількості  -->
+            <StackPanel IsVisible="{Binding HasMultipleMeasureTypes}" Spacing="5">
                 <ListBox
                     Background="Transparent"
-                    IsVisible="{Binding HasMultipleMeasureTypes}"
                     ItemsSource="{Binding MeasureTypes}"
                     SelectedItem="{Binding SelectedMeasureType, Mode=TwoWay}">
                     <ListBox.ItemsPanel>
@@ -173,6 +172,16 @@
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
+            </StackPanel>
+
+            <!--  Тип кількості  -->
+            <StackPanel>
+                <TextBlock Margin="0,0,0,4" Text="Дефолтна кількість" />
+                <TextBox
+                    Height="40"
+                    Classes="outlined"
+                    Text="{Binding DefaultAmount}"
+                    Watermark="" />
             </StackPanel>
 
             <!--  Ціна і кількість  -->

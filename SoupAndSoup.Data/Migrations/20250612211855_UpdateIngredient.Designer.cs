@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SoupAndSoup.Data;
 
@@ -11,9 +12,11 @@ using SoupAndSoup.Data;
 namespace SoupAndSoup.Data.Migrations
 {
     [DbContext(typeof(SoapAndSoulContext))]
-    partial class SoapAndSoulContextModelSnapshot : ModelSnapshot
+    [Migration("20250612211855_UpdateIngredient")]
+    partial class UpdateIngredient
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -135,8 +138,8 @@ namespace SoupAndSoup.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("Amount")
-                        .HasColumnType("int");
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int?>("AmountTypeId")
                         .HasColumnType("int");
@@ -144,8 +147,8 @@ namespace SoupAndSoup.Data.Migrations
                     b.Property<decimal>("Cost")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int>("DefaultAmount")
-                        .HasColumnType("int");
+                    b.Property<decimal>("DefaultAmount")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("IngredientTypeId")
                         .HasColumnType("int");

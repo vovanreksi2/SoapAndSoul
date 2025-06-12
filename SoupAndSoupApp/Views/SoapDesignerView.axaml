@@ -323,7 +323,7 @@
                                                 FontWeight="DemiBold"
                                                 TextWrapping="WrapWithOverflow">
                                                 <Run Text="{Binding Amount, StringFormat='{}{0:F0}'}" />
-                                                <Run Text="{Binding MeasureType.Title}" />
+                                                <Run Text="{Binding MeasureType.ShortTitle}" />
                                             </TextBlock>
                                         </StackPanel>
 
