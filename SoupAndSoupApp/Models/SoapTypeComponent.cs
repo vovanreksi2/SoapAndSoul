@@ -7,7 +7,9 @@ public enum SoapTypeComponent
     Pigment,
     EssentialOil,
     FragranceOil,
-    HerbalExtract
+    HerbalExtract,
+    Tools,
+    Other
 }
 
 public enum RecipeType

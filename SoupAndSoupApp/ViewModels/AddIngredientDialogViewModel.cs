@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Media.Imaging;
+using DynamicData;
 using ReactiveUI;
 using SoupAndSoupApp.Models;
 
@@ -58,12 +60,6 @@ namespace SoupAndSoupApp.ViewModels
             set => this.RaiseAndSetIfChanged(ref _unitPrice, value);
         }
 
-        public string AmountTypeTitle
-        {
-            get => _amountTypeTitle;
-            set => this.RaiseAndSetIfChanged(ref _amountTypeTitle, value);
-        }
-
         public string IngredientTitle
         {
             get => _ingredientTitle;
@@ -75,6 +71,31 @@ namespace SoupAndSoupApp.ViewModels
             get => _windowTitle;
             set => this.RaiseAndSetIfChanged(ref _windowTitle, value);
         }
+
+        #region MeasureTypeModel
+
+        // Колекція типів вимірювання (грам, мл і т.д.)
+        public ObservableCollection<MeasureTypeModel> MeasureTypes { get; } = new();
+
+        // Вибраний тип
+        private MeasureTypeModel? _selectedMeasureType;
+
+        public MeasureTypeModel? SelectedMeasureType
+        {
+            get => _selectedMeasureType;
+            set => this.RaiseAndSetIfChanged(ref _selectedMeasureType, value);
+        }
+
+        // Властивість, що інформує, чи є кілька типів (для UI)
+        private bool _hasMultipleMeasureTypes;
+
+        public bool HasMultipleMeasureTypes
+        {
+            get => _hasMultipleMeasureTypes;
+            private set => this.RaiseAndSetIfChanged(ref _hasMultipleMeasureTypes, value);
+        }
+
+        #endregion
 
         public ReactiveCommand<Unit, Unit> SelectPhotoCommand => _selectPhotoCommand;
 
@@ -110,11 +131,14 @@ namespace SoupAndSoupApp.ViewModels
                 _dialog?.Hide();
                 return (NewIngredientDto?)null;
             });
+
         }
 
-        public AddIngredientDialogViewModel() { }
+        public AddIngredientDialogViewModel()
+        {
+        }
 
-        public void Init(SoapTypeComponent ingredientType)
+        public void Init(SoapTypeComponent ingredientType, IEnumerable<MeasureTypeModel> measureTypes)
         {
             switch (ingredientType)
             {
@@ -122,12 +146,10 @@ namespace SoupAndSoupApp.ViewModels
                 case SoapTypeComponent.Form:
                     WindowTitle = "Додати форму";
                     IngredientTitle = "форму";
-                    AmountTypeTitle = "шт";
                     break;
                 case SoapTypeComponent.CraftingBase:
                     WindowTitle = "Додати основу";
                     IngredientTitle = "основи";
-                    AmountTypeTitle = "г";
                     break;
                 case SoapTypeComponent.Pigment:
                     break;
@@ -137,16 +159,32 @@ namespace SoupAndSoupApp.ViewModels
                     break;
                 case SoapTypeComponent.HerbalExtract:
                     break;
+                case SoapTypeComponent.Tools:
+                case SoapTypeComponent.Other:
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(ingredientType), ingredientType, null);
             }
 
-            Price= 0;
+            Price = 0;
             Amount = 0;
             PhotoPath = null;
             Name = string.Empty;
             NewIngredient = null;
             Photo = null;
+
+            MeasureTypes.Clear();
+            MeasureTypes.AddRange(measureTypes.Select(_ => new MeasureTypeModel(_.Id, _.Title, _.ShortTitle, GetBitmapByMeasureType(_.Id))));
+
+            //MeasureTypes.AddRange(new []
+            //{
+            //    new MeasureTypeModel(1, "Грами", "гр",GetBitmapByMeasureType(1)),
+            //    new MeasureTypeModel(2, "Мілілітри", "мл", GetBitmapByMeasureType(2)),
+            //    new MeasureTypeModel(3, "Штуки", "шт", GetBitmapByMeasureType(3)),
+            //    new MeasureTypeModel(4, "Краплі", "крап", GetBitmapByMeasureType(4)),
+            //});
+            SelectedMeasureType = MeasureTypes.Count > 0 ? MeasureTypes.FirstOrDefault() : null;
+            HasMultipleMeasureTypes = MeasureTypes.Count > 1;
         }
 
         public void Init(IngredientModel ingredient)
@@ -184,6 +222,24 @@ namespace SoupAndSoupApp.ViewModels
             }
         }
 
+        private Bitmap? GetBitmapByMeasureType(int id)
+        {
+            switch ((MeasureType)id)
+            {
+                case MeasureType.Gram:
+                    return ImageHelper.LoadFromResource("Assets/Gram.png");
+                case MeasureType.Milliliter:
+                    return ImageHelper.LoadFromResource("Assets/Milliliter.png");
+
+                case MeasureType.Piece:
+                    return ImageHelper.LoadFromResource("Assets/Gram.png");
+
+                case MeasureType.Drop:
+                    return ImageHelper.LoadFromResource("Assets/Drop.png");
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
 
         private readonly Window? _dialog;
         private decimal _amount;
@@ -195,9 +251,15 @@ namespace SoupAndSoupApp.ViewModels
         private readonly ReactiveCommand<Unit, Unit> _selectPhotoCommand;
         private readonly ReactiveCommand<Unit, NewIngredientDto?> _confirmCommand;
         private readonly ReactiveCommand<Unit, NewIngredientDto?> _cancelCommand;
-        private string _amountTypeTitle;
         private string _ingredientTitle;
         private string _windowTitle;
     }
 
+    public enum MeasureType
+    {
+        Gram =1,
+        Milliliter,
+        Piece,
+        Drop
+    }
 }

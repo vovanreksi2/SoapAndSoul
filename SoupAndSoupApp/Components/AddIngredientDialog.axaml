@@ -7,8 +7,8 @@
     xmlns:viewModels="clr-namespace:SoupAndSoupApp.ViewModels"
     Title="{Binding WindowTitle}"
     Width="480"
-    Height="620"
-    d:DesignHeight="600"
+    Height="640"
+    d:DesignHeight="640"
     d:DesignWidth="480"
     x:DataType="viewModels:AddIngredientDialogViewModel"
     WindowStartupLocation="CenterOwner"
@@ -145,16 +145,51 @@
                     Watermark="" />
             </StackPanel>
 
+            <StackPanel Margin="10" Spacing="5">
+
+                <ListBox
+                    Background="Transparent"
+                    IsVisible="{Binding HasMultipleMeasureTypes}"
+                    ItemsSource="{Binding MeasureTypes}"
+                    SelectedItem="{Binding SelectedMeasureType, Mode=TwoWay}">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="8" />
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel
+                                Width="70"
+                                Orientation="Vertical"
+                                Spacing="8">
+                                <Image
+                                    Width="50"
+                                    Height="50"
+                                    HorizontalAlignment="Center"
+                                    Source="{Binding Icon}" />
+                                <TextBlock HorizontalAlignment="Center" Text="{Binding Title}" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </StackPanel>
+
             <!--  Ціна і кількість  -->
             <StackPanel
                 HorizontalAlignment="Left"
                 Orientation="Horizontal"
                 Spacing="16">
                 <StackPanel>
-                    <TextBlock Margin="0,0,0,4" Text="{Binding AmountTypeTitle, StringFormat='Кількість ({0})'}" />
+                    <TextBlock
+                        Width="160"
+                        Margin="0,0,0,4"
+                        HorizontalAlignment="Left"
+                        Text="{Binding SelectedMeasureType.ShortTitle, StringFormat='Кількість ({0})'}" />
                     <TextBox
-                        Width="80"
+                        Width="160"
                         Height="40"
+                        HorizontalAlignment="Left"
                         Classes="outlined"
                         Text="{Binding Amount}" />
                 </StackPanel>
@@ -166,10 +201,15 @@
                     Text="×" />
 
                 <StackPanel>
-                    <TextBlock Margin="0,0,0,4" Text="Ціна (грн)" />
+                    <TextBlock
+                        Width="160"
+                        Margin="0,0,0,4"
+                        HorizontalAlignment="Left"
+                        Text="Ціна (грн)" />
                     <TextBox
-                        Width="80"
+                        Width="160"
                         Height="40"
+                        HorizontalAlignment="Left"
                         Text="{Binding Price}" />
                 </StackPanel>
             </StackPanel>

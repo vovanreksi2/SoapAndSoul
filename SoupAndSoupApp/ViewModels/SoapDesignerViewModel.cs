@@ -24,8 +24,8 @@ public class SoapDesignerViewModel : ViewModelBase
     private readonly IngredientService _ingredientService;
     private readonly IngredientTypeService _ingredientTypeService;
 
-    private readonly AddIngredientDialog _addIngredientDialogWindow;
-    private readonly AddIngredientDialogViewModel _addIngredientDialogViewModel;
+    private  AddIngredientDialog _addIngredientDialogWindow;
+    private  AddIngredientDialogViewModel _addIngredientDialogViewModel;
 
     public const string NoImage_Ingredient_Image = "Assets/65fdbf22-c38e-434a-aca6-859009c6c51d.png";
     public const string NoImage_Receipt_Image = "Assets/65fdbf22-c38e-434a-aca6-859009c6c51d.png";
@@ -131,7 +131,7 @@ public class SoapDesignerViewModel : ViewModelBase
         SaveReceiptCommand = ReactiveCommand.CreateFromTask<RecipeModel>(SaveReceiptAsync);
         DeleteReceiptCommand = ReactiveCommand.CreateFromTask<RecipeModel>(DeleteReceiptAsync);
 
-        NewComponentCommand = ReactiveCommand.CreateFromTask<SoapTypeComponent>(OpenAddIngredientDialogAsync);
+        NewComponentCommand = ReactiveCommand.CreateFromTask<SoapTypeComponent>(AddIngredientAsync);
         EditComponentCommand = ReactiveCommand.CreateFromTask<IngredientModel>(EditIngredientAsync);
         DeleteComponentCommand = ReactiveCommand.CreateFromTask<IngredientModel>(DeleteIngredientAsync, Observable.Return(true));
 
@@ -271,14 +271,17 @@ public class SoapDesignerViewModel : ViewModelBase
     }
 
     
-    private async Task OpenAddIngredientDialogAsync(SoapTypeComponent parameter)
+    private async Task AddIngredientAsync(SoapTypeComponent parameter)
     {
         var soapGroup = ComponentGroups.FirstOrDefault(_ => _.Type == parameter);
 
-        _addIngredientDialogWindow.DataContext = _addIngredientDialogViewModel;
-        _addIngredientDialogViewModel.Init(soapGroup.Type);
-
         //TODO: Move to separate "Widnows Manager"
+        _addIngredientDialogWindow = new AddIngredientDialog();
+        _addIngredientDialogViewModel = new AddIngredientDialogViewModel(_addIngredientDialogWindow);
+
+        _addIngredientDialogWindow.DataContext = _addIngredientDialogViewModel;
+        _addIngredientDialogViewModel.Init(soapGroup.Type, soapGroup.MeasureTypes);
+
         await _addIngredientDialogWindow.ShowDialog<NewIngredientDto?>(
             (Application.Current.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow
         );
@@ -417,6 +420,7 @@ public class SoapDesignerViewModel : ViewModelBase
         {
             Title = ingredientType.Name,
             Type = (SoapTypeComponent)ingredientType.Id,
+            MeasureTypes = ingredientType.AmountTypes.Select(mt => new MeasureTypeModel(mt.Id, mt.Name, mt.ShortName)),
             NewComponentCommand = NewComponentCommand
         };
 
@@ -435,7 +439,7 @@ public class SoapDesignerViewModel : ViewModelBase
             DeleteCommand = DeleteComponentCommand,
             EditCommand = EditComponentCommand,
             Type = (SoapTypeComponent)ingredientModel.IngredientType.Id,
-            MeasureType = new MeasureTypeModel(ingredientModel.AmountType.Id, ingredientModel.AmountType.ShortName),
+            MeasureType = new MeasureTypeModel(ingredientModel.AmountType.Id, ingredientModel.AmountType.Name, ingredientModel.AmountType.ShortName),
             ImagePath = ImageHelper.LoadFromResource(ingredientModel.Images.FirstOrDefault()?.ImageUrl ??
                                                      NoImage_Ingredient_Image),
         };

@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Windows.Input;
 using ReactiveUI;
 
@@ -7,6 +8,8 @@ namespace SoupAndSoupApp.Models;
 public class ComponentGroup: ReactiveObject
 {
     public SoapTypeComponent Type { get; set; }
+
+    public IEnumerable< MeasureTypeModel > MeasureTypes { get; set; } 
 
     public string Title { get; set; } = string.Empty;
     public string ShortTitle { get; set; } = string.Empty;
