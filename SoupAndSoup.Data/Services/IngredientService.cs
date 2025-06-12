@@ -19,6 +19,7 @@ public class IngredientService : RepositoryBase<Ingredient>
         return await _dbSet
             .Where(i => i.IsActive) // Only get active ingredients
             .Include(i => i.IngredientType)
+            .Include(i => i.AmountTypes)
             .Include(i => i.Images)
             .ToListAsync();
     }

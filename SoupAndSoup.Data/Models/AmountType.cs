@@ -13,5 +13,6 @@ public class AmountType
     [MaxLength(20)]
     public string ShortName { get; set; }
 
-    public ICollection<IngredientType> IngredientType { get; set; }
+    public ICollection<IngredientType> IngredientTypes { get; set; }
+    public ICollection<Ingredient> Ingredients { get; set; }
 }

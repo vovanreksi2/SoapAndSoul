@@ -15,10 +15,7 @@ public class IngredientType
 
     public int Order { get; set; }
 
-
-    // Foreign key to AmountType
-    public int AmountTypeId { get; set; }
-    public AmountType AmountType { get; set; }
+    public ICollection<AmountType> AmountTypes { get; set; }
 
     public ICollection<Ingredient> Ingredients { get; set; } = new List<Ingredient>();
 }

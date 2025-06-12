@@ -435,6 +435,7 @@ public class SoapDesignerViewModel : ViewModelBase
             DeleteCommand = DeleteComponentCommand,
             EditCommand = EditComponentCommand,
             Type = (SoapTypeComponent)ingredientModel.IngredientType.Id,
+            AmountsTitle = ingredientModel.AmountTypes.Select(at => new MeasureTypeModel(at.Id, at.ShortName)).ToList(),
             ImagePath = ImageHelper.LoadFromResource(ingredientModel.Images.FirstOrDefault()?.ImageUrl ??
                                                      NoImage_Ingredient_Image),
         };

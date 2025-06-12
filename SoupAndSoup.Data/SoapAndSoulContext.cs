@@ -24,39 +24,62 @@ public class SoapAndSoulContext : DbContext
         modelBuilder.Entity<Recipe>()
             .HasIndex(r => r.Name);
 
-        // Indexes on Ingredient.Name and Ingredient.IngredientTypeID
-        modelBuilder.Entity<Ingredient>()
-            .HasIndex(i => i.Name);
-        modelBuilder.Entity<Ingredient>()
-            .HasIndex(i => i.IngredientTypeId);
+        modelBuilder.Entity<Ingredient>(entity =>
+        {
+            // Indexes on Ingredient.Name and Ingredient.IngredientTypeID
+            entity.HasIndex(i => i.Name);
+            entity.HasIndex(i => i.IngredientTypeId);
 
-        // Composite primary key for RecipeIngredient (many-to-many)
-        modelBuilder.Entity<RecipeIngredient>()
-            .HasKey(ri => new { RecipeID = ri.RecipeId, IngredientID = ri.IngredientId });
+            // Relationship: Ingredient -> IngredientTypes
+            entity.HasOne(i => i.IngredientType)
+                .WithMany(it => it.Ingredients)
+                .HasForeignKey(i => i.IngredientTypeId);
 
-        // Relationship: RecipeIngredient -> Recipe
-        modelBuilder.Entity<RecipeIngredient>()
-            .HasOne(ri => ri.Recipe)
-            .WithMany(r => r.RecipeIngredients)
-            .HasForeignKey(ri => ri.RecipeId);
+            // Relationship: Ingredient -> AmountTypes
+            entity.HasMany(i => i.AmountTypes)
+                .WithMany(it => it.Ingredients)
+                .UsingEntity(j => j.ToTable("IngredientAmountTypes"));
+        });
 
-        // Relationship: RecipeIngredient -> Ingredient
-        modelBuilder.Entity<RecipeIngredient>()
-            .HasOne(ri => ri.Ingredient)
-            .WithMany(i => i.RecipeIngredients)
-            .HasForeignKey(ri => ri.IngredientId);  
+        modelBuilder.Entity<RecipeIngredient>(entity =>
+        {
+            // Composite primary key for RecipeIngredient (many-to-many)
+            entity.HasKey(ri => new { RecipeID = ri.RecipeId, IngredientID = ri.IngredientId });
 
-        // Relationship: Ingredient -> IngredientType
-        modelBuilder.Entity<Ingredient>()
-            .HasOne(i => i.IngredientType)
-            .WithMany(it => it.Ingredients)
-            .HasForeignKey(i => i.IngredientTypeId);
- 
-        // Relationship: IngredientType -> AmountType
-        modelBuilder.Entity<IngredientType>()
-            .HasOne(i => i.AmountType)
-            .WithMany(at => at.IngredientType)
-            .HasForeignKey(it => it.AmountTypeId); 
+            // Relationship: RecipeIngredient -> Recipe
+            entity.HasOne(ri => ri.Recipe)
+                .WithMany(r => r.RecipeIngredients)
+                .HasForeignKey(ri => ri.RecipeId);
+
+            // Relationship: RecipeIngredient -> Ingredient
+            entity.HasOne(ri => ri.Ingredient)
+                .WithMany(i => i.RecipeIngredients)
+                .HasForeignKey(ri => ri.IngredientId);
+        });
+
+        modelBuilder.Entity<IngredientType>(entity =>
+        {
+            // Relationship: IngredientTypes -> AmountType
+            entity.HasMany(i => i.AmountTypes)
+                .WithMany(at => at.IngredientTypes)
+                .UsingEntity<Dictionary<string, object>>(
+                    "IngredientTypeAmountTypes",
+                    j => j
+                        .HasOne<AmountType>()
+                        .WithMany()
+                        .HasForeignKey("AmountTypesId")
+                        .OnDelete(DeleteBehavior.Cascade),
+                    j => j
+                        .HasOne<IngredientType>()
+                        .WithMany()
+                        .HasForeignKey("IngredientTypesId")
+                        .OnDelete(DeleteBehavior.Cascade),
+                    j =>
+                    {
+                        j.HasKey("IngredientTypesId", "AmountTypesId"); 
+                        j.ToTable("IngredientTypeAmountTypes");
+                    });
+        });
 
         // Index on Images by EntityType and EntityID for fast lookup
         modelBuilder.Entity<RecipeImage>(entity =>
@@ -95,15 +118,28 @@ public class SoapAndSoulContext : DbContext
         );
 
         modelBuilder.Entity<IngredientType>().HasData(
-            new IngredientType { Id = 1, Name = "Форма для мила", ShortName = "форму"  , Order = 1, AmountTypeId = 3},
-            new IngredientType { Id = 2, Name = "Мильна основа", ShortName = "основу" , Order = 2, AmountTypeId = 1 },
-            new IngredientType { Id = 3, Name = "Запашка", ShortName = "запашку", Order = 3, AmountTypeId = 2 },
-            new IngredientType { Id = 4, Name = "Пігмент", ShortName = "пігмент", Order = 4, AmountTypeId = 2 },
-            new IngredientType { Id = 5, Name = "Ефірне масло", ShortName = "ефірне масло", Order = 5, AmountTypeId = 2 },
-            new IngredientType { Id = 6, Name = "Екстракт", ShortName = "екстракт", Order = 6, AmountTypeId = 2 },
-            new IngredientType { Id = 7, Name = "Інструменти", ShortName = "інструмент" , Order = 7, AmountTypeId = 2 },
-            new IngredientType { Id = 8, Name = "Інші", ShortName = "" , Order = 8, AmountTypeId = 3 }
+            new IngredientType { Id = 1, Name = "Форма для мила", ShortName = "форму", Order = 1 },
+            new IngredientType { Id = 2, Name = "Мильна основа", ShortName = "основу", Order = 2 },
+            new IngredientType { Id = 3, Name = "Запашка", ShortName = "запашку", Order = 3 },
+            new IngredientType { Id = 4, Name = "Пігмент", ShortName = "пігмент", Order = 4 },
+            new IngredientType { Id = 5, Name = "Ефірне масло", ShortName = "ефірне масло", Order = 5 },
+            new IngredientType { Id = 6, Name = "Екстракт", ShortName = "екстракт", Order = 6 },
+            new IngredientType { Id = 7, Name = "Інструменти", ShortName = "інструмент", Order = 7 },
+            new IngredientType { Id = 8, Name = "Інші", ShortName = "", Order = 8 }
         );
+
+        modelBuilder.Entity("IngredientTypeAmountTypes").HasData(
+            new { IngredientTypesId = 1, AmountTypesId = 3 }, // Форма - шт
+            new { IngredientTypesId = 2, AmountTypesId = 1 }, // Основа - г
+            new { IngredientTypesId = 3, AmountTypesId = 2 }, // Запашка - мл
+            new { IngredientTypesId = 4, AmountTypesId = 2 }, // Пігмент - мл
+            new { IngredientTypesId = 4, AmountTypesId = 1 }, // Пігмент - г
+            new { IngredientTypesId = 5, AmountTypesId = 2 }, // Еф.масло - мл
+            new { IngredientTypesId = 6, AmountTypesId = 2 }, // Екстракт - мл
+            new { IngredientTypesId = 7, AmountTypesId = 3 }, // Інструменти - шт
+            new { IngredientTypesId = 8, AmountTypesId = 3 }  // Інші - шт
+        );
+
 
         base.OnModelCreating(modelBuilder); 
     }

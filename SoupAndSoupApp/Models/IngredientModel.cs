@@ -1,4 +1,5 @@
-﻿using System.Windows.Input;
+﻿using System.Collections.Generic;
+using System.Windows.Input;
 using Avalonia.Media.Imaging;
 using ReactiveUI;
 
@@ -17,7 +18,7 @@ public class IngredientModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _amount, value);
     }
 
-    public string AmountTitle { get; set; }
+    public ICollection<MeasureTypeModel> AmountsTitle { get; set; }
     public decimal Cost { get; set; }
 
     public SoapTypeComponent Type { get; set; }

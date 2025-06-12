@@ -245,6 +245,7 @@
                             Grid.Column="0"
                             ColumnDefinitions="* * *"
                             ShowGridLines="False">
+
                             <Border Grid.Column="0" Classes="WeightBorder" />
 
                             <StackPanel Grid.Column="0" Classes="WeightStackPanel">
@@ -318,7 +319,9 @@
                                                 HorizontalAlignment="Right"
                                                 VerticalAlignment="Top"
                                                 FontSize="20"
-                                                Text="{Binding Amount, StringFormat='{}{0:F0}кап'}" />
+                                                Text="{Binding Amount, StringFormat='{}{0:F0}'}" >
+                                                </
+                                            
                                         </StackPanel>
 
                                     </Grid>
@@ -327,15 +330,6 @@
                         </ItemsControl>
 
                     </StackPanel>
-
-                    <!--<StackPanel Grid.Row="4">
-                        <Button
-                            Classes="SaveButton"
-                            Command="{Binding SaveReceiptCommand}"
-                            CommandParameter="{Binding SelectedReceipt}"
-                            Content="Зберегти" />
-                        <Button Classes="SaveButton" Content="Зберегти як новий" />
-                    </StackPanel>-->
                 </Grid>
 
                 <Grid
