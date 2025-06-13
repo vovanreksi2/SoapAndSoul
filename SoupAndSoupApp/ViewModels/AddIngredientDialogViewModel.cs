@@ -78,9 +78,15 @@ namespace SoupAndSoupApp.ViewModels
             set => this.RaiseAndSetIfChanged(ref _windowTitle, value);
         }
 
+        public bool IsAmountVisible
+        {
+            get => _isAmountVisible;
+            set => this.RaiseAndSetIfChanged(ref _isAmountVisible, value);
+        }
+
         #region MeasureTypeModel
 
-        public ObservableCollection<MeasureTypeModel> MeasureTypes { get; } = new();
+        public ObservableCollection<MeasureTypeModel> MeasureTypes => _measureTypes;
 
 
         private MeasureTypeModel? _selectedMeasureType;
@@ -106,7 +112,11 @@ namespace SoupAndSoupApp.ViewModels
 
         public ReactiveCommand<Unit, NewIngredientDto?> CancelCommand => _cancelCommand;
 
-        public NewIngredientDto? NewIngredient { get; private set; }
+        public NewIngredientDto? NewIngredient
+        {
+            get => _newIngredient;
+            private set => _newIngredient = value;
+        }
 
         public bool CanConfirm => !string.IsNullOrWhiteSpace(Name) && Price > 0 && Amount > 0;
 
@@ -153,6 +163,8 @@ namespace SoupAndSoupApp.ViewModels
                 case SoapTypeComponent.Form:
                     WindowTitle = "Додати форму";
                     IngredientTitle = "форму";
+                    IsAmountVisible = false;
+                    Amount = 1;
                     break;
                 case SoapTypeComponent.CraftingBase:
                     WindowTitle = "Додати основу";
@@ -174,7 +186,7 @@ namespace SoupAndSoupApp.ViewModels
             }
 
             Price = 0;
-            Amount = 0;
+            Amount = 1;
             PhotoPath = null;
             Name = string.Empty;
             NewIngredient = null;
@@ -264,6 +276,9 @@ namespace SoupAndSoupApp.ViewModels
         private string _ingredientTitle;
         private string _windowTitle;
         private decimal _defaultAmount;
+        private bool _isAmountVisible;
+        private readonly ObservableCollection<MeasureTypeModel> _measureTypes = new();
+        private NewIngredientDto? _newIngredient;
     }
 
     public enum MeasureType

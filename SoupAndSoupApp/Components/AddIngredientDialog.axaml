@@ -189,7 +189,7 @@
                 HorizontalAlignment="Left"
                 Orientation="Horizontal"
                 Spacing="16">
-                <StackPanel>
+                <StackPanel IsVisible="{Binding IsAmountVisible}">
                     <TextBlock
                         Width="160"
                         Margin="0,0,0,4"
@@ -207,6 +207,7 @@
                     Margin="8,0"
                     VerticalAlignment="Bottom"
                     FontSize="25"
+                    IsVisible="{Binding IsAmountVisible}"
                     Text="×" />
 
                 <StackPanel>
