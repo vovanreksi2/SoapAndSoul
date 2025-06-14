@@ -14,7 +14,6 @@ using ReactiveUI;
 using SoupAndSoup.Data.Models;
 using SoupAndSoup.Data.Services;
 using SoupAndSoupApp.Models;
-using Avalonia.Collections;
 
 namespace SoupAndSoupApp.ViewModels;
 
@@ -27,8 +26,7 @@ public class SoapDesignerViewModel : ViewModelBase
     private  AddIngredientDialog _addIngredientDialogWindow;
     private  AddIngredientDialogViewModel _addIngredientDialogViewModel;
 
-    public const string NoImage_Ingredient_Image = "Assets/65fdbf22-c38e-434a-aca6-859009c6c51d.png";
-    public const string NoImage_Receipt_Image = "Assets/65fdbf22-c38e-434a-aca6-859009c6c51d.png";
+    public const string NoImage_Receipt = "Assets/No_Receipt_Photo.png";
 
     public ICommand NewReceiptCommand { get; private set; }
     public ICommand SaveReceiptCommand { get; private set; }
@@ -37,13 +35,26 @@ public class SoapDesignerViewModel : ViewModelBase
     public ReactiveCommand<SoapTypeComponent, Unit> NewComponentCommand { get; private set; }
     public ReactiveCommand<IngredientModel, Unit> EditComponentCommand { get; private set; }
     public ReactiveCommand<IngredientModel, Unit> DeleteComponentCommand { get; private set; }
-   
+
+
     public bool IsReceiptEditMode
     {
         get => _isReceiptEditMode;
         set => this.RaiseAndSetIfChanged(ref _isReceiptEditMode, value);
     }
 
+    public string NewImagePath
+    {
+        get => _newImagePath;
+        set
+        {
+            if (_newImagePath == value) return;
+            if (SelectedReceipt != null) 
+                SelectedReceipt.ImagePath = ImageHelper.LoadFromResource(value);
+
+            this.RaiseAndSetIfChanged(ref _newImagePath, value);
+        }
+    }
 
     public ObservableCollection<RecipeModel> Recipes { get; } = new();
 
@@ -89,6 +100,7 @@ public class SoapDesignerViewModel : ViewModelBase
 
     private bool _isReceiptEditMode;
     private RecipeModel? _selectedReceipt;
+    private string _newImagePath;
 
 
     public SoapDesignerViewModel()
@@ -138,7 +150,6 @@ public class SoapDesignerViewModel : ViewModelBase
         //FillTestData();
     }
 
-
     private async Task InitializeAsync()
     {
         var ingredientTypes = await _ingredientTypeService.GetAllAsync();
@@ -160,6 +171,7 @@ public class SoapDesignerViewModel : ViewModelBase
         //FillTestData();
        
     }
+
 
     private void FillTestData()
     {
@@ -212,7 +224,7 @@ public class SoapDesignerViewModel : ViewModelBase
        //    Amount = 0,
        //    PreparationTime = 0,
        //    UnitCost = 0,
-       //    ImagePath = ImageHelper.LoadFromResource(NoImage_Receipt_Image)
+       //    ImagePath = ImageHelper.LoadFromResource(NoImage_Receipt)
        //}
        //);
     }
@@ -225,7 +237,7 @@ public class SoapDesignerViewModel : ViewModelBase
             Name = "Нова Рецептура",
             RecipeIngredients = new ObservableCollection<IngredientByReceiptModel>(),
             Description = string.Empty,
-            ImagePath = ImageHelper.LoadFromResource(NoImage_Receipt_Image),
+            ImagePath = ImageHelper.LoadFromResource(NoImage_Receipt),
         };
         Recipes.Add(newRecipe);
         IsReceiptEditMode = false;
@@ -391,7 +403,7 @@ public class SoapDesignerViewModel : ViewModelBase
             Amount = recipe.Amount,
             PreparationTime = (int)recipe.PreparationTime.TotalMinutes,
             DeleteReceiptCommand = DeleteReceiptCommand,
-            ImagePath = ImageHelper.LoadFromResource(recipe.Images.FirstOrDefault()?.ImageUrl ?? NoImage_Receipt_Image),
+            ImagePath = ImageHelper.LoadFromResource(recipe.Images.FirstOrDefault()?.ImageUrl ?? NoImage_Receipt),
             RecipeIngredients = new(recipe.RecipeIngredients.Select(_=> new IngredientByReceiptModel
             {
                 Amount = _.Amount,
@@ -441,7 +453,7 @@ public class SoapDesignerViewModel : ViewModelBase
             Type = (SoapTypeComponent)ingredientModel.IngredientType.Id,
             MeasureType = new MeasureTypeModel(ingredientModel.AmountType.Id, ingredientModel.AmountType.Name, ingredientModel.AmountType.ShortName),
             ImagePath = ImageHelper.LoadFromResource(ingredientModel.Images.FirstOrDefault()?.ImageUrl ??
-                                                     NoImage_Ingredient_Image),
+                                                     NoImage_Receipt),
         };
 
         result

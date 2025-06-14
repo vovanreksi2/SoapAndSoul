@@ -5,6 +5,7 @@
     xmlns:components="clr-namespace:SoupAndSoupApp.Components"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:soupAndSoupApp="clr-namespace:SoupAndSoupApp"
     xmlns:vm="clr-namespace:SoupAndSoupApp.ViewModels"
     d:DesignHeight="1200"
     d:DesignWidth="1600"
@@ -31,6 +32,54 @@
                     CommandParameter="{Binding .}" />
             </Grid>
         </DataTemplate>
+
+        <ControlTemplate x:Key="ButtonImageTemplate" TargetType="Button">
+            <Border
+                x:Name="RootBorder"
+                Background="Transparent"
+                BorderBrush="{StaticResource IngredientBorderSolidColorBrush}"
+                BorderThickness="2"
+                BoxShadow="0 0 8 0 #33000000"
+                ClipToBounds="True"
+                CornerRadius="{TemplateBinding CornerRadius}">
+
+                <Border.Styles>
+                    <Style Selector="Border:pointerover">
+                        <Setter Property="BoxShadow" Value="0 0 30 #66000000" />
+                    </Style>
+                </Border.Styles>
+
+                <Grid RowDefinitions="2* *">
+                    <Image
+                        x:Name="Image1"
+                        Grid.Row="0"
+                        Grid.RowSpan="2"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        Opacity="1"
+                        Source="{Binding SelectedReceipt.ImagePath}"
+                        Stretch="UniformToFill" />
+
+                    <Image
+                        x:Name="CameraIcon"
+                        Grid.Row="0"
+                        MaxWidth="70"
+                        VerticalAlignment="Bottom"
+                        Source="../Assets/camera_icon.png" />
+
+                    <TextBlock
+                        Grid.Row="1"
+                        Padding="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="#80000000"
+                        FontSize="24"
+                        Foreground="White"
+                        Text="Додати фото" />
+                </Grid>
+            </Border>
+        </ControlTemplate>
+
     </UserControl.Resources>
 
     <UserControl.Styles>
@@ -106,6 +155,14 @@
             <Setter Property="Foreground" Value="White" />
         </Style>
 
+        <Style Selector="Button.button-image">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="VerticalAlignment" Value="Stretch" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template" Value="{StaticResource ButtonImageTemplate}" />
+        </Style>
+
         <!--  Buttons end  -->
 
 
@@ -113,7 +170,6 @@
         <Style Selector="Border.WeightBorder">
             <Setter Property="Background" Value="{StaticResource ReceiptDetailPrimarySolidColorBrush}" />
             <Setter Property="CornerRadius" Value="5" />
-            <Setter Property="Opacity" Value="0.2" />
             <Setter Property="Width" Value="100" />
             <Setter Property="Height" Value="100" />
         </Style>
@@ -201,18 +257,11 @@
                         Classes="SectionTitle"
                         Text="Опис рецепта" />
 
-                    <Border
+                    <soupAndSoupApp:ImagePickerControl
                         Grid.Row="1"
-                        Background="LightBlue"
-                        BorderBrush="{StaticResource IngredientBorderSolidColorBrush}"
-                        BorderThickness="2"
-                        BoxShadow="0 0 8 0 #33000000"
-                        CornerRadius="10" />
-
-                    <Image
-                        Grid.Row="1"
-                        Source="{Binding SelectedReceipt.ImagePath}"
-                        Stretch="UniformToFill" />
+                        Classes="button-image"
+                        ImageSource="{Binding SelectedReceipt.ImagePath}"
+                        NewImagePath="{Binding NewImagePath, Mode=OneWayToSource}" />
 
                     <Grid
                         Grid.Row="2"
@@ -224,6 +273,7 @@
                             Grid.Column="0"
                             Classes="ReceiptTitle"
                             Text="{Binding Name}" />
+
                         <Button
                             Grid.Row="0"
                             HorizontalAlignment="Right"

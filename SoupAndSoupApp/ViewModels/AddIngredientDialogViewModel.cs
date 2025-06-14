@@ -15,11 +15,9 @@ namespace SoupAndSoupApp.ViewModels
 {
     public class AddIngredientDialogViewModel : ViewModelBase
     {
-        public string? PhotoPath
-        {
-            get => _photoPath;
-            set => _photoPath = value;
-        }
+        public const string NoImage_Component_Image = "Assets/No_Component_Photo.png";
+
+        public string? PhotoPath { get; set; }
 
         public Bitmap? Photo
         {
@@ -190,8 +188,6 @@ namespace SoupAndSoupApp.ViewModels
             PhotoPath = null;
             Name = string.Empty;
             NewIngredient = null;
-            Photo = null;
-
             MeasureTypes.Clear();
             MeasureTypes.AddRange(measureTypes.Select(_ => new MeasureTypeModel(_.Id, _.Title, _.ShortTitle, GetBitmapByMeasureType(_.Id))));
 
@@ -204,6 +200,7 @@ namespace SoupAndSoupApp.ViewModels
             //});
             SelectedMeasureType = MeasureTypes.Count > 0 ? MeasureTypes.FirstOrDefault() : null;
             HasMultipleMeasureTypes = MeasureTypes.Count > 1;
+            Photo = ImageHelper.LoadFromResource(NoImage_Component_Image);
         }
 
         public void Init(IngredientModel ingredient)
@@ -269,7 +266,6 @@ namespace SoupAndSoupApp.ViewModels
         private decimal _unitPrice;
         private string _name = "";
         private Bitmap? _photo = null;
-        private string? _photoPath;
         private readonly ReactiveCommand<Unit, Unit> _selectPhotoCommand;
         private readonly ReactiveCommand<Unit, NewIngredientDto?> _confirmCommand;
         private readonly ReactiveCommand<Unit, NewIngredientDto?> _cancelCommand;

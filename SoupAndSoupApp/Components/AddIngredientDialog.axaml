@@ -4,11 +4,12 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:soupAndSoupApp="clr-namespace:SoupAndSoupApp"
     xmlns:viewModels="clr-namespace:SoupAndSoupApp.ViewModels"
     Title="{Binding WindowTitle}"
     Width="480"
-    Height="695"
-    d:DesignHeight="695"
+    Height="730"
+    d:DesignHeight="730"
     d:DesignWidth="480"
     x:DataType="viewModels:AddIngredientDialogViewModel"
     WindowStartupLocation="CenterOwner"
@@ -101,36 +102,10 @@
                 <Run Text="{Binding IngredientTitle}" />
             </TextBlock>
 
-            <Button
-                Height="170"
-                HorizontalAlignment="Center"
-                Command="{Binding SelectPhotoCommand}"
-                Cursor="Hand"
-                IsVisible="{Binding Photo, Converter={StaticResource NullToFalse}}">
-                <Button.Template>
-                    <ControlTemplate>
-                        <StackPanel HorizontalAlignment="Center" Spacing="8">
-                            <Border
-                                Width="140"
-                                Height="140"
-                                HorizontalAlignment="Center"
-                                Background="#F2F2F2"
-                                CornerRadius="70">
-                                <Image Width="70" Classes="uploadPhoto" />
-                            </Border>
-                            <TextBlock HorizontalAlignment="Center" Foreground="#5F5F5F">
-                                <Run Text="Натисніть, щоб завантажити фото" />
-                            </TextBlock>
-                        </StackPanel>
-                    </ControlTemplate>
-                </Button.Template>
-            </Button>
-
-            <Image
-                Height="200"
-                HorizontalAlignment="Center"
-                IsVisible="{Binding Photo, Converter={StaticResource NullToTrue}}"
-                Source="{Binding Photo}" />
+            <soupAndSoupApp:ImagePickerControl
+                Height="300"
+                Classes="button-image"
+                ImageSource="{Binding Photo}" />
 
             <!--  Назва  -->
             <StackPanel>
