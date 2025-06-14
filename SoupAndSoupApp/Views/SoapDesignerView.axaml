@@ -33,7 +33,7 @@
             </Grid>
         </DataTemplate>
 
-        <ControlTemplate x:Key="ButtonImageTemplate" TargetType="Button">
+        <!--<ControlTemplate x:Key="ButtonImageTemplate" TargetType="Button">
             <Border
                 x:Name="RootBorder"
                 Background="Transparent"
@@ -78,7 +78,7 @@
                         Text="Додати фото" />
                 </Grid>
             </Border>
-        </ControlTemplate>
+        </ControlTemplate>-->
 
     </UserControl.Resources>
 
@@ -155,13 +155,13 @@
             <Setter Property="Foreground" Value="White" />
         </Style>
 
-        <Style Selector="Button.button-image">
+        <!--<Style Selector="Button.button-image">
             <Setter Property="HorizontalAlignment" Value="Stretch" />
             <Setter Property="VerticalAlignment" Value="Stretch" />
             <Setter Property="CornerRadius" Value="10" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template" Value="{StaticResource ButtonImageTemplate}" />
-        </Style>
+        </Style>-->
 
         <!--  Buttons end  -->
 
@@ -259,7 +259,6 @@
 
                     <soupAndSoupApp:ImagePickerControl
                         Grid.Row="1"
-                        Classes="button-image"
                         ImageSource="{Binding SelectedReceipt.ImagePath}"
                         NewImagePath="{Binding NewImagePath, Mode=OneWayToSource}" />
 

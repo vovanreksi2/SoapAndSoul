@@ -40,6 +40,7 @@ public partial class App : Application
                 break;
         }
 
+
         base.OnFrameworkInitializationCompleted();
     }
 
@@ -51,8 +52,10 @@ public partial class App : Application
         services.AddSingleton<SoapDesignerView>();
         services.AddSingleton<SoapDesignerViewModel>();
 
-        services.AddScoped<AddIngredientDialog>();
-        services.AddScoped<AddIngredientDialogViewModel>();
+        services.AddSingleton<IDialogService, DialogService>();
+
+        services.AddSingleton<AddIngredientDialog>();
+        services.AddSingleton<AddIngredientDialogViewModel>();
 
         services.AddSoupAndSoulDb();
     }

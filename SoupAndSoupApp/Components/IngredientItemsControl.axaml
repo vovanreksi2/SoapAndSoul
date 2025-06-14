@@ -52,8 +52,11 @@
                         HorizontalAlignment="Center"
                         FontSize="12"
                         FontWeight="Bold"
-                        Foreground="Black"
-                        Text="Додати форму" />
+                        Foreground="Black">
+                        <Run Text="Додати" />
+                        <Run Text="{Binding GroupTitle, RelativeSource={RelativeSource AncestorType=components:IngredientItemsControl}}" />
+                    </TextBlock>
+
                 </StackPanel>
             </Grid>
         </ControlTemplate>

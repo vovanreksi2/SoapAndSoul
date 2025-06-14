@@ -4,8 +4,8 @@ public enum SoapTypeComponent
 {
     Form = 1,
     CraftingBase,
-    Pigment,
     EssentialOil,
+    Pigment,
     FragranceOil,
     HerbalExtract,
     Tools,

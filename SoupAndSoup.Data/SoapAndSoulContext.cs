@@ -101,6 +101,7 @@ public class SoapAndSoulContext : DbContext
             entity.HasOne(i => i.Ingredient)
                 .WithMany(i => i.Images)
                 .HasForeignKey(i => i.IngredientId)
+                .IsRequired(false)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

@@ -5,8 +5,11 @@ using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Media.Imaging;
+using Avalonia.Platform.Storage;
 using DynamicData;
 using ReactiveUI;
 using SoupAndSoupApp.Models;
@@ -17,12 +20,23 @@ namespace SoupAndSoupApp.ViewModels
     {
         public const string NoImage_Component_Image = "Assets/No_Component_Photo.png";
 
-        public string? PhotoPath { get; set; }
-
         public Bitmap? Photo
         {
             get => _photo;
             set => this.RaiseAndSetIfChanged(ref _photo, value);
+        }
+
+        public string NewImagePath
+        {
+            get => _newImagePath;
+            set
+            {
+                if (_newImagePath == value) return;
+
+                Photo = ImageHelper.LoadFromResource(value);
+
+                this.RaiseAndSetIfChanged(ref _newImagePath, value);
+            }
         }
 
         public string Name
@@ -31,24 +45,24 @@ namespace SoupAndSoupApp.ViewModels
             set => this.RaiseAndSetIfChanged(ref _name, value);
         }
 
-        public decimal Amount
+        public decimal BuyAmount
         {
-            get => _amount;
+            get => _buyAmount;
             set
             {
-                ReCalculateUnitPrice(value, Price);
-                this.RaiseAndSetIfChanged(ref _amount, value);
+                ReCalculateUnitPrice(value, BuyPrice);
+                this.RaiseAndSetIfChanged(ref _buyAmount, value);
             }
         }
 
 
-        public decimal Price
+        public decimal BuyPrice
         {
-            get => _price;
+            get => _buyPrice;
             set
             {
-                ReCalculateUnitPrice(Amount, value);
-                this.RaiseAndSetIfChanged(ref _price, value);
+                ReCalculateUnitPrice(BuyAmount, value);
+                this.RaiseAndSetIfChanged(ref _buyPrice, value);
             }
         }
 
@@ -58,22 +72,22 @@ namespace SoupAndSoupApp.ViewModels
             set => this.RaiseAndSetIfChanged(ref _unitPrice, value);
         }
 
-        public decimal DefaultAmount
+        public decimal TypicalAmountInRecipe
         {
-            get => _defaultAmount;
-            set => this.RaiseAndSetIfChanged(ref _defaultAmount, value);
+            get => _typicalAmountInRecipe;
+            set => this.RaiseAndSetIfChanged(ref _typicalAmountInRecipe, value);
         }
 
-        public string IngredientTitle
+        public string TypicalAmountMeasure
         {
-            get => _ingredientTitle;
-            set => this.RaiseAndSetIfChanged(ref _ingredientTitle, value);
+            get => _typicalAmountMeasure;
+            set => this.RaiseAndSetIfChanged(ref _typicalAmountMeasure, value);
         }
 
-        public string WindowTitle
+        public string Title
         {
-            get => _windowTitle;
-            set => this.RaiseAndSetIfChanged(ref _windowTitle, value);
+            get => _title;
+            set => this.RaiseAndSetIfChanged(ref _title, value);
         }
 
         public bool IsAmountVisible
@@ -84,14 +98,26 @@ namespace SoupAndSoupApp.ViewModels
 
         #region MeasureTypeModel
 
-        public ObservableCollection<MeasureTypeModel> MeasureTypes => _measureTypes;
+        public ObservableCollection<MeasureTypeModel> MeasureTypes { get; } = new();
 
 
         private MeasureTypeModel? _selectedMeasureType;
         public MeasureTypeModel? SelectedMeasureType
         {
             get => _selectedMeasureType;
-            set => this.RaiseAndSetIfChanged(ref _selectedMeasureType, value);
+            set
+            {
+                if (_selectedMeasureType == value || value is null) return;
+
+                TypicalAmountMeasure = (MeasureType)value.Id switch
+                {
+                    MeasureType.Gram => value.ShortTitle,
+                    MeasureType.Milliliter => "крап",
+                    MeasureType.Piece => value.ShortTitle,
+                    _ => throw new ArgumentOutOfRangeException()
+                };
+                this.RaiseAndSetIfChanged(ref _selectedMeasureType, value);
+            }
         }
 
 
@@ -104,115 +130,122 @@ namespace SoupAndSoupApp.ViewModels
 
         #endregion
 
-        public ReactiveCommand<Unit, Unit> SelectPhotoCommand => _selectPhotoCommand;
+        public ReactiveCommand<Unit, NewIngredientDto?> ConfirmCommand { get; }
+        public ReactiveCommand<Unit, Unit> CancelCommand { get; }
 
-        public ReactiveCommand<Unit, NewIngredientDto?> ConfirmCommand => _confirmCommand;
-
-        public ReactiveCommand<Unit, NewIngredientDto?> CancelCommand => _cancelCommand;
-
-        public NewIngredientDto? NewIngredient
-        {
-            get => _newIngredient;
-            private set => _newIngredient = value;
-        }
-
-        public bool CanConfirm => !string.IsNullOrWhiteSpace(Name) && Price > 0 && Amount > 0;
+        public Interaction<NewIngredientDto?, NewIngredientDto?> ConfirmInteraction { get; } = new();
+        public Interaction<Unit, Unit> CancelInteraction { get; } = new();
 
 
-        public AddIngredientDialogViewModel(AddIngredientDialog dialog)
-        {
-            _dialog = dialog;
+        public bool CanConfirm => !string.IsNullOrWhiteSpace(Name) && BuyPrice > 0 && BuyAmount > 0 && SelectedMeasureType!= null && TypicalAmountInRecipe > 0;
 
-            _selectPhotoCommand = ReactiveCommand.CreateFromTask(SelectPhotoAsync);
-            _confirmCommand = ReactiveCommand.Create(() =>
-            {
-                NewIngredient = new NewIngredientDto
-                {
-                    Name = Name,
-                    Cost = UnitPrice,
-                    ImagePath = PhotoPath ?? string.Empty,
-                    MeasureType = SelectedMeasureType,
-                    Amount = Amount,
-                    Price = Price,
-                    DefaultAmount = Amount
-                };
-                _dialog?.Hide();
-                return (NewIngredientDto?)null;
-            });
-
-            _cancelCommand = ReactiveCommand.Create(() =>
-            {
-                NewIngredient = null;
-                _dialog?.Hide();
-                return (NewIngredientDto?)null;
-            });
-
-        }
 
         public AddIngredientDialogViewModel()
         {
+            var canConfirm = this.WhenAnyValue(
+                x => x.Name,
+                x => x.BuyPrice,
+                x => x.BuyAmount,
+                x => x.SelectedMeasureType,
+                x => x.TypicalAmountInRecipe,
+                (name, price, amount, measure, typical) =>
+                    !string.IsNullOrWhiteSpace(name) &&
+                    price > 0 &&
+                    amount > 0 &&
+                    measure != null &&
+                    typical > 0
+            );
+
+            ConfirmCommand = ReactiveCommand.CreateFromTask(ConfirmAsync, canConfirm);
+            CancelCommand = ReactiveCommand.CreateFromTask(CancelAsync);
+        }
+
+        public void Init(IngredientModel ingredient)
+        {
+            Init(ingredient.Type, new List<MeasureTypeModel> { ingredient.MeasureType });
+
+            BuyPrice = ingredient.CostPrice;
+            BuyAmount = ingredient.Amount;
+            Name = ingredient.Name;
+            UnitPrice = ingredient.Cost;
+            Photo = ingredient.ImagePath;
+            TypicalAmountInRecipe = ingredient.DefaultAmount;
         }
 
         public void Init(SoapTypeComponent ingredientType, IEnumerable<MeasureTypeModel> measureTypes)
         {
-            switch (ingredientType)
-            {
-                //TODO: Move to separate service 
-                case SoapTypeComponent.Form:
-                    WindowTitle = "Додати форму";
-                    IngredientTitle = "форму";
-                    IsAmountVisible = false;
-                    Amount = 1;
-                    break;
-                case SoapTypeComponent.CraftingBase:
-                    WindowTitle = "Додати основу";
-                    IngredientTitle = "основи";
-                    break;
-                case SoapTypeComponent.Pigment:
-                    break;
-                case SoapTypeComponent.EssentialOil:
-                    break;
-                case SoapTypeComponent.FragranceOil:
-                    break;
-                case SoapTypeComponent.HerbalExtract:
-                    break;
-                case SoapTypeComponent.Tools:
-                case SoapTypeComponent.Other:
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(ingredientType), ingredientType, null);
-            }
-
-            Price = 0;
-            Amount = 1;
-            PhotoPath = null;
-            Name = string.Empty;
-            NewIngredient = null;
             MeasureTypes.Clear();
             MeasureTypes.AddRange(measureTypes.Select(_ => new MeasureTypeModel(_.Id, _.Title, _.ShortTitle, GetBitmapByMeasureType(_.Id))));
 
-            //MeasureTypes.AddRange(new []
+            //MeasureTypes.AddRange(new[]
             //{
             //    new MeasureTypeModel(1, "Грами", "гр",GetBitmapByMeasureType(1)),
             //    new MeasureTypeModel(2, "Мілілітри", "мл", GetBitmapByMeasureType(2)),
             //    new MeasureTypeModel(3, "Штуки", "шт", GetBitmapByMeasureType(3)),
             //    new MeasureTypeModel(4, "Краплі", "крап", GetBitmapByMeasureType(4)),
             //});
+
             SelectedMeasureType = MeasureTypes.Count > 0 ? MeasureTypes.FirstOrDefault() : null;
             HasMultipleMeasureTypes = MeasureTypes.Count > 1;
+
+            IsAmountVisible = true;
+
+            switch (ingredientType)
+            {
+                case SoapTypeComponent.Form:
+                    Title = "Додати форму";
+                    IsAmountVisible = false;
+                    BuyAmount = 1;
+                    break;
+                case SoapTypeComponent.CraftingBase:
+                    Title = "Додати основу";
+                    BuyAmount = 200;
+                    break;
+                case SoapTypeComponent.Pigment:
+                    Title = "Додати пігмент ";
+                    BuyAmount = 10;
+                    break;
+                case SoapTypeComponent.EssentialOil:
+                    Title = "Додати запашку";
+                    BuyAmount = 10;
+                    break;
+                case SoapTypeComponent.FragranceOil:
+                    Title = "Додати ефірне масло";
+                    BuyAmount = 10;
+                    break;
+                case SoapTypeComponent.HerbalExtract:
+                    Title = "Додати екстракт";
+                    BuyAmount = 10;
+                    break;
+                case SoapTypeComponent.Tools:
+                    Title = "Додати інструмент";
+                    IsAmountVisible = false;
+                    BuyAmount = 1;
+                    break;
+                case SoapTypeComponent.Other:  
+                    Title = "Додати інший компонент";
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(ingredientType), ingredientType, null);
+            }
+
             Photo = ImageHelper.LoadFromResource(NoImage_Component_Image);
         }
 
-        public void Init(IngredientModel ingredient)
-        {
-            Price = ingredient.CostPrice;
-            Amount = ingredient.Amount;
-            Name = ingredient.Name;
-            UnitPrice = ingredient.Cost;
-            NewIngredient = null;
-            Photo = ingredient.ImagePath;
 
-            DefaultAmount = ingredient.DefaultAmount;
+        public void Reset()
+        {
+            Photo = null;
+            Name = string.Empty;
+            BuyPrice = 0;
+            BuyAmount = 0;
+            UnitPrice = 0;
+            TypicalAmountInRecipe = 0;
+            SelectedMeasureType = null;
+            IsAmountVisible = true;
+
+            MeasureTypes.Clear();
+            HasMultipleMeasureTypes = false;
         }
 
         private void ReCalculateUnitPrice(decimal amount, decimal price)
@@ -222,66 +255,58 @@ namespace SoupAndSoupApp.ViewModels
                 : 0;
         }
 
-        private async Task SelectPhotoAsync()
+
+        private async Task CancelAsync()
         {
-            var dialog = new OpenFileDialog
+            await CancelInteraction.Handle(Unit.Default); 
+        }
+
+        private async Task<NewIngredientDto?> ConfirmAsync()
+        {
+            var newIngredient = new NewIngredientDto
             {
-                Filters = new List<FileDialogFilter>
-                {
-                    new FileDialogFilter { Name = "Зображення", Extensions = { "png", "jpg", "jpeg" } }
-                }
+                Name = Name,
+                Cost = UnitPrice,
+                ImagePath = NewImagePath,
+                MeasureType = SelectedMeasureType,
+                BuyAmount = BuyAmount,
+                BuyPrice = BuyPrice,
+                TypicalAmountInRecipe = BuyAmount
             };
-            var result = await dialog.ShowAsync(_dialog);
-            if (result?.FirstOrDefault() is string path)
-            {
-                PhotoPath = path;
-                var tmp = path.Remove(0, path.IndexOf("Assets"));
-                Photo = ImageHelper.LoadFromResource(tmp);
-            }
+
+            await ConfirmInteraction.Handle(newIngredient);
+
+            return (NewIngredientDto?)null;
         }
 
-        private Bitmap? GetBitmapByMeasureType(int id)
+        private Bitmap GetBitmapByMeasureType(int id)
         {
-            switch ((MeasureType)id)
+            return (MeasureType)id switch
             {
-                case MeasureType.Gram:
-                    return ImageHelper.LoadFromResource("Assets/Gram.png");
-                case MeasureType.Milliliter:
-                    return ImageHelper.LoadFromResource("Assets/Milliliter.png");
-
-                case MeasureType.Piece:
-                    return ImageHelper.LoadFromResource("Assets/Gram.png");
-
-                case MeasureType.Drop:
-                    return ImageHelper.LoadFromResource("Assets/Drop.png");
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
+                MeasureType.Gram => ImageHelper.LoadFromResource("Assets/Gram.png"),
+                MeasureType.Milliliter => ImageHelper.LoadFromResource("Assets/Milliliter.png"),
+                MeasureType.Piece => ImageHelper.LoadFromResource("Assets/Gram.png"),
+                _ => throw new ArgumentOutOfRangeException(),
+            };
         }
 
 
-        private readonly Window? _dialog;
-        private decimal _amount;
-        private decimal _price;
+        private decimal _buyAmount;
+        private decimal _buyPrice;
         private decimal _unitPrice;
         private string _name = "";
         private Bitmap? _photo = null;
-        private readonly ReactiveCommand<Unit, Unit> _selectPhotoCommand;
-        private readonly ReactiveCommand<Unit, NewIngredientDto?> _confirmCommand;
-        private readonly ReactiveCommand<Unit, NewIngredientDto?> _cancelCommand;
-        private string _ingredientTitle;
-        private string _windowTitle;
-        private decimal _defaultAmount;
+        private string _title;
+        private decimal _typicalAmountInRecipe;
         private bool _isAmountVisible;
-        private readonly ObservableCollection<MeasureTypeModel> _measureTypes = new();
-        private NewIngredientDto? _newIngredient;
+        private string _newImagePath;
+        private string _typicalAmountMeasure;
     }
 
     public enum MeasureType
     {
-        Gram =1,
+        Gram = 1,
         Milliliter,
-        Piece,
-        Drop
+        Piece
     }
 }

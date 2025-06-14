@@ -6,12 +6,12 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:soupAndSoupApp="clr-namespace:SoupAndSoupApp"
     xmlns:viewModels="clr-namespace:SoupAndSoupApp.ViewModels"
-    Title="{Binding WindowTitle}"
+    Title="{Binding Title}"
     Width="480"
-    Height="730"
-    d:DesignHeight="730"
-    d:DesignWidth="480"
+    Height="920"
     x:DataType="viewModels:AddIngredientDialogViewModel"
+    Background="White"
+    SystemDecorations="BorderOnly"
     WindowStartupLocation="CenterOwner"
     mc:Ignorable="d">
 
@@ -88,6 +88,7 @@
 
     </Window.Styles>
 
+
     <Border
         Padding="32"
         Background="White"
@@ -97,22 +98,17 @@
             <TextBlock
                 HorizontalAlignment="Center"
                 FontSize="24"
-                FontWeight="SemiBold">
-                <Run Text="Додати нову " />
-                <Run Text="{Binding IngredientTitle}" />
-            </TextBlock>
+                FontWeight="SemiBold"
+                Text="{Binding Title}" />
 
             <soupAndSoupApp:ImagePickerControl
                 Height="300"
-                Classes="button-image"
-                ImageSource="{Binding Photo}" />
+                ImageSource="{Binding Photo}"
+                NewImagePath="{Binding NewImagePath, Mode=OneWayToSource}" />
 
             <!--  Назва  -->
             <StackPanel>
-                <TextBlock Margin="0,0,0,4">
-                    <Run Text="Назва " />
-                    <Run Text="{Binding IngredientTitle}" />
-                </TextBlock>
+                <TextBlock Margin="0,0,0,4" Text="Назва" />
                 <TextBox
                     Height="40"
                     Classes="outlined"
@@ -149,55 +145,62 @@
                 </ListBox>
             </StackPanel>
 
-            <!--  Тип кількості  -->
+            <!--  Типова порція  -->
             <StackPanel>
-                <TextBlock Margin="0,0,0,4" Text="Дефолтна кількість" />
+                <TextBlock
+                    Margin="0,0,0,4"
+                    IsVisible="{Binding IsAmountVisible}"
+                    Text="{Binding TypicalAmountMeasure, StringFormat='Типова порція в рецепті ({0})'}" />
+                <TextBlock
+                    Margin="0,0,0,4"
+                    IsVisible="{Binding IsAmountVisible, Converter={StaticResource InvertBool}}"
+                    Text="Вага форми (г)" />
                 <TextBox
                     Height="40"
                     Classes="outlined"
-                    Text="{Binding DefaultAmount}"
+                    Text="{Binding TypicalAmountInRecipe}"
                     Watermark="" />
             </StackPanel>
 
+            <TextBlock
+                Margin="0,25,0,0"
+                FontSize="18"
+                FontWeight="SemiBold"
+                Text="Покупка" />
+
             <!--  Ціна і кількість  -->
-            <StackPanel
-                HorizontalAlignment="Left"
-                Orientation="Horizontal"
-                Spacing="16">
-                <StackPanel IsVisible="{Binding IsAmountVisible}">
-                    <TextBlock
-                        Width="160"
-                        Margin="0,0,0,4"
-                        HorizontalAlignment="Left"
-                        Text="{Binding SelectedMeasureType.ShortTitle, StringFormat='Кількість ({0})'}" />
+            <Grid
+                Margin="0,0,0,4"
+                HorizontalAlignment="Stretch"
+                ColumnDefinitions="Auto Auto *">
+                <StackPanel
+                    Width="160"
+                    HorizontalAlignment="Stretch"
+                    IsVisible="{Binding IsAmountVisible}">
+                    <TextBlock Margin="0,0,0,4" Text="{Binding SelectedMeasureType.ShortTitle, StringFormat='Кількість ({0})'}" />
                     <TextBox
-                        Width="160"
                         Height="40"
-                        HorizontalAlignment="Left"
                         Classes="outlined"
-                        Text="{Binding Amount}" />
+                        Text="{Binding BuyAmount}" />
                 </StackPanel>
 
                 <TextBlock
-                    Margin="8,0"
+                    Grid.Column="1"
+                    Width="30"
+                    Margin="20,0,0,10"
                     VerticalAlignment="Bottom"
-                    FontSize="25"
+                    FontSize="20"
                     IsVisible="{Binding IsAmountVisible}"
-                    Text="×" />
+                    Text="x" />
 
-                <StackPanel>
-                    <TextBlock
-                        Width="160"
-                        Margin="0,0,0,4"
-                        HorizontalAlignment="Left"
-                        Text="Ціна (грн)" />
+                <StackPanel Grid.Column="2" HorizontalAlignment="Stretch">
+                    <TextBlock Margin="0,0,0,4" Text="Ціна (грн)" />
                     <TextBox
-                        Width="160"
                         Height="40"
-                        HorizontalAlignment="Left"
-                        Text="{Binding Price}" />
+                        Classes="outlined"
+                        Text="{Binding BuyPrice}" />
                 </StackPanel>
-            </StackPanel>
+            </Grid>
 
             <!--  Підсумок ціни  -->
             <Border
@@ -212,7 +215,7 @@
                     <TextBlock FontWeight="Medium" Foreground="{DynamicResource MaterialPrimary}">
                         <TextBlock.Text>
                             <MultiBinding StringFormat="Ціна за {0}: {1:F2} грн">
-                                <Binding Path="IngredientTitle" />
+                                <Binding Path="SelectedMeasureType.ShortTitle" />
                                 <Binding Path="UnitPrice" />
                             </MultiBinding>
                         </TextBlock.Text>
@@ -220,102 +223,27 @@
                 </StackPanel>
             </Border>
 
-            <!--  Кнопки  -->
+
             <StackPanel
                 Margin="0,20,0,0"
                 HorizontalAlignment="Right"
+                VerticalAlignment="Bottom"
                 Orientation="Horizontal"
                 Spacing="30">
                 <Button
                     Classes="outlined"
                     Command="{Binding CancelCommand}"
-                    Content="Скасувати" />
+                    Content="Скасувати"
+                    IsCancel="True" />
                 <Button
                     Background="#7C3AED"
                     Classes="rounded"
                     Command="{Binding ConfirmCommand}"
                     Content="Додати"
-                    Foreground="White" />
+                    Foreground="White"
+                    IsDefault="True" />
             </StackPanel>
 
         </StackPanel>
     </Border>
-
-    <!--<Grid Margin="15,30,15,15" RowDefinitions="300 Auto Auto Auto Auto Auto">
-        <Button
-            HorizontalAlignment="Stretch"
-            Command="{Binding SelectPhotoCommand}"
-            IsVisible="{Binding Photo, Converter={StaticResource NullToFalse}}">
-            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                <Image
-                    Width="250"
-                    Height="250"
-                    HorizontalAlignment="Center"
-                    Source="../Assets/PhotoCamera.png"
-                    Stretch="UniformToFill" />
-                <TextBlock HorizontalAlignment="Center">
-                    <Run Text="Натисніть, щоб завантажити фото " />
-                    <Run Text="{Binding IngredientTitle}" />
-                </TextBlock>
-            </StackPanel>
-        </Button>
-
-        <Image
-            Grid.Row="0"
-            IsVisible="{Binding Photo, Converter={StaticResource NullToTrue}}"
-            Source="{Binding Photo}" />
-
-        <StackPanel
-            Grid.Row="1"
-            Margin="0,10"
-            Spacing="5">
-            <TextBlock>
-                <Run Text="Назва " />
-                <Run Text="{Binding IngredientTitle}" />
-            </TextBlock>
-            <TextBox Text="{Binding Name}" />
-        </StackPanel>
-
-        <TextBlock
-            Grid.Row="2"
-            Margin="0,20,0,0"
-            Text="Ціна (грн)" />
-
-        <StackPanel
-            Grid.Row="3"
-            Orientation="Horizontal"
-            Spacing="5">
-
-            <TextBox
-                Width="60"
-                Text="{Binding Quantity}"
-                Watermark="К-сть" />
-            <TextBlock VerticalAlignment="Bottom" Text="{Binding AmountTypeTitle}" />
-            <TextBlock Margin="20,0" Text="Х" />
-            <TextBox Text="{Binding Price}" />
-            <TextBlock VerticalAlignment="Bottom" Text="грн" />
-        </StackPanel>
-
-
-        <TextBlock
-            Grid.Row="4"
-            Margin="0,20,0,0"
-            FontSize="20"
-            FontWeight="DemiBold">
-            <Run Text="Ціна за грам " />
-            <Run Text="{Binding UnitPrice}" />
-            <Run Text="грн" />
-        </TextBlock>
-
-
-        <StackPanel
-            Grid.Row="5"
-            HorizontalAlignment="Right"
-            Orientation="Horizontal"
-            Spacing="10">
-            <Button Command="{Binding CancelCommand}" Content="Скасувати" />
-            <Button Command="{Binding ConfirmCommand}" Content="Додати" />
-        </StackPanel>
-
-    </Grid>-->
 </Window>

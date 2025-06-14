@@ -8,10 +8,11 @@ public class NewIngredientDto
     public decimal Cost { get; set; }
     public string ImagePath { get; set; }
 
+    
     public MeasureTypeModel MeasureType { get; set; }
 
-    public decimal DefaultAmount { get; set; }
+    public decimal TypicalAmountInRecipe { get; set; }
 
-    public decimal Amount { get; set; }
-    public decimal Price { get; set; }
+    public decimal BuyAmount { get; set; }
+    public decimal BuyPrice { get; set; }
 }

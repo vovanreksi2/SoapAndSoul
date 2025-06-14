@@ -8,7 +8,9 @@ using System.Reactive.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia;
+using Avalonia.Collections;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Controls.Shapes;
 using DynamicData;
 using ReactiveUI;
 using SoupAndSoup.Data.Models;
@@ -23,10 +25,10 @@ public class SoapDesignerViewModel : ViewModelBase
     private readonly IngredientService _ingredientService;
     private readonly IngredientTypeService _ingredientTypeService;
 
-    private  AddIngredientDialog _addIngredientDialogWindow;
-    private  AddIngredientDialogViewModel _addIngredientDialogViewModel;
+    private readonly IDialogService _dialogService;
 
     public const string NoImage_Receipt = "Assets/No_Receipt_Photo.png";
+    public const string NoImage_Component_Image = "Assets/No_Component_Photo.png";
 
     public ICommand NewReceiptCommand { get; private set; }
     public ICommand SaveReceiptCommand { get; private set; }
@@ -110,16 +112,14 @@ public class SoapDesignerViewModel : ViewModelBase
 
     public SoapDesignerViewModel(RecipeService recipeService,
         IngredientService ingredientService,
-        IngredientTypeService ingredientTypeService,
-        AddIngredientDialog addIngredientDialogWindow, 
-        AddIngredientDialogViewModel addIngredientDialogViewModel)
+        IngredientTypeService ingredientTypeService, 
+        IDialogService dialogService)
     {
         _recipeService = recipeService;
         _ingredientService = ingredientService;
         _ingredientTypeService = ingredientTypeService;
 
-        _addIngredientDialogWindow = addIngredientDialogWindow;
-        _addIngredientDialogViewModel = addIngredientDialogViewModel;
+        _dialogService = dialogService;
 
         try
         {
@@ -221,7 +221,7 @@ public class SoapDesignerViewModel : ViewModelBase
        //    Name = "Нова Рецептура",
        //    RecipeIngredients = new ObservableCollection<IngredientModel>(),
        //    Description = string.Empty,
-       //    Amount = 0,
+       //    BuyAmount = 0,
        //    PreparationTime = 0,
        //    UnitCost = 0,
        //    ImagePath = ImageHelper.LoadFromResource(NoImage_Receipt)
@@ -274,7 +274,6 @@ public class SoapDesignerViewModel : ViewModelBase
 
     private async Task<RecipeModel> DeleteReceiptAsync(RecipeModel recipeModel)
     {
-        
         await _recipeService.SoftDelete(recipeModel.Id);
         
         Recipes.Remove(recipeModel);
@@ -286,85 +285,38 @@ public class SoapDesignerViewModel : ViewModelBase
     private async Task AddIngredientAsync(SoapTypeComponent parameter)
     {
         var soapGroup = ComponentGroups.FirstOrDefault(_ => _.Type == parameter);
+        
+        var newIngredientDto = await _dialogService.ShowAddIngredientDialogAsync(soapGroup.Type, soapGroup.MeasureTypes);
+        if (newIngredientDto is null) return;
 
-        //TODO: Move to separate "Widnows Manager"
-        _addIngredientDialogWindow = new AddIngredientDialog();
-        _addIngredientDialogViewModel = new AddIngredientDialogViewModel(_addIngredientDialogWindow);
-
-        _addIngredientDialogWindow.DataContext = _addIngredientDialogViewModel;
-        _addIngredientDialogViewModel.Init(soapGroup.Type, soapGroup.MeasureTypes);
-
-        await _addIngredientDialogWindow.ShowDialog<NewIngredientDto?>(
-            (Application.Current.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow
-        );
-
-        if (_addIngredientDialogViewModel.NewIngredient == null)
-        {
-            return;
-        }
-
-        var newIngredientDto = _addIngredientDialogViewModel.NewIngredient;
-        var ingredient = new Ingredient
-        {
-            Cost = newIngredientDto.Cost,
-            Name = newIngredientDto.Name,
-            IngredientTypeId = (int)soapGroup.Type,
-            AmountTypeId = newIngredientDto.MeasureType.Id,
-            DefaultAmount = (int)newIngredientDto.DefaultAmount,
-            Amount = (int)newIngredientDto.Amount,
-            Price = newIngredientDto.Price,
-            Images = new List<IngredientImage>
-            {
-                new()
-                {
-                    ImageUrl = newIngredientDto.ImagePath
-                }
-            }
-        };
+        var ingredient = MapIngredient(newIngredientDto, soapGroup.Type);
 
         var saveResult = await _ingredientService.CreateAsync(ingredient);
-        var currentImageUrl = saveResult.Images.FirstOrDefault()?.ImageUrl;
-        var imageUrl = currentImageUrl?.Substring(currentImageUrl.IndexOf("Assets"));
+        
+        soapGroup.Components.Add(MapIngredientModel(saveResult));
+    }
 
-        var newIngredient = new IngredientModel
+    private async Task EditIngredientAsync(IngredientModel arg)
+    {
+        var ingredientDto = await _dialogService.ShowEditIngredientDialogAsync(arg);
+        if (ingredientDto is null) return;
+
+        var ingredient = MapIngredient(ingredientDto, arg.Type, arg.Id);
+
+        var saveResult = await _ingredientService.UpdateAsync(ingredient);
+        if (!saveResult)
         {
-            Id = saveResult.Id,
-            Name = saveResult.Name,
-            ImagePath = ImageHelper.LoadFromResource(imageUrl)
-        };
-        soapGroup.Components.Add(newIngredient);
+            Debug.WriteLine($"Failed to update ingredient with ID {arg.Id}.");
+        }
     }
 
     private async Task DeleteIngredientAsync(IngredientModel ingredient)
     {
         var result = await _ingredientService.SoftDeleteAsync(ingredient.Id);
         if (!result) return;
-     
-        foreach (var soapGroup in ComponentGroups)
-        {
-            var item = soapGroup.Components.FirstOrDefault(i => i.Id == ingredient.Id);
-            if (item != null)
-            {
-                soapGroup.Components.Remove(item);
-            }
-        }
-    }
 
-    private async Task EditIngredientAsync(IngredientModel arg)
-    {
-
-        _addIngredientDialogWindow.DataContext = _addIngredientDialogViewModel;
-        _addIngredientDialogViewModel.Init(arg);
-
-        //TODO: Move to separate "Widnows Manager"
-        await _addIngredientDialogWindow.ShowDialog<NewIngredientDto?>(
-            (Application.Current.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow
-        );
-
-        if (_addIngredientDialogViewModel.NewIngredient == null)
-        {
-            return;
-        }
+        ComponentGroups.FirstOrDefault(_ => _.Type == ingredient.Type)?.Components.Remove(ingredient);
+        _cachedComponents.Remove(ingredient.Id);
     }
 
 
@@ -453,15 +405,37 @@ public class SoapDesignerViewModel : ViewModelBase
             Type = (SoapTypeComponent)ingredientModel.IngredientType.Id,
             MeasureType = new MeasureTypeModel(ingredientModel.AmountType.Id, ingredientModel.AmountType.Name, ingredientModel.AmountType.ShortName),
             ImagePath = ImageHelper.LoadFromResource(ingredientModel.Images.FirstOrDefault()?.ImageUrl ??
-                                                     NoImage_Receipt),
+                                                     NoImage_Component_Image),
         };
 
         result
             .WhenAnyValue(x => x.IsSelected)
             .Subscribe(_ => { HandleSelectedComponentChanged(result); });
+
         return result;
     }
 
+    private Ingredient MapIngredient(NewIngredientDto ingredientDto, SoapTypeComponent ingredientType, int? ingredientId = null)
+    {
+        var ingredient = new Ingredient
+        {
+            Cost = ingredientDto.Cost,
+            Name = ingredientDto.Name,
+            IngredientTypeId = (int)ingredientType,
+            AmountTypeId = ingredientDto.MeasureType.Id,
+            DefaultAmount = (int)ingredientDto.TypicalAmountInRecipe,
+            Amount = (int)ingredientDto.BuyAmount,
+            Price = ingredientDto.BuyPrice
+        };
+
+        if (ingredientId.HasValue)
+            ingredient.Id = ingredientId.Value;
+
+        if (!string.IsNullOrEmpty(ingredientDto.ImagePath))
+            ingredient.Images.Add(new IngredientImage { ImageUrl = ingredientDto.ImagePath });
+
+        return ingredient;
+    }
     private bool IsLatin(string name)
     {
         if (string.IsNullOrEmpty(name))
