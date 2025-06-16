@@ -293,7 +293,13 @@ public class SoapDesignerViewModel : ViewModelBase
 
         var saveResult = await _ingredientService.CreateAsync(ingredient);
         
-        soapGroup.Components.Add(MapIngredientModel(saveResult));
+        var tmpList = new List<IngredientModel>(soapGroup.Components) { MapIngredientModel(saveResult) };
+
+        soapGroup.Components.Clear();
+        soapGroup.Components.AddRange(
+            tmpList
+                .OrderBy(x => IsLatin(x.Name))
+                .ThenBy(x => x.Name));
     }
 
     private async Task EditIngredientAsync(IngredientModel arg)
@@ -322,14 +328,20 @@ public class SoapDesignerViewModel : ViewModelBase
 
     private void HandleSelectedComponentChanged(IngredientModel ingredientModel)
     {
+        var tmpList = new List<IngredientModel>(ComponentsByReceipt);
+
         if (ingredientModel.IsSelected)
-        {
-            ComponentsByReceipt.Add(ingredientModel);
-        }
+            tmpList.Add(ingredientModel);
         else
-        {
-            ComponentsByReceipt.Remove(ingredientModel);
-        }
+            tmpList.Remove(ingredientModel);
+        
+        ComponentsByReceipt.Clear();
+        ComponentsByReceipt.AddRange(
+            
+            tmpList
+                .OrderBy(_=> _.Type)
+                .ThenBy(x => IsLatin(x.Name))
+                .ThenBy(x => x.Name));
 
         ReCalculateUnitCost(SelectedReceipt);
     }
