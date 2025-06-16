@@ -138,7 +138,6 @@ public class SoapDesignerViewModel : ViewModelBase
     {
         IsReceiptEditMode = true;
 
-
         NewReceiptCommand = ReactiveCommand.Create(NewReceipt, this.WhenAnyValue(_ => _.IsReceiptEditMode));
         SaveReceiptCommand = ReactiveCommand.CreateFromTask<RecipeModel>(SaveReceiptAsync);
         DeleteReceiptCommand = ReactiveCommand.CreateFromTask<RecipeModel>(DeleteReceiptAsync);
@@ -216,17 +215,27 @@ public class SoapDesignerViewModel : ViewModelBase
             }
         });
 
-       //Recipes.Add(new RecipeModel
-       //{
-       //    Name = "Нова Рецептура",
-       //    RecipeIngredients = new ObservableCollection<IngredientModel>(),
-       //    Description = string.Empty,
-       //    BuyAmount = 0,
-       //    PreparationTime = 0,
-       //    UnitCost = 0,
-       //    ImagePath = ImageHelper.LoadFromResource(NoImage_Receipt)
-       //}
-       //);
+       Recipes.Add(new RecipeModel
+       {
+           Name = "Лавандовий крафт",
+           RecipeIngredients = new ObservableCollection<IngredientByReceiptModel>(),
+           Description = string.Empty,
+           PreparationTime = 0,
+
+           UnitCost = 0,
+           ImagePath = ImageHelper.LoadFromResource(NoImage_Receipt)
+       });
+        
+       ComponentsByReceipt.AddRange( new []
+       {
+           new IngredientModel()
+           {
+               ImagePath = ImageHelper.LoadFromResource("Assets/lavanda-ekstract.800x600w.jpg"),
+                Name = "Екстракт Лаванди гліколевий",
+                Amount = 20,
+                Cost = 2.9m,
+           }
+       });
     }
 
 
@@ -392,7 +401,7 @@ public class SoapDesignerViewModel : ViewModelBase
         {
             Title = ingredientType.Name,
             Type = (SoapTypeComponent)ingredientType.Id,
-            MeasureTypes = ingredientType.AmountTypes.Select(mt => new MeasureTypeModel(mt.Id, mt.Name, mt.ShortName)),
+            MeasureTypes = ingredientType.AmountTypes.Select(mt => new MeasureTypeModel(mt.Id, mt.Name, mt.ShortName, mt.ShortName)),
             NewComponentCommand = NewComponentCommand
         };
 
@@ -415,10 +424,15 @@ public class SoapDesignerViewModel : ViewModelBase
             DeleteCommand = DeleteComponentCommand,
             EditCommand = EditComponentCommand,
             Type = (SoapTypeComponent)ingredientModel.IngredientType.Id,
-            MeasureType = new MeasureTypeModel(ingredientModel.AmountType.Id, ingredientModel.AmountType.Name, ingredientModel.AmountType.ShortName),
+            MeasureType = new MeasureTypeModel(ingredientModel.AmountType.Id, ingredientModel.AmountType.Name, ingredientModel.AmountType.ShortName, ingredientModel.AmountType.ShortName),
             ImagePath = ImageHelper.LoadFromResource(ingredientModel.Images.FirstOrDefault()?.ImageUrl ??
                                                      NoImage_Component_Image),
         };
+
+        if (result.MeasureType.Id == 2)
+        {
+            result.MeasureType.DisplayTitle = "крап";
+        }
 
         result
             .WhenAnyValue(x => x.IsSelected)

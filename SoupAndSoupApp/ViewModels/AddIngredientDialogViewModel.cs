@@ -175,7 +175,7 @@ namespace SoupAndSoupApp.ViewModels
         public void Init(SoapTypeComponent ingredientType, IEnumerable<MeasureTypeModel> measureTypes)
         {
             MeasureTypes.Clear();
-            MeasureTypes.AddRange(measureTypes.Select(_ => new MeasureTypeModel(_.Id, _.Title, _.ShortTitle, GetBitmapByMeasureType(_.Id))));
+            MeasureTypes.AddRange(measureTypes.Select(_ => new MeasureTypeModel(_.Id, _.Title, _.ShortTitle, _.DisplayTitle, GetBitmapByMeasureType(_.Id))));
 
             //MeasureTypes.AddRange(new[]
             //{
