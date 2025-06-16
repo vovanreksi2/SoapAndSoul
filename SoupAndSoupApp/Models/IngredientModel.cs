@@ -21,7 +21,7 @@ public class IngredientModel : ReactiveObject
     public MeasureTypeModel MeasureType { get; set; }
     public decimal Cost { get; set; }
     public decimal DefaultAmount { get; set; }
-    public decimal CostPrice { get; set; }
+    public decimal BuyPrice { get; set; }
 
     public SoapTypeComponent Type { get; set; }
 

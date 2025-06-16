@@ -12,6 +12,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using DynamicData;
 using ReactiveUI;
+using SoupAndSoupApp.Helpers;
 using SoupAndSoupApp.Models;
 
 namespace SoupAndSoupApp.ViewModels
@@ -164,7 +165,7 @@ namespace SoupAndSoupApp.ViewModels
         {
             Init(ingredient.Type, new List<MeasureTypeModel> { ingredient.MeasureType });
 
-            BuyPrice = ingredient.CostPrice;
+            BuyPrice = ingredient.BuyPrice;
             BuyAmount = ingredient.Amount;
             Name = ingredient.Name;
             UnitPrice = ingredient.Cost;
@@ -301,12 +302,5 @@ namespace SoupAndSoupApp.ViewModels
         private bool _isAmountVisible;
         private string _newImagePath;
         private string _typicalAmountMeasure;
-    }
-
-    public enum MeasureType
-    {
-        Gram = 1,
-        Milliliter,
-        Piece
     }
 }

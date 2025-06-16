@@ -2,9 +2,10 @@
 using System.Reactive;
 using System.Threading.Tasks;
 using SoupAndSoupApp.Models;
+using SoupAndSoupApp.ViewModels;
 using SoupAndSoupApp.Views;
 
-namespace SoupAndSoupApp.ViewModels;
+namespace SoupAndSoupApp.Helpers;
 
 public class DialogService : IDialogService
 {

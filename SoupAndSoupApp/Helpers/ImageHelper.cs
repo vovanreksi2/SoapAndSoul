@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 
-namespace SoupAndSoupApp;
+namespace SoupAndSoupApp.Helpers;
 
 public static class ImageHelper
 {

@@ -4,6 +4,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
 using SoupAndSoup.Data;
+using SoupAndSoupApp.Helpers;
 using SoupAndSoupApp.ViewModels;
 using SoupAndSoupApp.Views;
 
@@ -56,6 +57,8 @@ public partial class App : Application
 
         services.AddSingleton<AddIngredientDialog>();
         services.AddSingleton<AddIngredientDialogViewModel>();
+
+        services.AddSingleton<IUnitCostCalculator, UnitCostCalculator>();
 
         services.AddSoupAndSoulDb();
     }

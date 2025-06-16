@@ -15,6 +15,7 @@ using DynamicData;
 using ReactiveUI;
 using SoupAndSoup.Data.Models;
 using SoupAndSoup.Data.Services;
+using SoupAndSoupApp.Helpers;
 using SoupAndSoupApp.Models;
 
 namespace SoupAndSoupApp.ViewModels;
@@ -103,6 +104,7 @@ public class SoapDesignerViewModel : ViewModelBase
     private bool _isReceiptEditMode;
     private RecipeModel? _selectedReceipt;
     private string _newImagePath;
+    private readonly IUnitCostCalculator _unitCostCalc;
 
 
     public SoapDesignerViewModel()
@@ -113,13 +115,14 @@ public class SoapDesignerViewModel : ViewModelBase
     public SoapDesignerViewModel(RecipeService recipeService,
         IngredientService ingredientService,
         IngredientTypeService ingredientTypeService, 
-        IDialogService dialogService)
+        IDialogService dialogService, IUnitCostCalculator unitCostCalc)
     {
         _recipeService = recipeService;
         _ingredientService = ingredientService;
         _ingredientTypeService = ingredientTypeService;
 
         _dialogService = dialogService;
+        _unitCostCalc = unitCostCalc;
 
         try
         {
@@ -252,7 +255,6 @@ public class SoapDesignerViewModel : ViewModelBase
         IsReceiptEditMode = false;
 
         SelectedReceipt = newRecipe;
-        SelectedReceipt.RecipeIngredients.Clear();
     }
    
     private async Task SaveReceiptAsync(RecipeModel newRecipeModel)
@@ -352,17 +354,25 @@ public class SoapDesignerViewModel : ViewModelBase
                 .ThenBy(x => IsLatin(x.Name))
                 .ThenBy(x => x.Name));
 
-        ReCalculateUnitCost(SelectedReceipt);
+        if (SelectedReceipt != null)
+            ReCalculateUnitCost(SelectedReceipt.RecipeIngredients);
     }
 
-    private void ReCalculateUnitCost(RecipeModel? receipt)
+    private void ReCalculateUnitCost(IEnumerable<IngredientByReceiptModel> ingredients)
     {
-        if (receipt == null)
+        if (!ingredients.Any())
         {
+            Debug.WriteLine("No ingredients found to calculate unit cost.");
             return;
         }
 
-        receipt.UnitCost = ComponentsByReceipt.Sum(i => i.Amount * i.Cost);
+        if (SelectedReceipt == null)
+        {
+            Debug.WriteLine("Selected receipt is null, cannot calculate unit cost.");
+            return;
+        }
+
+        SelectedReceipt.UnitCost = _unitCostCalc.CalculateUnitCost(ingredients, _cachedComponents);
     }
 
 
@@ -377,14 +387,14 @@ public class SoapDesignerViewModel : ViewModelBase
             PreparationTime = (int)recipe.PreparationTime.TotalMinutes,
             DeleteReceiptCommand = DeleteReceiptCommand,
             ImagePath = ImageHelper.LoadFromResource(recipe.Images.FirstOrDefault()?.ImageUrl ?? NoImage_Receipt),
-            RecipeIngredients = new(recipe.RecipeIngredients.Select(_=> new IngredientByReceiptModel
+            RecipeIngredients = recipe.RecipeIngredients.Select(_=> new IngredientByReceiptModel
             {
                 Amount = _.Amount,
                 IngredientId = _.IngredientId,
-            }))
+            }),
         };
-        
-        ReCalculateUnitCost(result);
+
+        result.UnitCost = _unitCostCalc.CalculateUnitCost(result.RecipeIngredients, _cachedComponents);
 
         return result;
     }
@@ -419,7 +429,7 @@ public class SoapDesignerViewModel : ViewModelBase
             Cost = ingredientModel.Cost,
 
             DefaultAmount = ingredientModel.DefaultAmount,
-            CostPrice = ingredientModel.Price,
+            BuyPrice = ingredientModel.Price,
 
             DeleteCommand = DeleteComponentCommand,
             EditCommand = EditComponentCommand,
