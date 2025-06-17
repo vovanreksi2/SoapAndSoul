@@ -17,6 +17,7 @@
         <system:Double x:Key="IngredientCheckBoxWidth">150</system:Double>
         <system:Double x:Key="IngredientCheckBoxHeight">150</system:Double>
 
+        <converters:TextVisibilityConverter x:Key="TextVisibilityConverter" />
 
         <!--  Button  -->
         <ControlTemplate x:Key="MoldButtonControlTemplate">
@@ -52,10 +53,8 @@
                         HorizontalAlignment="Center"
                         FontSize="12"
                         FontWeight="Bold"
-                        Foreground="Black">
-                        <Run Text="Додати" />
-                        <Run Text="{Binding GroupTitle, RelativeSource={RelativeSource AncestorType=components:IngredientItemsControl}}" />
-                    </TextBlock>
+                        Foreground="Black"
+                        Text="Додати" />
 
                 </StackPanel>
             </Grid>
@@ -130,11 +129,18 @@
                     VerticalAlignment="Center"
                     FontSize="{TemplateBinding FontSize}"
                     FontWeight="{TemplateBinding FontWeight}"
-                    IsVisible="{Binding Path=IsChecked, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource InvertBool}}"
                     Text="{Binding Name}"
                     TextAlignment="Center"
                     TextTrimming="CharacterEllipsis"
-                    TextWrapping="NoWrap" />
+                    TextWrapping="NoWrap">
+
+                    <Grid.IsVisible>
+                        <MultiBinding Converter="{StaticResource TextVisibilityConverter}">
+                            <Binding Path="ShowAmountInButton" />
+                            <Binding Path="IsChecked" RelativeSource="{RelativeSource TemplatedParent}" />
+                        </MultiBinding>
+                    </Grid.IsVisible>
+                </TextBlock>
 
                 <Grid
                     Grid.Row="1"
@@ -142,8 +148,13 @@
                     Grid.ColumnSpan="2"
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Bottom"
-                    ColumnDefinitions="Auto * Auto"
-                    IsVisible="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=IsChecked}">
+                    ColumnDefinitions="Auto * Auto">
+                    <Grid.IsVisible>
+                        <MultiBinding Converter="{StaticResource AndConverter}">
+                            <Binding Path="IsChecked" RelativeSource="{RelativeSource TemplatedParent}" />
+                            <Binding Path="ShowAmountInButton" />
+                        </MultiBinding>
+                    </Grid.IsVisible>
 
                     <Button
                         Grid.Column="0"

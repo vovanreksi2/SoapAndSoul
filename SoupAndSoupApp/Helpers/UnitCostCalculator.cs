@@ -36,6 +36,27 @@ public class UnitCostCalculator : IUnitCostCalculator
         return result;
     }
 
+    public decimal CalculateUnitCost(IEnumerable<IngredientModel> components)
+    {
+        var result = 0m;
+
+        foreach (var recipeComponent in components)
+        {
+            if (recipeComponent.Type == SoapTypeComponent.Form)
+            {
+                result += recipeComponent.BuyPrice / ArrangeAmountOfUseForm;
+            }
+            else if ((MeasureType)recipeComponent.MeasureType.Id == MeasureType.Milliliter)
+            {
+                result += recipeComponent.Cost * ConvertMilliliterInDrop(recipeComponent.Amount);
+            }
+            else
+                result += recipeComponent.Cost * recipeComponent.Amount;
+        }
+
+        return result;
+    }
+
     private decimal ConvertMilliliterInDrop(decimal amount)
     {
         return amount / DropsInMilliliters;

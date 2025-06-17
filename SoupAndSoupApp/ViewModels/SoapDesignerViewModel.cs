@@ -7,10 +7,6 @@ using System.Reactive;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using Avalonia;
-using Avalonia.Collections;
-using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Controls.Shapes;
 using DynamicData;
 using ReactiveUI;
 using SoupAndSoup.Data.Models;
@@ -22,11 +18,7 @@ namespace SoupAndSoupApp.ViewModels;
 
 public class SoapDesignerViewModel : ViewModelBase
 {
-    private readonly RecipeService _recipeService;
-    private readonly IngredientService _ingredientService;
-    private readonly IngredientTypeService _ingredientTypeService;
 
-    private readonly IDialogService _dialogService;
 
     public const string NoImage_Receipt = "Assets/No_Receipt_Photo.png";
     public const string NoImage_Component_Image = "Assets/No_Component_Photo.png";
@@ -100,11 +92,17 @@ public class SoapDesignerViewModel : ViewModelBase
 
     public Task Initialization { get; private set; }
 
+    private readonly RecipeService _recipeService;
+    private readonly IngredientService _ingredientService;
+    private readonly IngredientTypeService _ingredientTypeService;
+
+    private readonly IDialogService _dialogService;
 
     private bool _isReceiptEditMode;
     private RecipeModel? _selectedReceipt;
     private string _newImagePath;
     private readonly IUnitCostCalculator _unitCostCalc;
+    private bool _suppressSelectionChange;
 
 
     public SoapDesignerViewModel()
@@ -339,30 +337,42 @@ public class SoapDesignerViewModel : ViewModelBase
 
     private void HandleSelectedComponentChanged(IngredientModel ingredientModel)
     {
+        if (_suppressSelectionChange) return;
+
+
         var tmpList = new List<IngredientModel>(ComponentsByReceipt);
+
+        UpdateComponentInGroupAccordingToRules(ingredientModel, tmpList);
 
         if (ingredientModel.IsSelected)
             tmpList.Add(ingredientModel);
         else
             tmpList.Remove(ingredientModel);
-        
+
         ComponentsByReceipt.Clear();
         ComponentsByReceipt.AddRange(
-            
+
             tmpList
-                .OrderBy(_=> _.Type)
+                .OrderBy(_ => _.Type)
                 .ThenBy(x => IsLatin(x.Name))
                 .ThenBy(x => x.Name));
 
         if (SelectedReceipt != null)
-            ReCalculateUnitCost(SelectedReceipt.RecipeIngredients);
+            ReCalculateUnitCost(ComponentsByReceipt);
     }
 
-    private void ReCalculateUnitCost(IEnumerable<IngredientByReceiptModel> ingredients)
+    private void HandleAmountComponentChanged(IngredientModel ingredientModel)
     {
-        if (!ingredients.Any())
+        if (ingredientModel.IsSelected && SelectedReceipt != null)
+            ReCalculateUnitCost(ComponentsByReceipt);
+    }
+
+
+    private void ReCalculateUnitCost(IEnumerable<IngredientModel> components)
+    {
+        if (!components.Any())
         {
-            Debug.WriteLine("No ingredients found to calculate unit cost.");
+            Debug.WriteLine("No components found to calculate unit cost.");
             return;
         }
 
@@ -372,7 +382,62 @@ public class SoapDesignerViewModel : ViewModelBase
             return;
         }
 
-        SelectedReceipt.UnitCost = _unitCostCalc.CalculateUnitCost(ingredients, _cachedComponents);
+        SelectedReceipt.UnitCost = _unitCostCalc.CalculateUnitCost(components);
+    }
+
+    private void UpdateComponentInGroupAccordingToRules(IngredientModel ingredientModel, List<IngredientModel> tmpList)
+    {
+        try
+        {
+            _suppressSelectionChange = true;
+
+            switch (ingredientModel.Type)
+            {
+                case SoapTypeComponent.Form:
+                    UpdateComponents(ComponentsByReceipt, ingredientModel.Type);
+
+                    var craftingBase = ComponentsByReceipt.FirstOrDefault(_ => _.Type == SoapTypeComponent.CraftingBase);
+                    if (craftingBase != null)
+                        craftingBase.Amount = ingredientModel.Amount;
+
+                    break;
+
+                case SoapTypeComponent.EssentialOil:
+                    UpdateComponents(ComponentsByReceipt, SoapTypeComponent.FragranceOil);
+                    break;
+
+                case SoapTypeComponent.FragranceOil:
+                    UpdateComponents(ComponentsByReceipt, SoapTypeComponent.EssentialOil);
+                    break;
+
+                case SoapTypeComponent.CraftingBase:
+                    var form = ComponentsByReceipt.FirstOrDefault(_ => _.Type == SoapTypeComponent.Form);
+                    if (form != null && ingredientModel.IsSelected)
+                        ingredientModel.Amount = form.Amount;
+
+                    break;
+                case SoapTypeComponent.Pigment:
+                case SoapTypeComponent.HerbalExtract:
+                case SoapTypeComponent.Tools:
+                case SoapTypeComponent.Other:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+        finally
+        {
+            _suppressSelectionChange = false;
+        }
+
+        void UpdateComponents(IEnumerable<IngredientModel> components, SoapTypeComponent typeComponent)
+        {
+            foreach (var component in components.Where(_ => _.Type == typeComponent && _.Id != ingredientModel.Id))
+            {
+                component.IsSelected = false;
+                tmpList.Remove(component);
+            }
+        }
     }
 
 
@@ -421,6 +486,8 @@ public class SoapDesignerViewModel : ViewModelBase
 
     private IngredientModel MapIngredientModel(Ingredient ingredientModel)
     {
+        var componentType = (SoapTypeComponent)ingredientModel.IngredientTypeId;
+
         var result = new IngredientModel
         {
             Id = ingredientModel.Id,
@@ -433,7 +500,8 @@ public class SoapDesignerViewModel : ViewModelBase
 
             DeleteCommand = DeleteComponentCommand,
             EditCommand = EditComponentCommand,
-            Type = (SoapTypeComponent)ingredientModel.IngredientType.Id,
+            ShowAmountInButton = componentType != SoapTypeComponent.Form,
+            Type = componentType,
             MeasureType = new MeasureTypeModel(ingredientModel.AmountType.Id, ingredientModel.AmountType.Name, ingredientModel.AmountType.ShortName, ingredientModel.AmountType.ShortName),
             ImagePath = ImageHelper.LoadFromResource(ingredientModel.Images.FirstOrDefault()?.ImageUrl ??
                                                      NoImage_Component_Image),
@@ -446,7 +514,13 @@ public class SoapDesignerViewModel : ViewModelBase
 
         result
             .WhenAnyValue(x => x.IsSelected)
+            .Skip(1)
             .Subscribe(_ => { HandleSelectedComponentChanged(result); });
+
+        result
+            .WhenAnyValue(x => x.Amount)
+            .Skip(1)
+            .Subscribe(_ => { HandleAmountComponentChanged(result);});
 
         return result;
     }

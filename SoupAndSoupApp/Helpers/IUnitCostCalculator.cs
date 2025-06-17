@@ -1,11 +1,11 @@
 ﻿using System.Collections.Generic;
-using SoupAndSoup.Data.Models;
 using SoupAndSoupApp.Models;
 
-namespace SoupAndSoupApp.Helpers
+namespace SoupAndSoupApp.Helpers;
+
+public  interface IUnitCostCalculator
 {
-    public  interface IUnitCostCalculator
-    {
-        decimal CalculateUnitCost(IEnumerable<IngredientByReceiptModel> recipeComponents, Dictionary<int, IngredientModel> cachedComponents);
-    }
+    decimal CalculateUnitCost(IEnumerable<IngredientByReceiptModel> recipeComponents, Dictionary<int, IngredientModel> cachedComponents);
+
+    decimal CalculateUnitCost(IEnumerable<IngredientModel> components);
 }

@@ -27,6 +27,7 @@
 
 
         <converters:OrConverter x:Key="OrConverter" />
+        <converters:AndConverter x:Key="AndConverter" />
         <converters:NullToBooleanConverter x:Key="NullToTrue" />
         <converters:NullToBooleanConverter x:Key="NullToFalse" Invert="True" />
         <converters:BooleanNegationConverter x:Key="InvertBool" />
@@ -35,8 +36,6 @@
     <Application.Styles>
         <FluentTheme />
         <materialIcons:MaterialIconStyles />
-
-
 
         <Style Selector="Button.lbButton">
             <Setter Property="Background" Value="Transparent" />

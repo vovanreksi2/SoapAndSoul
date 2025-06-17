@@ -239,9 +239,15 @@
                     Background="#7C3AED"
                     Classes="rounded"
                     Command="{Binding ConfirmCommand}"
-                    Content="Додати"
                     Foreground="White"
-                    IsDefault="True" />
+                    IsDefault="True">
+                    <Button.Content>
+                        <Grid>
+                            <TextBlock IsVisible="{Binding IsEditMode, Converter={StaticResource InvertBool}}" Text="Додати" />
+                            <TextBlock IsVisible="{Binding IsEditMode}" Text="Оновити" />
+                        </Grid>
+                    </Button.Content>
+                </Button>
             </StackPanel>
 
         </StackPanel>

@@ -32,6 +32,8 @@ public class IngredientModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _isSelected, value);
     }
 
+    public bool ShowAmountInButton { get; set; }
+
     public ICommand EditCommand { get; set; }
     public ICommand DeleteCommand { get; set; }
 

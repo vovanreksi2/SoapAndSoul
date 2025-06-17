@@ -97,6 +97,12 @@ namespace SoupAndSoupApp.ViewModels
             set => this.RaiseAndSetIfChanged(ref _isAmountVisible, value);
         }
 
+        public bool IsEditMode
+        {
+            get => _isEditMode;
+            set => this.RaiseAndSetIfChanged(ref _isEditMode, value);
+        }
+
         #region MeasureTypeModel
 
         public ObservableCollection<MeasureTypeModel> MeasureTypes { get; } = new();
@@ -166,12 +172,15 @@ namespace SoupAndSoupApp.ViewModels
             Init(ingredient.Type, new List<MeasureTypeModel> { ingredient.MeasureType });
 
             BuyPrice = ingredient.BuyPrice;
-            BuyAmount = ingredient.Amount;
+            BuyAmount = ingredient.Type == SoapTypeComponent.Form ? BuyAmount : ingredient.Amount;
             Name = ingredient.Name;
             UnitPrice = ingredient.Cost;
             Photo = ingredient.ImagePath;
             TypicalAmountInRecipe = ingredient.DefaultAmount;
+
+            IsEditMode = true;
         }
+
 
         public void Init(SoapTypeComponent ingredientType, IEnumerable<MeasureTypeModel> measureTypes)
         {
@@ -190,41 +199,41 @@ namespace SoupAndSoupApp.ViewModels
             HasMultipleMeasureTypes = MeasureTypes.Count > 1;
 
             IsAmountVisible = true;
-
+            Title = IsEditMode ? "Редагувати " : "Додати ";
             switch (ingredientType)
             {
                 case SoapTypeComponent.Form:
-                    Title = "Додати форму";
+                    Title += "форму";
                     IsAmountVisible = false;
                     BuyAmount = 1;
                     break;
                 case SoapTypeComponent.CraftingBase:
-                    Title = "Додати основу";
+                    Title += "основу";
                     BuyAmount = 200;
                     break;
                 case SoapTypeComponent.Pigment:
-                    Title = "Додати пігмент ";
+                    Title += "пігмент";
                     BuyAmount = 10;
                     break;
                 case SoapTypeComponent.EssentialOil:
-                    Title = "Додати запашку";
+                    Title += "запашку";
                     BuyAmount = 10;
                     break;
                 case SoapTypeComponent.FragranceOil:
-                    Title = "Додати ефірне масло";
+                    Title += "ефірне масло";
                     BuyAmount = 10;
                     break;
                 case SoapTypeComponent.HerbalExtract:
-                    Title = "Додати екстракт";
+                    Title += "екстракт";
                     BuyAmount = 10;
                     break;
                 case SoapTypeComponent.Tools:
-                    Title = "Додати інструмент";
+                    Title += "інструмент";
                     IsAmountVisible = false;
                     BuyAmount = 1;
                     break;
                 case SoapTypeComponent.Other:  
-                    Title = "Додати інший компонент";
+                    Title += "інший компонент";
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(ingredientType), ingredientType, null);
@@ -302,5 +311,6 @@ namespace SoupAndSoupApp.ViewModels
         private bool _isAmountVisible;
         private string _newImagePath;
         private string _typicalAmountMeasure;
+        private bool _isEditMode;
     }
 }
