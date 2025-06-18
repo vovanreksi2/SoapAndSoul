@@ -82,7 +82,7 @@
                         FontSize="16"
                         FontWeight="DemiBold"
                         TextWrapping="WrapWithOverflow">
-                        <Run Text="{Binding Amount, StringFormat='{}{0:F0}'}" />
+                        <Run Text="{Binding AmountInRecipe, StringFormat='{}{0:F0}'}" />
                         <Run Text="{Binding MeasureType.DisplayTitle}" />
                     </TextBlock>
                 </StackPanel>

@@ -154,7 +154,7 @@
                 <TextBlock
                     Margin="0,0,0,4"
                     IsVisible="{Binding IsAmountVisible, Converter={StaticResource InvertBool}}"
-                    Text="Вага форми (г)" />
+                    Text="Вага мила (г)" />
                 <TextBox
                     Height="40"
                     Classes="outlined"

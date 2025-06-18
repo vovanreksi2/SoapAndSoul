@@ -48,10 +48,10 @@ public class UnitCostCalculator : IUnitCostCalculator
             }
             else if ((MeasureType)recipeComponent.MeasureType.Id == MeasureType.Milliliter)
             {
-                result += recipeComponent.Cost * ConvertMilliliterInDrop(recipeComponent.Amount);
+                result += recipeComponent.Cost * ConvertMilliliterInDrop(recipeComponent.BuyAmount);
             }
             else
-                result += recipeComponent.Cost * recipeComponent.Amount;
+                result += recipeComponent.Cost * recipeComponent.BuyAmount;
         }
 
         return result;

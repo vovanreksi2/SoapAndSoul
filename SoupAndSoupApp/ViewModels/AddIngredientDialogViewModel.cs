@@ -167,17 +167,18 @@ namespace SoupAndSoupApp.ViewModels
             CancelCommand = ReactiveCommand.CreateFromTask(CancelAsync);
         }
 
-        public void Init(IngredientModel ingredient)
+        public void Init(IngredientModel ingredient, IEnumerable<MeasureTypeModel> measureTypes)
         {
-            Init(ingredient.Type, new List<MeasureTypeModel> { ingredient.MeasureType });
+            Init(ingredient.Type, measureTypes);
 
             BuyPrice = ingredient.BuyPrice;
-            BuyAmount = ingredient.Type == SoapTypeComponent.Form ? BuyAmount : ingredient.Amount;
+            BuyAmount = ingredient.Type == SoapTypeComponent.Form ? BuyAmount : ingredient.BuyAmount;
             Name = ingredient.Name;
             UnitPrice = ingredient.Cost;
             Photo = ingredient.ImagePath;
-            TypicalAmountInRecipe = ingredient.DefaultAmount;
-
+            TypicalAmountInRecipe = ingredient.TypicalAmountInRecipe;
+            SelectedMeasureType = ingredient.MeasureType;
+            
             IsEditMode = true;
         }
 
@@ -281,7 +282,7 @@ namespace SoupAndSoupApp.ViewModels
                 MeasureType = SelectedMeasureType,
                 BuyAmount = BuyAmount,
                 BuyPrice = BuyPrice,
-                TypicalAmountInRecipe = BuyAmount
+                TypicalAmountInRecipe = TypicalAmountInRecipe, 
             };
 
             await ConfirmInteraction.Handle(newIngredient);

@@ -57,9 +57,13 @@ public class DialogService : IDialogService
         return await _tcs.Task;
     }
 
-    public Task<NewIngredientDto?> ShowEditIngredientDialogAsync(IngredientModel ingredientModel)
+    public async Task<NewIngredientDto?> ShowEditIngredientDialogAsync(IngredientModel ingredientModel, IEnumerable<MeasureTypeModel> soapGroupMeasureTypes)
     {
-        _viewModel.Init(ingredientModel);
-        return _dialog.ShowDialog<NewIngredientDto?>(_mainWindow);
+        _tcs = new TaskCompletionSource<NewIngredientDto?>();
+
+        _viewModel.Init(ingredientModel, soapGroupMeasureTypes);
+        await _dialog.ShowDialog<NewIngredientDto?>(_mainWindow);
+
+        return await _tcs.Task;
     }
 } 

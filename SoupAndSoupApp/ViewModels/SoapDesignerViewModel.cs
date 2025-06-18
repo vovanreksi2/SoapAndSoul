@@ -75,7 +75,7 @@ public class SoapDesignerViewModel : ViewModelBase
                     continue;
                 }
 
-                component.Amount = ingredientByReceiptModel.Amount;
+                component.AmountInRecipe = ingredientByReceiptModel.Amount;
                 component.IsSelected = true;
             }
 
@@ -152,24 +152,32 @@ public class SoapDesignerViewModel : ViewModelBase
 
     private async Task InitializeAsync()
     {
-        var ingredientTypes = await _ingredientTypeService.GetAllAsync();
-        var ingredients = await _ingredientService.GetAllAsync();
+        try
+        {
 
-        _cachedComponents = ingredients.ToDictionary(ingredient => ingredient.Id, MapIngredientModel);
+            var ingredientTypes = await _ingredientTypeService.GetAllAsync();
+            var ingredients = await _ingredientService.GetAllAsync();
 
-        ComponentGroups.AddRange(
-            ingredientTypes
-                .OrderBy(_ => _.Order)
-                .Select(ingredientType => MapComponentGroup(ingredientType, _cachedComponents)));
+            _cachedComponents = ingredients.ToDictionary(ingredient => ingredient.Id, MapIngredientModel);
 
-        var recipes = await _recipeService.GetAllAsync();
-        var recipeModels = recipes.Select(MapRecipe);
+            ComponentGroups.AddRange(
+                ingredientTypes
+                    .OrderBy(_ => _.Order)
+                    .Select(ingredientType => MapComponentGroup(ingredientType, _cachedComponents)));
 
-        Recipes.AddRange(recipeModels);
-        SelectedReceipt = Recipes.FirstOrDefault();
+            var recipes = await _recipeService.GetAllAsync();
+            var recipeModels = recipes.Select(MapRecipe);
 
-        //FillTestData();
-       
+            Recipes.AddRange(recipeModels);
+            SelectedReceipt = Recipes.FirstOrDefault();
+
+            //FillTestData();
+
+        }
+        catch (Exception e)
+        {
+            Debug.WriteLine($"‼️ Exception during initialization: {e.Message}");
+        }
     }
 
 
@@ -233,7 +241,7 @@ public class SoapDesignerViewModel : ViewModelBase
            {
                ImagePath = ImageHelper.LoadFromResource("Assets/lavanda-ekstract.800x600w.jpg"),
                 Name = "Екстракт Лаванди гліколевий",
-                Amount = 20,
+                BuyAmount = 20,
                 Cost = 2.9m,
            }
        });
@@ -311,18 +319,35 @@ public class SoapDesignerViewModel : ViewModelBase
                 .ThenBy(x => x.Name));
     }
 
-    private async Task EditIngredientAsync(IngredientModel arg)
+    private async Task EditIngredientAsync(IngredientModel ingredientModel)
     {
-        var ingredientDto = await _dialogService.ShowEditIngredientDialogAsync(arg);
+        var soapGroup = ComponentGroups.FirstOrDefault(_ => _.Type == ingredientModel.Type);
+
+        var ingredientDto = await _dialogService.ShowEditIngredientDialogAsync(ingredientModel, soapGroup.MeasureTypes);
         if (ingredientDto is null) return;
 
-        var ingredient = MapIngredient(ingredientDto, arg.Type, arg.Id);
+        var ingredient = MapIngredient(ingredientDto, ingredientModel.Type, ingredientModel.Id);
 
         var saveResult = await _ingredientService.UpdateAsync(ingredient);
-        if (!saveResult)
+        if (saveResult)
         {
-            Debug.WriteLine($"Failed to update ingredient with ID {arg.Id}.");
+            _cachedComponents[ingredientModel.Id].Name = ingredient.Name;
+            _cachedComponents[ingredientModel.Id].BuyAmount = ingredient.BuyAmount;
+            _cachedComponents[ingredientModel.Id].Cost = ingredient.Cost;
+            _cachedComponents[ingredientModel.Id].BuyPrice = ingredient.BuyPrice;
+            _cachedComponents[ingredientModel.Id].MeasureType = new MeasureTypeModel(ingredient.AmountType.Id, ingredient.AmountType.Name, ingredient.AmountType.ShortName, ingredient.AmountType.ShortName);
+            _cachedComponents[ingredientModel.Id].ImagePath = ingredient.Images.FirstOrDefault()?.ImageUrl is null
+                ? ingredientModel.ImagePath
+                : ImageHelper.LoadFromResource(ingredient.Images.First().ImageUrl);
+            _cachedComponents[ingredientModel.Id].TypicalAmountInRecipe = ingredient.TypicalAmountInRecipe;
+            _cachedComponents[ingredientModel.Id].Type = (SoapTypeComponent)ingredient.IngredientTypeId;
+
+            return;
         }
+
+        Debug.WriteLine(saveResult
+            ? $"Success for save ingredient with ID {ingredientModel.Id}"
+            : $"Failed to update ingredient with ID {ingredientModel.Id}.");
     }
 
     private async Task DeleteIngredientAsync(IngredientModel ingredient)
@@ -398,7 +423,7 @@ public class SoapDesignerViewModel : ViewModelBase
 
                     var craftingBase = ComponentsByReceipt.FirstOrDefault(_ => _.Type == SoapTypeComponent.CraftingBase);
                     if (craftingBase != null)
-                        craftingBase.Amount = ingredientModel.Amount;
+                        craftingBase.AmountInRecipe = ingredientModel.TypicalAmountInRecipe;
 
                     break;
 
@@ -413,7 +438,7 @@ public class SoapDesignerViewModel : ViewModelBase
                 case SoapTypeComponent.CraftingBase:
                     var form = ComponentsByReceipt.FirstOrDefault(_ => _.Type == SoapTypeComponent.Form);
                     if (form != null && ingredientModel.IsSelected)
-                        ingredientModel.Amount = form.Amount;
+                        ingredientModel.AmountInRecipe = form.TypicalAmountInRecipe;
 
                     break;
                 case SoapTypeComponent.Pigment:
@@ -492,11 +517,11 @@ public class SoapDesignerViewModel : ViewModelBase
         {
             Id = ingredientModel.Id,
             Name = ingredientModel.Name,
-            Amount = ingredientModel.Amount,
             Cost = ingredientModel.Cost,
 
-            DefaultAmount = ingredientModel.DefaultAmount,
-            BuyPrice = ingredientModel.Price,
+            TypicalAmountInRecipe = ingredientModel.TypicalAmountInRecipe,
+            BuyPrice = ingredientModel.BuyPrice,
+            BuyAmount = ingredientModel.BuyAmount,
 
             DeleteCommand = DeleteComponentCommand,
             EditCommand = EditComponentCommand,
@@ -518,7 +543,7 @@ public class SoapDesignerViewModel : ViewModelBase
             .Subscribe(_ => { HandleSelectedComponentChanged(result); });
 
         result
-            .WhenAnyValue(x => x.Amount)
+            .WhenAnyValue(x => x.BuyAmount)
             .Skip(1)
             .Subscribe(_ => { HandleAmountComponentChanged(result);});
 
@@ -533,9 +558,16 @@ public class SoapDesignerViewModel : ViewModelBase
             Name = ingredientDto.Name,
             IngredientTypeId = (int)ingredientType,
             AmountTypeId = ingredientDto.MeasureType.Id,
-            DefaultAmount = (int)ingredientDto.TypicalAmountInRecipe,
-            Amount = (int)ingredientDto.BuyAmount,
-            Price = ingredientDto.BuyPrice
+            TypicalAmountInRecipe = (int)ingredientDto.TypicalAmountInRecipe,
+            BuyAmount = (int)ingredientDto.BuyAmount,
+            BuyPrice = ingredientDto.BuyPrice,
+            AmountType = new AmountType
+            {
+               Id = ingredientDto.MeasureType.Id,
+                Name = ingredientDto.MeasureType.Title,
+                ShortName = ingredientDto.MeasureType.ShortTitle,
+                
+            }
         };
 
         if (ingredientId.HasValue)
@@ -559,7 +591,7 @@ public class SoapDesignerViewModel : ViewModelBase
         new List<IngredientModel>
         {new() {IsSelected = false, IsButton = true},
 
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/efirne-limon.800x600w.jpg"), Name = "Лимон", Amount = 5, Cost = 2.5m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/efirne-limon.800x600w.jpg"), Name = "Лимон", BuyAmount = 5, Cost = 2.5m },
         }
         .OrderBy(x => IsLatin(x.Name))
         .ThenBy(x => x.Name);
@@ -568,10 +600,10 @@ public class SoapDesignerViewModel : ViewModelBase
         new List<IngredientModel>
         {new() {IsSelected = false, IsButton = true},
 
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/greipfrut-ekstrackt.800x600w.jpg"), Name = "Екстракт Грейпфрута гліколевий", Amount = 3, Cost = 1.8m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/aloe-ekstract.800x600w.jpg"), Name = "Алое віра гліколевий", Amount = 7, Cost = 2.2m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/lavanda-ekstract.800x600w.jpg"), Name = "Лаванди гліколевий", Amount = 2, Cost = 2.9m ,Id = 4 },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/romashki-ekstrackt.800x600w.jpg"), Name = "Квіток Ромашки гліколевий", Amount = 8, Cost = 1.4m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/greipfrut-ekstrackt.800x600w.jpg"), Name = "Екстракт Грейпфрута гліколевий", BuyAmount = 3, Cost = 1.8m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/aloe-ekstract.800x600w.jpg"), Name = "Алое віра гліколевий", BuyAmount = 7, Cost = 2.2m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/lavanda-ekstract.800x600w.jpg"), Name = "Лаванди гліколевий", BuyAmount = 2, Cost = 2.9m ,Id = 4 },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/romashki-ekstrackt.800x600w.jpg"), Name = "Квіток Ромашки гліколевий", BuyAmount = 8, Cost = 1.4m },
         }
         .OrderBy(x => IsLatin(x.Name))
         .ThenBy(x => x.Name);
@@ -580,31 +612,31 @@ public class SoapDesignerViewModel : ViewModelBase
         new List<IngredientModel>
         {new() {IsSelected = false, IsButton = true},
 
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/armani-zapashka.800x600w.jpg"), Name = "Acqua Di Gio Homme, Armani (чоловіча)", Amount = 4, Cost = 2.7m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/beby-bergamot-flovers.800x600w.jpg"), Name = "Baby bergamot & Orange flower", Amount = 6, Cost = 1.5m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/19-vanill-cream.800x600w.jpg"), Name = "Vanilla Cream", Amount = 1, Cost = 2.1m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/07-apelsin.800x600w.jpg"), Name = "Апельсин", Amount = 5, Cost = 1.9m, Id = 1},
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/18-chai.800x600w.jpg"), Name = "Грінвіталіті", Amount = 3, Cost = 2.3m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/solodka-dinya-zapashka.800x600w.jpg"), Name = "Диня солодка", Amount = 7, Cost = 1.6m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/68-yabloko.800x600w.jpg"), Name = "Зелене яблуко", Amount = 4, Cost = 2.0m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/47-karamel.800x600w.jpg"), Name = "Карамель", Amount = 6, Cost = 2.5m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/myata-s-laimom-01.800x600w.jpg"), Name = "М'ята з лаймом", Amount = 2, Cost = 1.7m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/44-malina.800x600w.jpg"), Name = "Малина", Amount = 5, Cost = 2.8m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/95-smorodina.800x600w.jpg"), Name = "Чорна смородина", Amount = 7, Cost = 1.9m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/13-arbuz.800x600w.jpg"), Name = "Кавун", Amount = 3, Cost = 2.2m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/62-kokos.800x600w.jpg"), Name = "Кокос", Amount = 6, Cost = 1.8m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/krya-krya-otdushka.800x600w.jpg"), Name = "Кря-Кря", Amount = 1, Cost = 2.9m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/35-morskaya-svezhest.800x600w.jpg"), Name = "Морська свіжість", Amount = 8, Cost = 1.5m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/92-persik-nektarin.800x600w.jpg"), Name = "Персик нектарин", Amount = 4, Cost = 2.3m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/63-kludnica-so-ldom.800x600w.jpg"), Name = "Полуниця з льодом", Amount = 7, Cost = 2.0m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/coca-cola-otdushka.800x600w.jpg"), Name = "Кока кола", Amount = 5, Cost = 1.4m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/09-goryachii-shokolad.800x600w.jpg"), Name = "Гарячий шоколад", Amount = 3, Cost = 2.7m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/81-toplenoe-moloko.800x600w.jpg"), Name = "Вівсяне молочко", Amount = 7, Cost = 1.9m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/amor-cacharel-zapashka.800x600w.jpg"), Name = "Amor Amor, Cacharel (жіноча)", Amount = 4, Cost = 2.8m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/roza-alaya-otdushka.800x600w.jpg"), Name = "Троянда червона запашка", Amount = 8, Cost = 1.5m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/belie-cveti-otdushka.800x600w.jpg"), Name = "Білі квіти", Amount = 2, Cost = 2.1m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/49-kofe-s-koricei.800x600w (1).jpg"), Name = "Кава з корицею", Amount = 1, Cost = 2.9m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/laviaestbell-zapashka.800x600w.jpg"), Name = "La vie est belle, Lancome (жіноча) ", Amount = 5, Cost = 1.7m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/armani-zapashka.800x600w.jpg"), Name = "Acqua Di Gio Homme, Armani (чоловіча)", BuyAmount = 4, Cost = 2.7m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/beby-bergamot-flovers.800x600w.jpg"), Name = "Baby bergamot & Orange flower", BuyAmount = 6, Cost = 1.5m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/19-vanill-cream.800x600w.jpg"), Name = "Vanilla Cream", BuyAmount = 1, Cost = 2.1m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/07-apelsin.800x600w.jpg"), Name = "Апельсин", BuyAmount = 5, Cost = 1.9m, Id = 1},
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/18-chai.800x600w.jpg"), Name = "Грінвіталіті", BuyAmount = 3, Cost = 2.3m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/solodka-dinya-zapashka.800x600w.jpg"), Name = "Диня солодка", BuyAmount = 7, Cost = 1.6m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/68-yabloko.800x600w.jpg"), Name = "Зелене яблуко", BuyAmount = 4, Cost = 2.0m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/47-karamel.800x600w.jpg"), Name = "Карамель", BuyAmount = 6, Cost = 2.5m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/myata-s-laimom-01.800x600w.jpg"), Name = "М'ята з лаймом", BuyAmount = 2, Cost = 1.7m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/44-malina.800x600w.jpg"), Name = "Малина", BuyAmount = 5, Cost = 2.8m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/95-smorodina.800x600w.jpg"), Name = "Чорна смородина", BuyAmount = 7, Cost = 1.9m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/13-arbuz.800x600w.jpg"), Name = "Кавун", BuyAmount = 3, Cost = 2.2m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/62-kokos.800x600w.jpg"), Name = "Кокос", BuyAmount = 6, Cost = 1.8m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/krya-krya-otdushka.800x600w.jpg"), Name = "Кря-Кря", BuyAmount = 1, Cost = 2.9m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/35-morskaya-svezhest.800x600w.jpg"), Name = "Морська свіжість", BuyAmount = 8, Cost = 1.5m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/92-persik-nektarin.800x600w.jpg"), Name = "Персик нектарин", BuyAmount = 4, Cost = 2.3m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/63-kludnica-so-ldom.800x600w.jpg"), Name = "Полуниця з льодом", BuyAmount = 7, Cost = 2.0m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/coca-cola-otdushka.800x600w.jpg"), Name = "Кока кола", BuyAmount = 5, Cost = 1.4m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/09-goryachii-shokolad.800x600w.jpg"), Name = "Гарячий шоколад", BuyAmount = 3, Cost = 2.7m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/81-toplenoe-moloko.800x600w.jpg"), Name = "Вівсяне молочко", BuyAmount = 7, Cost = 1.9m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/amor-cacharel-zapashka.800x600w.jpg"), Name = "Amor Amor, Cacharel (жіноча)", BuyAmount = 4, Cost = 2.8m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/roza-alaya-otdushka.800x600w.jpg"), Name = "Троянда червона запашка", BuyAmount = 8, Cost = 1.5m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/belie-cveti-otdushka.800x600w.jpg"), Name = "Білі квіти", BuyAmount = 2, Cost = 2.1m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/49-kofe-s-koricei.800x600w (1).jpg"), Name = "Кава з корицею", BuyAmount = 1, Cost = 2.9m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/laviaestbell-zapashka.800x600w.jpg"), Name = "La vie est belle, Lancome (жіноча) ", BuyAmount = 5, Cost = 1.7m },
         }
         .OrderBy(x => IsLatin(x.Name))
         .ThenBy(x => x.Name);
@@ -613,19 +645,19 @@ public class SoapDesignerViewModel : ViewModelBase
         new List<IngredientModel>
         {new() {IsSelected = false, IsButton = true},
 
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/pigment-dlya-bombochek-malinov.800x600w.jpg"), Name = "Малиновий-крафт для бомб", Amount = 3, Cost = 2.4m, Id = 6},
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/vrm-zheltii-barvnik.800x600w.jpg"), Name = "Жовтий", Amount = 2, Cost = 1.5m , Id = 2},
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/vrm-korichnevii-barvnik.800x600w.jpg"), Name = "Коричневий", Amount = 4, Cost = 1.7m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/pigment-perlamutr-sinii.800x600w.jpg"), Name = "Перламутровий синій", Amount = 1, Cost = 3.0m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/pigment-biruza-sweden.800x600w.jpg"), Name = "Рідкий Бірюзовий", Amount = 5, Cost = 2.2m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/pigm-perlam-vinno-chervonii.800x600w.jpg"), Name = "Перламутровий винно-червоний", Amount = 2, Cost = 2.8m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/vrm-blakitnii-barvnik.800x600w.jpg"), Name = "Блакитний", Amount = 3, Cost = 1.9m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/barvnik-red-neri.800x600w.jpg"), Name = "Neri color Red", Amount = 6, Cost = 2.6m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/neri-barv-zelenii-01-1.800x600w.jpg"), Name = "Neri color Зелений", Amount = 2, Cost = 2.4m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/neri-barv-bila-001.800x600w.jpg"), Name = "Neri color Білий", Amount = 4, Cost = 2.0m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/neri-barv-pomaranch-01-1.800x600w.jpg"), Name = "Neri color Помаранчевий", Amount = 3, Cost = 2.3m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/barvnik-rose-neri.800x600w.jpg"), Name = "Neri color Rose (Рожевий)", Amount = 1, Cost = 2.7m },
-        new() { ImagePath = ImageHelper.LoadFromResource("Assets/neri-barv-sinii-01-1.800x600w.jpg"), Name = "Neri color Синій", Amount = 3, Cost = 2.5m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/pigment-dlya-bombochek-malinov.800x600w.jpg"), Name = "Малиновий-крафт для бомб", BuyAmount = 3, Cost = 2.4m, Id = 6},
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/vrm-zheltii-barvnik.800x600w.jpg"), Name = "Жовтий", BuyAmount = 2, Cost = 1.5m , Id = 2},
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/vrm-korichnevii-barvnik.800x600w.jpg"), Name = "Коричневий", BuyAmount = 4, Cost = 1.7m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/pigment-perlamutr-sinii.800x600w.jpg"), Name = "Перламутровий синій", BuyAmount = 1, Cost = 3.0m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/pigment-biruza-sweden.800x600w.jpg"), Name = "Рідкий Бірюзовий", BuyAmount = 5, Cost = 2.2m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/pigm-perlam-vinno-chervonii.800x600w.jpg"), Name = "Перламутровий винно-червоний", BuyAmount = 2, Cost = 2.8m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/vrm-blakitnii-barvnik.800x600w.jpg"), Name = "Блакитний", BuyAmount = 3, Cost = 1.9m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/barvnik-red-neri.800x600w.jpg"), Name = "Neri color Red", BuyAmount = 6, Cost = 2.6m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/neri-barv-zelenii-01-1.800x600w.jpg"), Name = "Neri color Зелений", BuyAmount = 2, Cost = 2.4m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/neri-barv-bila-001.800x600w.jpg"), Name = "Neri color Білий", BuyAmount = 4, Cost = 2.0m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/neri-barv-pomaranch-01-1.800x600w.jpg"), Name = "Neri color Помаранчевий", BuyAmount = 3, Cost = 2.3m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/barvnik-rose-neri.800x600w.jpg"), Name = "Neri color Rose (Рожевий)", BuyAmount = 1, Cost = 2.7m },
+        new() { ImagePath = ImageHelper.LoadFromResource("Assets/neri-barv-sinii-01-1.800x600w.jpg"), Name = "Neri color Синій", BuyAmount = 3, Cost = 2.5m },
         }
         .OrderBy(x => IsLatin(x.Name))
         .ThenBy(x => x.Name);
@@ -635,13 +667,13 @@ public class SoapDesignerViewModel : ViewModelBase
         {
             new() {IsSelected = false, IsButton = true},
 
-            new() {ImagePath = ImageHelper.LoadFromResource("Assets/crystal-bila_4.800x600w.jpg"), Name = "Crystal Triple Butter (масло Ши, Какао і Манго)", Amount = 0, Cost = 70},
-            new() {ImagePath = ImageHelper.LoadFromResource("Assets/mylnaya-osnova-stephenson-crystal-st_1.800x600w.jpg"), Name = "Crystal SLS Free прозора", Amount = 0, Cost = 130},
-            new() {ImagePath = ImageHelper.LoadFromResource("Assets/crystal-bila.800x600w.jpg"), Name = "Crystal Donkey Milk Біла", Amount = 0, Cost = 100},
-            new() {ImagePath = ImageHelper.LoadFromResource("Assets/milna-osnova-nco-organica.800x600w.jpg"), Name = "Crystal NCO (ORG) органічна", Amount = 0, Cost = 600},
-            new() {ImagePath = ImageHelper.LoadFromResource("Assets/neri-milna-osnova-aloe.800x600w.jpg"), Name = "Neri Aloe з екстрактом алое прозора", Amount = 0, Cost = 30},
-            new() {ImagePath = ImageHelper.LoadFromResource("Assets/neri-olivka-osnova-new-01.800x600w.jpg"), Name = "Neri Olive з оливковою олією напівпрозора", Amount = 0, Cost = 100},
-            new() {ImagePath = ImageHelper.LoadFromResource("Assets/svirli-osnova-milna.800x600w.jpg"), Name = "Основа для свірлов Neri Swirl", Amount = 0, Cost = 150},
+            new() {ImagePath = ImageHelper.LoadFromResource("Assets/crystal-bila_4.800x600w.jpg"), Name = "Crystal Triple Butter (масло Ши, Какао і Манго)", BuyAmount = 0, Cost = 70},
+            new() {ImagePath = ImageHelper.LoadFromResource("Assets/mylnaya-osnova-stephenson-crystal-st_1.800x600w.jpg"), Name = "Crystal SLS Free прозора", BuyAmount = 0, Cost = 130},
+            new() {ImagePath = ImageHelper.LoadFromResource("Assets/crystal-bila.800x600w.jpg"), Name = "Crystal Donkey Milk Біла", BuyAmount = 0, Cost = 100},
+            new() {ImagePath = ImageHelper.LoadFromResource("Assets/milna-osnova-nco-organica.800x600w.jpg"), Name = "Crystal NCO (ORG) органічна", BuyAmount = 0, Cost = 600},
+            new() {ImagePath = ImageHelper.LoadFromResource("Assets/neri-milna-osnova-aloe.800x600w.jpg"), Name = "Neri Aloe з екстрактом алое прозора", BuyAmount = 0, Cost = 30},
+            new() {ImagePath = ImageHelper.LoadFromResource("Assets/neri-olivka-osnova-new-01.800x600w.jpg"), Name = "Neri Olive з оливковою олією напівпрозора", BuyAmount = 0, Cost = 100},
+            new() {ImagePath = ImageHelper.LoadFromResource("Assets/svirli-osnova-milna.800x600w.jpg"), Name = "Основа для свірлов Neri Swirl", BuyAmount = 0, Cost = 150},
         }.OrderBy(x => IsLatin(x.Name))
             .ThenBy(x => x.Name);
 
@@ -649,16 +681,16 @@ public class SoapDesignerViewModel : ViewModelBase
         new List<IngredientModel>
         {
             new() {IsSelected = false, IsButton = true},
-            new() { ImagePath = ImageHelper.LoadFromResource("Assets/silikon-kvitka-ajstra-pishna.800x600w.jpg"), Name = "Айстра пишна розкрита 70г" , Amount = 70, Cost = 0, IsSelected = false},
-            new() { ImagePath = ImageHelper.LoadFromResource("Assets/silikon-serdechko-azhurne.800x600w.jpg"), Name = "Сердечко ажурне велике 130г", Amount = 130, Cost = 0 },
-            new() {ImagePath = ImageHelper.LoadFromResource("Assets/apelsin-srednii-plastik-01.800x600w.jpg"), Name = "Апельсин середній 60г", Amount = 60, Cost = 0, Id = 3},
-            new() {ImagePath = ImageHelper.LoadFromResource("Assets/polyana-forma-01.500x500.jpg"), Name = "Зелена галявина в квітах 36г", Amount = 36, Cost = 0, IsSelected = false, Id = 5},
-            new() {ImagePath = ImageHelper.LoadFromResource("Assets/angel-v-rozah-elit-forma.800x600w.jpg"), Name = "Янгол в трояндах 90г", Amount = 90, Cost = 0},
-            new() {ImagePath = ImageHelper.LoadFromResource("Assets/205-zefir.800x600w.jpg"), Name = "Зефір 44г", Amount = 44, Cost = 0},
-            new() {ImagePath = ImageHelper.LoadFromResource("Assets/312-oduvanchik.800x600w.jpg"), Name = "Кульбаба 110г", Amount = 110, Cost = 0},
-            new() {ImagePath = ImageHelper.LoadFromResource("Assets/silikon-spiral.800x600w.jpg"), Name = "Спіраль 80г", Amount = 80, Cost = 0},
-            new() {ImagePath = ImageHelper.LoadFromResource("Assets/kofejnyj-krug-elit-forma.800x600w.jpg"), Name = "Кавове коло 87г", Amount = 87, Cost = 0},
-            new() {ImagePath = ImageHelper.LoadFromResource("Assets/silikon-polusferi-seredni-.800x600w.jpg"), Name = "Силіконові форми Півсфери 73г", Amount = 73, Cost = 0}
+            new() { ImagePath = ImageHelper.LoadFromResource("Assets/silikon-kvitka-ajstra-pishna.800x600w.jpg"), Name = "Айстра пишна розкрита 70г" , BuyAmount = 70, Cost = 0, IsSelected = false},
+            new() { ImagePath = ImageHelper.LoadFromResource("Assets/silikon-serdechko-azhurne.800x600w.jpg"), Name = "Сердечко ажурне велике 130г", BuyAmount = 130, Cost = 0 },
+            new() {ImagePath = ImageHelper.LoadFromResource("Assets/apelsin-srednii-plastik-01.800x600w.jpg"), Name = "Апельсин середній 60г", BuyAmount = 60, Cost = 0, Id = 3},
+            new() {ImagePath = ImageHelper.LoadFromResource("Assets/polyana-forma-01.500x500.jpg"), Name = "Зелена галявина в квітах 36г", BuyAmount = 36, Cost = 0, IsSelected = false, Id = 5},
+            new() {ImagePath = ImageHelper.LoadFromResource("Assets/angel-v-rozah-elit-forma.800x600w.jpg"), Name = "Янгол в трояндах 90г", BuyAmount = 90, Cost = 0},
+            new() {ImagePath = ImageHelper.LoadFromResource("Assets/205-zefir.800x600w.jpg"), Name = "Зефір 44г", BuyAmount = 44, Cost = 0},
+            new() {ImagePath = ImageHelper.LoadFromResource("Assets/312-oduvanchik.800x600w.jpg"), Name = "Кульбаба 110г", BuyAmount = 110, Cost = 0},
+            new() {ImagePath = ImageHelper.LoadFromResource("Assets/silikon-spiral.800x600w.jpg"), Name = "Спіраль 80г", BuyAmount = 80, Cost = 0},
+            new() {ImagePath = ImageHelper.LoadFromResource("Assets/kofejnyj-krug-elit-forma.800x600w.jpg"), Name = "Кавове коло 87г", BuyAmount = 87, Cost = 0},
+            new() {ImagePath = ImageHelper.LoadFromResource("Assets/silikon-polusferi-seredni-.800x600w.jpg"), Name = "Силіконові форми Півсфери 73г", BuyAmount = 73, Cost = 0}
         }.OrderBy(x => IsLatin(x.Name))
             .ThenBy(x => x.Name);
 

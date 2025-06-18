@@ -8,5 +8,5 @@ namespace SoupAndSoupApp.Helpers;
 public interface IDialogService
 {
     Task<NewIngredientDto?> ShowAddIngredientDialogAsync(SoapTypeComponent type, IEnumerable<MeasureTypeModel> measureTypes);
-    Task<NewIngredientDto?> ShowEditIngredientDialogAsync(IngredientModel ingredientModel);
+    Task<NewIngredientDto?> ShowEditIngredientDialogAsync(IngredientModel ingredientModel, IEnumerable<MeasureTypeModel> soapGroupMeasureTypes);
 }

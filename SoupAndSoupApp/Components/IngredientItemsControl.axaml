@@ -134,12 +134,12 @@
                     TextTrimming="CharacterEllipsis"
                     TextWrapping="NoWrap">
 
-                    <Grid.IsVisible>
+                    <TextBlock.IsVisible>
                         <MultiBinding Converter="{StaticResource TextVisibilityConverter}">
                             <Binding Path="ShowAmountInButton" />
                             <Binding Path="IsChecked" RelativeSource="{RelativeSource TemplatedParent}" />
                         </MultiBinding>
-                    </Grid.IsVisible>
+                    </TextBlock.IsVisible>
                 </TextBlock>
 
                 <Grid
@@ -173,7 +173,7 @@
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Top"
                         HorizontalContentAlignment="Center"
-                        Text="{Binding Amount, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat='{}{0:F0}'}" />
+                        Text="{Binding AmountInRecipe, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat='{}{0:F0}'}" />
                     <Button
                         Grid.Column="2"
                         Content="+"

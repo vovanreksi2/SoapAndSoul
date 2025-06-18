@@ -70,10 +70,12 @@
         <Style Selector="Button.edit-button">
             <Setter Property="Template">
                 <ControlTemplate>
-                    <materialIcons:MaterialIcon
-                        Width="22"
-                        Height="22"
-                        Kind="Edit" />
+                    <Border Background="Transparent">
+                        <materialIcons:MaterialIcon
+                            Width="22"
+                            Height="22"
+                            Kind="EditBoxOutline" />
+                    </Border>
                 </ControlTemplate>
             </Setter>
         </Style>

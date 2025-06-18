@@ -39,7 +39,7 @@
                         VerticalAlignment="Stretch"
                         Opacity="{Binding #RootControl.IsPointerOver, Converter={StaticResource OpacityConverter}, ConverterParameter='From1To0.4'}"
                         Source="{Binding #RootControl.ImageSource}"
-                        Stretch="UniformToFill">
+                        Stretch="Uniform">
                         <Image.Transitions>
                             <Transitions>
                                 <DoubleTransition Property="Opacity" Duration="0:0:0.2" />
