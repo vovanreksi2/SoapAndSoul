@@ -6,7 +6,7 @@ public abstract class RepositoryBase<T> : IRepository<T> where T : class
     protected readonly SoapAndSoulContext _context;
     protected readonly DbSet<T> _dbSet;
 
-    public RepositoryBase(SoapAndSoulContext context)
+    protected RepositoryBase(SoapAndSoulContext context)
     {
         _context = context;
         _dbSet = _context.Set<T>();
@@ -26,16 +26,17 @@ public abstract class RepositoryBase<T> : IRepository<T> where T : class
         return await _dbSet.FindAsync(id);
     }
 
-    public virtual async Task<List<T>> GetAllAsync()
+    public virtual async Task<List<T>> GetAllAsync(bool noTracking = false)
     {
+        if (noTracking) 
+            return await _dbSet.AsNoTracking().ToListAsync();
+
         return await _dbSet.ToListAsync();
     }
 
     public virtual async Task<bool> UpdateAsync(T entity)
     {
         if (entity == null) throw new ArgumentNullException(nameof(entity));
-
-
 
         _dbSet.Update(entity);
         await _context.SaveChangesAsync();

@@ -4,13 +4,14 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="clr-namespace:SoupAndSoupApp.Models"
     xmlns:soupAndSoupApp="clr-namespace:SoupAndSoupApp"
     xmlns:viewModels="clr-namespace:SoupAndSoupApp.ViewModels"
     Title="{Binding Title}"
     Width="480"
-    Height="920"
     x:DataType="viewModels:AddIngredientDialogViewModel"
     Background="White"
+    SizeToContent="Height"
     SystemDecorations="BorderOnly"
     WindowStartupLocation="CenterOwner"
     mc:Ignorable="d">
@@ -84,7 +85,33 @@
             <Style Selector="Image.uploadPhoto:pointerover">
                 <Setter Property="Source" Value="/Assets/camera_icon_pressed.png" />
             </Style>
+
+
+            <Style Selector="ListBox.lbMeasureTypes">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="ItemsPanel">
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" Spacing="8" />
+                    </ItemsPanelTemplate>
+                </Setter>
+                <Setter Property="ItemTemplate">
+                    <DataTemplate DataType="models:MeasureTypeModel">
+                        <StackPanel
+                            Width="70"
+                            Orientation="Vertical"
+                            Spacing="8">
+                            <Image
+                                Width="50"
+                                Height="50"
+                                HorizontalAlignment="Center"
+                                Source="{Binding Icon}" />
+                            <TextBlock HorizontalAlignment="Center" Text="{Binding Title}" />
+                        </StackPanel>
+                    </DataTemplate>
+                </Setter>
+            </Style>
         </Styles>
+
 
     </Window.Styles>
 
@@ -117,32 +144,11 @@
             </StackPanel>
 
             <!--  Тип кількості  -->
-            <StackPanel IsVisible="{Binding HasMultipleMeasureTypes}" Spacing="5">
+            <StackPanel IsVisible="{Binding SelectedUseMeasureType.HasMultipleMeasureTypes}" Spacing="5">
                 <ListBox
-                    Background="Transparent"
-                    ItemsSource="{Binding MeasureTypes}"
-                    SelectedItem="{Binding SelectedMeasureType, Mode=TwoWay}">
-                    <ListBox.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal" Spacing="8" />
-                        </ItemsPanelTemplate>
-                    </ListBox.ItemsPanel>
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <StackPanel
-                                Width="70"
-                                Orientation="Vertical"
-                                Spacing="8">
-                                <Image
-                                    Width="50"
-                                    Height="50"
-                                    HorizontalAlignment="Center"
-                                    Source="{Binding Icon}" />
-                                <TextBlock HorizontalAlignment="Center" Text="{Binding Title}" />
-                            </StackPanel>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
+                    Classes="lbMeasureTypes"
+                    ItemsSource="{Binding SelectedUseMeasureType.MeasureTypes}"
+                    SelectedItem="{Binding SelectedUseMeasureType.Selected, Mode=TwoWay}" />
             </StackPanel>
 
             <!--  Типова порція  -->
@@ -150,7 +156,7 @@
                 <TextBlock
                     Margin="0,0,0,4"
                     IsVisible="{Binding IsAmountVisible}"
-                    Text="{Binding TypicalAmountMeasure, StringFormat='Типова порція в рецепті ({0})'}" />
+                    Text="{Binding SelectedUseMeasureType.Selected.ShortTitle, StringFormat='Типова порція в рецепті ({0})'}" />
                 <TextBlock
                     Margin="0,0,0,4"
                     IsVisible="{Binding IsAmountVisible, Converter={StaticResource InvertBool}}"
@@ -158,9 +164,11 @@
                 <TextBox
                     Height="40"
                     Classes="outlined"
-                    Text="{Binding TypicalAmountInRecipe}"
+                    Text="{Binding SuggestedAmount}"
                     Watermark="" />
             </StackPanel>
+
+            <!--  Ціна і кількість  -->
 
             <TextBlock
                 Margin="0,25,0,0"
@@ -168,16 +176,26 @@
                 FontWeight="SemiBold"
                 Text="Покупка" />
 
-            <!--  Ціна і кількість  -->
             <Grid
                 Margin="0,0,0,4"
                 HorizontalAlignment="Stretch"
-                ColumnDefinitions="Auto Auto *">
+                ColumnDefinitions="Auto Auto *"
+                RowDefinitions="Auto *">
+
+                <ListBox
+                    Background="Transparent"
+                    Classes="lbMeasureTypes"
+                    IsVisible="False"
+                    ItemsSource="{Binding SelectedBuyMeasureType.MeasureTypes}"
+                    SelectedItem="{Binding SelectedBuyMeasureType.Selected, Mode=TwoWay}" />
+
                 <StackPanel
+                    Grid.Row="1"
+                    Grid.Column="0"
                     Width="160"
                     HorizontalAlignment="Stretch"
                     IsVisible="{Binding IsAmountVisible}">
-                    <TextBlock Margin="0,0,0,4" Text="{Binding SelectedMeasureType.ShortTitle, StringFormat='Кількість ({0})'}" />
+                    <TextBlock Margin="0,0,0,4" Text="{Binding SelectedBuyMeasureType.Selected.ShortTitle, StringFormat='Кількість ({0})'}" />
                     <TextBox
                         Height="40"
                         Classes="outlined"
@@ -185,6 +203,7 @@
                 </StackPanel>
 
                 <TextBlock
+                    Grid.Row="1"
                     Grid.Column="1"
                     Width="30"
                     Margin="20,0,0,10"
@@ -193,7 +212,10 @@
                     IsVisible="{Binding IsAmountVisible}"
                     Text="x" />
 
-                <StackPanel Grid.Column="2" HorizontalAlignment="Stretch">
+                <StackPanel
+                    Grid.Row="1"
+                    Grid.Column="2"
+                    HorizontalAlignment="Stretch">
                     <TextBlock Margin="0,0,0,4" Text="Ціна (грн)" />
                     <TextBox
                         Height="40"
@@ -215,14 +237,13 @@
                     <TextBlock FontWeight="Medium" Foreground="{DynamicResource MaterialPrimary}">
                         <TextBlock.Text>
                             <MultiBinding StringFormat="Ціна за {0}: {1:F2} грн">
-                                <Binding Path="SelectedMeasureType.ShortTitle" />
+                                <Binding Path="SelectedUseMeasureType.Selected.ShortTitle" />
                                 <Binding Path="UnitPrice" />
                             </MultiBinding>
                         </TextBlock.Text>
                     </TextBlock>
                 </StackPanel>
             </Border>
-
 
             <StackPanel
                 Margin="0,20,0,0"

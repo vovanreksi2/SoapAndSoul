@@ -10,13 +10,14 @@ namespace SoupAndSoup.Data
         {
             services.AddDbContext<SoapAndSoulContext>(options =>
             {
-                options.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=SoapAndSoulDb;Trusted_Connection=True;")
+                options.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=SoapAndSoulDb_new;Trusted_Connection=True;")
                     .EnableSensitiveDataLogging();
             });
 
             services.AddScoped<RecipeService>();
-            services.AddScoped<IngredientService>();
-            services.AddScoped<IngredientTypeService>();
+            services.AddScoped<ComponentService>();
+            services.AddScoped<ComponentTypeService>();
+            services.AddScoped<MeasureTypesService>();
 
             return services;
         }

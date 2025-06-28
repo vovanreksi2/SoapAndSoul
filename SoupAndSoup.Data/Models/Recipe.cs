@@ -19,15 +19,13 @@ public class Recipe
 
     public decimal Amount { get; set; }
 
-    public decimal UnitCost { get; set; }
-
     public TimeSpan PreparationTime { get; set; }
 
     public bool IsActive { get; set; }
 
     public long Version { get; set; }
 
-    public ICollection<RecipeIngredient> RecipeIngredients { get; set; }
+    public ICollection<RecipeComponent> RecipeComponents { get; set; }
         
     public ICollection<RecipeImage> Images { get; set; } 
 
@@ -37,7 +35,7 @@ public class Recipe
         Version = 1;
         DateOfCreate = DateTime.UtcNow;
 
-        RecipeIngredients = new List<RecipeIngredient>();
+        RecipeComponents = new List<RecipeComponent>();
         Images = new List<RecipeImage>();
     }
 }

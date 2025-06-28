@@ -64,7 +64,7 @@
         <!--  CheckBox  -->
         <ControlTemplate
             x:Key="IngredientCBControlTemplate"
-            x:DataType="models:IngredientModel"
+            x:DataType="models:ComponentModel"
             TargetType="ToggleButton">
 
             <Grid
@@ -185,7 +185,7 @@
         <!--  End  -->
 
         <!--  ListBox  -->
-        <DataTemplate x:Key="IngredientsCBDataTemplate" DataType="models:IngredientModel">
+        <DataTemplate x:Key="IngredientsCBDataTemplate" DataType="models:ComponentModel">
             <ToggleButton
                 Width="{StaticResource IngredientCheckBoxWidth}"
                 Height="{StaticResource IngredientCheckBoxHeight}"
@@ -215,7 +215,7 @@
             </ToggleButton>
         </DataTemplate>
 
-        <DataTemplate x:Key="IngredientsButtonDataTemplate" DataType="models:IngredientModel">
+        <DataTemplate x:Key="IngredientsButtonDataTemplate" DataType="models:ComponentModel">
             <Button
                 Width="{StaticResource IngredientCheckBoxWidth}"
                 Height="{StaticResource IngredientCheckBoxHeight}"

@@ -12,7 +12,7 @@ namespace SoupAndSoupApp.Components
 
         public Control Build(object? param)
         {
-            if (param is IngredientModel item)
+            if (param is ComponentModel item)
             {
                 if (item.IsButton)
                     return ButtonTemplate?.Build(param) ?? new TextBlock { Text = "No ButtonTemplate" };
@@ -25,7 +25,7 @@ namespace SoupAndSoupApp.Components
 
         public bool Match(object? data)
         {
-            return data is IngredientModel;
+            return data is ComponentModel;
         }
     }
 

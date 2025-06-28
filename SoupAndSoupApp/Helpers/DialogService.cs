@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Reactive;
+﻿using System.Reactive;
 using System.Threading.Tasks;
 using SoupAndSoupApp.Models;
 using SoupAndSoupApp.ViewModels;
@@ -12,7 +11,7 @@ public class DialogService : IDialogService
     private readonly MainWindow _mainWindow;
     private readonly AddIngredientDialog _dialog;
     private readonly AddIngredientDialogViewModel _viewModel;
-    private TaskCompletionSource<NewIngredientDto?> _tcs;
+    private TaskCompletionSource<NewComponentDto?> _tcs;
 
     public DialogService(MainWindow mainWindow, AddIngredientDialog dialog, AddIngredientDialogViewModel viewModel)
     {
@@ -47,22 +46,12 @@ public class DialogService : IDialogService
         });
     }
 
-    public async Task<NewIngredientDto?> ShowAddIngredientDialogAsync(SoapTypeComponent type, IEnumerable<MeasureTypeModel> measureTypes)
+    public async Task<NewComponentDto> ShowAddEditComponentDialogAsync(bool isEditMode, ComponentTypeModel componentType, ComponentModel? component = null)
     {
-        _tcs = new TaskCompletionSource<NewIngredientDto?>();
+        _tcs = new TaskCompletionSource<NewComponentDto?>();
 
-        _viewModel.Init(type, measureTypes);
+        await _viewModel.InitAsync(isEditMode, componentType, component);
         await _dialog.ShowDialog(_mainWindow);
-
-        return await _tcs.Task;
-    }
-
-    public async Task<NewIngredientDto?> ShowEditIngredientDialogAsync(IngredientModel ingredientModel, IEnumerable<MeasureTypeModel> soapGroupMeasureTypes)
-    {
-        _tcs = new TaskCompletionSource<NewIngredientDto?>();
-
-        _viewModel.Init(ingredientModel, soapGroupMeasureTypes);
-        await _dialog.ShowDialog<NewIngredientDto?>(_mainWindow);
 
         return await _tcs.Task;
     }

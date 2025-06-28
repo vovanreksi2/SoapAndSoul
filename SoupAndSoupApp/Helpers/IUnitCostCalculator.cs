@@ -5,7 +5,8 @@ namespace SoupAndSoupApp.Helpers;
 
 public  interface IUnitCostCalculator
 {
-    decimal CalculateUnitCost(IEnumerable<IngredientByReceiptModel> recipeComponents, Dictionary<int, IngredientModel> cachedComponents);
+    decimal CalculateUnitCost(IEnumerable<ComponentByRecipeModel> recipeComponents, Dictionary<int, ComponentModel> cachedComponents);
 
-    decimal CalculateUnitCost(IEnumerable<IngredientModel> components);
+    decimal CalculateUnitCost(IEnumerable<ComponentModel> components);
+    decimal CalculateComponentCostForOneMeasure(ComponentType componentType, MeasureType? measureType, decimal buyPrice, decimal buyAmount);
 }

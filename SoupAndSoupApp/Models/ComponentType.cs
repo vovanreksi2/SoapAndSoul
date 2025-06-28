@@ -1,6 +1,6 @@
 ﻿namespace SoupAndSoupApp.Models;
 
-public enum SoapTypeComponent
+public enum ComponentType
 {
     Form = 1,
     CraftingBase,
@@ -10,10 +10,4 @@ public enum SoapTypeComponent
     HerbalExtract,
     Tools,
     Other
-}
-
-public enum RecipeType
-{
-    Soap = 1,
-    Parfum
 }

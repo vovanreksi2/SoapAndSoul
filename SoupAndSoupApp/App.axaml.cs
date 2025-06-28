@@ -59,6 +59,7 @@ public partial class App : Application
         services.AddSingleton<AddIngredientDialogViewModel>();
 
         services.AddSingleton<IUnitCostCalculator, UnitCostCalculator>();
+        services.AddSingleton<MeasureTypeCache>();
 
         services.AddSoupAndSoulDb();
     }

@@ -2,15 +2,15 @@
 
 namespace SoupAndSoup.Data.Models;
 
-public class IngredientImage
+public class ComponentImage
 {
     [Key]
     public int Id { get; set; }
-    public int IngredientId { get; set; }
+    public int ComponentId { get; set; }
 
     [Required]
     public string ImageUrl { get; set; } = string.Empty;
     public string? AltText { get; set; }
 
-    public Ingredient? Ingredient { get; set; }
+    public Component? Component { get; set; }
 }

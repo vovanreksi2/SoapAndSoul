@@ -10,9 +10,9 @@ namespace SoupAndSoupApp.Components;
 
 public partial class IngredientItemsControl : UserControl
 {
-    public static readonly StyledProperty<ObservableCollection<IngredientModel>> IngredientsProperty =
-        AvaloniaProperty.Register<IngredientItemsControl, ObservableCollection<IngredientModel>>(nameof(Ingredients));
-    public ObservableCollection<IngredientModel> Ingredients
+    public static readonly StyledProperty<ObservableCollection<ComponentModel>> IngredientsProperty =
+        AvaloniaProperty.Register<IngredientItemsControl, ObservableCollection<ComponentModel>>(nameof(Ingredients));
+    public ObservableCollection<ComponentModel> Ingredients
     {
         get => GetValue(IngredientsProperty);
         set => SetValue(IngredientsProperty, value);
@@ -46,9 +46,9 @@ public partial class IngredientItemsControl : UserControl
     }
 
 
-    public static readonly StyledProperty<SoapTypeComponent> TypeProperty =
-        AvaloniaProperty.Register<IngredientItemsControl, SoapTypeComponent>(nameof(Type));
-    public SoapTypeComponent Type
+    public static readonly StyledProperty<ComponentType> TypeProperty =
+        AvaloniaProperty.Register<IngredientItemsControl, ComponentType>(nameof(Type));
+    public ComponentType Type
     {
         get => GetValue(TypeProperty);
         set => SetValue(TypeProperty, value);

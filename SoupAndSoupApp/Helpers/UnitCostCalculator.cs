@@ -9,23 +9,23 @@ public class UnitCostCalculator : IUnitCostCalculator
     private const decimal ArrangeAmountOfUseForm = 100m;
     private const decimal DropsInMilliliters = 20;
 
-    public decimal CalculateUnitCost(IEnumerable<IngredientByReceiptModel> recipeComponents, Dictionary<int, IngredientModel> cachedComponents)
+    public decimal CalculateUnitCost(IEnumerable<ComponentByRecipeModel> recipeComponents, Dictionary<int, ComponentModel> cachedComponents)
     {
         var result = 0m;
 
         foreach (var recipeComponent in recipeComponents)
         {
-            if (!cachedComponents.TryGetValue(recipeComponent.IngredientId, out var ingredientModel))
+            if (!cachedComponents.TryGetValue(recipeComponent.ComponentId, out var ingredientModel))
             {
-                Debug.WriteLine($"Ingredient with ID {recipeComponent.IngredientId} not found in cached components.");
+                Debug.WriteLine($"Component with ID {recipeComponent.ComponentId} not found in cached components.");
                 continue; 
             }
 
-            if (ingredientModel.Type == SoapTypeComponent.Form)
+            if (ingredientModel.Type == ComponentType.Form)
             {
                 result += ingredientModel.BuyPrice / ArrangeAmountOfUseForm;
             }
-            else if ((MeasureType)ingredientModel.MeasureType.Id == MeasureType.Milliliter)
+            else if ((MeasureType)ingredientModel.UseMeasureTypeId == MeasureType.Milliliter)
             {
                 result += ingredientModel.Cost * ConvertMilliliterInDrop(recipeComponent.Amount);
             }
@@ -36,17 +36,17 @@ public class UnitCostCalculator : IUnitCostCalculator
         return result;
     }
 
-    public decimal CalculateUnitCost(IEnumerable<IngredientModel> components)
+    public decimal CalculateUnitCost(IEnumerable<ComponentModel> components)
     {
         var result = 0m;
 
         foreach (var recipeComponent in components)
         {
-            if (recipeComponent.Type == SoapTypeComponent.Form)
+            if (recipeComponent.Type == ComponentType.Form)
             {
                 result += recipeComponent.BuyPrice / ArrangeAmountOfUseForm;
             }
-            else if ((MeasureType)recipeComponent.MeasureType.Id == MeasureType.Milliliter)
+            else if ((MeasureType)recipeComponent.UseMeasureTypeId == MeasureType.Milliliter)
             {
                 result += recipeComponent.Cost * ConvertMilliliterInDrop(recipeComponent.BuyAmount);
             }
@@ -60,5 +60,22 @@ public class UnitCostCalculator : IUnitCostCalculator
     private decimal ConvertMilliliterInDrop(decimal amount)
     {
         return amount / DropsInMilliliters;
+    }
+
+    public decimal CalculateComponentCostForOneMeasure(ComponentType componentType, MeasureType? measureType, decimal buyPrice, decimal buyAmount)
+    {
+        if (buyPrice <= 0 || buyAmount <= 0 || measureType is null)
+        {
+            return 0;
+        }
+
+        if (componentType == ComponentType.Form)
+            return buyPrice;
+
+        //If the measure type is Drop, convert the buy amount from milliliters to drops 
+        if (measureType == MeasureType.Drop)
+            return buyPrice / (buyAmount * DropsInMilliliters);
+     
+        return buyPrice / buyAmount;
     }
 }

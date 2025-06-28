@@ -9,18 +9,18 @@ public class RecipeService : RepositoryBase<Recipe>
     public override async Task<Recipe> GetByIdAsync(int id)
     {
         return await _dbSet
-            .Include(r => r.RecipeIngredients)
-            .ThenInclude(ri => ri.Ingredient)
+            .Include(r => r.RecipeComponents)
+            .ThenInclude(ri => ri.Component)
             .Include(r => r.Images)
             .FirstOrDefaultAsync(r => r.Id == id);
     }
 
-    public override async Task<List<Recipe>> GetAllAsync()
+    public override async Task<List<Recipe>> GetAllAsync(bool noTracking = false)
     {
         return await _dbSet
             .Where(r=> r.IsActive)
-            .Include(r => r.RecipeIngredients)
-                .ThenInclude(ri => ri.Ingredient)
+            .Include(r => r.RecipeComponents)
+                .ThenInclude(ri => ri.Component)
                     .ThenInclude(i=> i.Images)
             .Include(r => r.Images)
             .ToListAsync();

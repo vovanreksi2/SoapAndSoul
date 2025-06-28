@@ -4,7 +4,7 @@ using ReactiveUI;
 
 namespace SoupAndSoupApp.Models;
 
-public class IngredientModel : ReactiveObject
+public class ComponentModel : ReactiveObject
 {
     public int Id { get; set; }
 
@@ -31,13 +31,19 @@ public class IngredientModel : ReactiveObject
         get => _buyAmount;
         set => this.RaiseAndSetIfChanged(ref _buyAmount, value);
     }
-
-    public MeasureTypeModel MeasureType { get; set; }
-    public decimal Cost { get; set; }
-    public decimal TypicalAmountInRecipe { get; set; }
     public decimal BuyPrice { get; set; }
 
-    public SoapTypeComponent Type { get; set; }
+    public int UseMeasureTypeId { get; set; }
+    public string UseMeasureTypeShortTitle { get; set; } 
+
+    public int BuyMeasureTypeId { get; set; }
+    public string BuyMeasureTypeShortTitle { get; set; }
+
+
+    public decimal Cost { get; set; }
+    public decimal SuggestedAmount { get; set; }
+
+    public ComponentType Type { get; set; }
 
     public bool IsButton { get; set; }
     public bool IsSelected

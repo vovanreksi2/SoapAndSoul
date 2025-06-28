@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Diagnostics;
+using Microsoft.EntityFrameworkCore;
 using SoupAndSoup.Data.Models;
 
 namespace SoupAndSoup.Data;
@@ -6,78 +7,135 @@ namespace SoupAndSoup.Data;
 public class SoapAndSoulContext : DbContext
 {
     public DbSet<Recipe> Recipes { get; set; }
-    public DbSet<Ingredient> Ingredients { get; set; }
-    public DbSet<IngredientType> IngredientTypes { get; set; }
-    public DbSet<AmountType> AmountTypes { get; set; }
-    public DbSet<RecipeIngredient> RecipeIngredients { get; set; }
-    public DbSet<IngredientImage> IngredientImages { get; set; }
+    public DbSet<Component> Components { get; set; }
+    public DbSet<ComponentType> ComponentTypes { get; set; }
+    public DbSet<MeasureType> MeasureTypes { get; set; }
+    public DbSet<CosmeticType> CosmeticTypes { get; set; }
+    public DbSet<RecipeComponent> RecipeComponents { get; set; }
+    public DbSet<ComponentImage> ComponentImages { get; set; }
     public DbSet<RecipeImage> RecipeImages { get; set; }
 
     public SoapAndSoulContext(DbContextOptions<SoapAndSoulContext> options)
         : base(options)
     {
+        Debug.WriteLine("==> Using DB: " + Database.GetDbConnection().ConnectionString);
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         // Index on Recipe.Name for fast searching
-        modelBuilder.Entity<Recipe>()
-            .HasIndex(r => r.Name);
-
-        modelBuilder.Entity<Ingredient>(entity =>
+        modelBuilder.Entity<Recipe>(entity =>
         {
-            // Indexes on Ingredient.Name and Ingredient.IngredientTypeID
-            entity.HasIndex(i => i.Name);
-            entity.HasIndex(i => i.IngredientTypeId);
-
-            // Relationship: Ingredient -> IngredientTypes
-            entity.HasOne(i => i.IngredientType)
-                .WithMany(it => it.Ingredients)
-                .HasForeignKey(i => i.IngredientTypeId);
-
-            // Relationship: Ingredient -> AmountTypes
-            entity.HasOne(i=>i.AmountType)
-                .WithMany(at => at.Ingredients)
-                .HasForeignKey(i => i.AmountTypeId);
+            entity.HasIndex(r => r.Name);
+            entity.HasQueryFilter(r => r.IsActive);
         });
 
-        modelBuilder.Entity<RecipeIngredient>(entity =>
+        modelBuilder.Entity<Component>(entity =>
         {
-            // Composite primary key for RecipeIngredient (many-to-many)
-            entity.HasKey(ri => new { RecipeID = ri.RecipeId, IngredientID = ri.IngredientId });
+            // Indexes on Component.Name and Component.ComponentTypeID
+            entity.HasIndex(i => i.Name);
+            entity.HasIndex(i => i.ComponentTypeId);
+            entity.HasIndex(i => i.UseMeasureTypeId);
 
-            // Relationship: RecipeIngredient -> Recipe
+            entity.HasQueryFilter(i => i.IsActive); // Filter for active components
+
+            // Relationship: Component -> ComponentTypesForUse
+            entity.HasOne(i => i.ComponentType)
+                .WithMany(it => it.Components)
+                .HasForeignKey(i => i.ComponentTypeId);
+
+            // Relationship: Component -> UseMeasureTypes
+            entity.HasOne(i=>i.UseMeasureType)
+                .WithMany(at => at.ComponentsUsingAsUseMeasureType)
+                .HasForeignKey(i => i.UseMeasureTypeId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // Relationship: Component -> BuyMeasureTypes
+            entity.HasOne(i=>i.BuyMeasureType)
+                .WithMany(at => at.ComponentsUsingAsBuyMeasureType)
+                .HasForeignKey(i => i.BuyMeasureTypeId)
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<RecipeComponent>(entity =>
+        {
+            // Composite primary key for RecipeComponent (many-to-many)
+            entity.HasKey(ri => new { RecipeID = ri.RecipeId, ComponentID = ri.ComponentId });
+
+            // Relationship: RecipeComponent -> Recipe
             entity.HasOne(ri => ri.Recipe)
-                .WithMany(r => r.RecipeIngredients)
+                .WithMany(r => r.RecipeComponents)
                 .HasForeignKey(ri => ri.RecipeId);
 
-            // Relationship: RecipeIngredient -> Ingredient
-            entity.HasOne(ri => ri.Ingredient)
-                .WithMany(i => i.RecipeIngredients)
-                .HasForeignKey(ri => ri.IngredientId);
+            // Relationship: RecipeComponent -> Component
+            entity.HasOne(ri => ri.Component)
+                .WithMany(i => i.RecipeComponents)
+                .HasForeignKey(ri => ri.ComponentId);
         });
 
-        modelBuilder.Entity<IngredientType>(entity =>
+        modelBuilder.Entity<ComponentType>(entity =>
         {
-            // Relationship: IngredientTypes -> AmountType
-            entity.HasMany(i => i.AmountTypes)
-                .WithMany(at => at.IngredientTypes)
+            // Relationship: ComponentTypesForUse -> UseMeasureType
+            entity.HasMany(i => i.UseMeasureTypes)
+                .WithMany(at => at.ComponentTypesForUse)
                 .UsingEntity<Dictionary<string, object>>(
-                    "IngredientTypeAmountTypes",
+                    "ComponentTypeUseMeasureTypes",
                     j => j
-                        .HasOne<AmountType>()
+                        .HasOne<MeasureType>()
                         .WithMany()
-                        .HasForeignKey("AmountTypesId")
+                        .HasForeignKey("MeasureTypesId")
+                        .OnDelete(DeleteBehavior.Restrict),
+                    j => j
+                        .HasOne<ComponentType>()
+                        .WithMany()
+                        .HasForeignKey("ComponentTypesId")
+                        .OnDelete(DeleteBehavior.Restrict),
+                    j =>
+                    {
+                        j.HasKey("ComponentTypesId", "MeasureTypesId"); 
+                        j.ToTable("ComponentTypeUseMeasureTypes");
+                    });
+
+            // Relationship: ComponentTypesForUse -> UseMeasureType
+            entity.HasMany(i => i.BuyMeasureTypes)
+                .WithMany(at => at.ComponentTypesForBuy)
+                .UsingEntity<Dictionary<string, object>>(
+                    "ComponentTypeBuyMeasureTypes",
+                    j => j
+                        .HasOne<MeasureType>()
+                        .WithMany()
+                        .HasForeignKey("MeasureTypesId")
+                        .OnDelete(DeleteBehavior.Restrict),
+                    j => j
+                        .HasOne<ComponentType>()
+                        .WithMany()
+                        .HasForeignKey("ComponentTypesId")
+                        .OnDelete(DeleteBehavior.Restrict),
+                    j =>
+                    {
+                        j.HasKey("ComponentTypesId", "MeasureTypesId"); 
+                        j.ToTable("ComponentTypeBuyMeasureTypes");
+                    });
+
+            // Relationship: ComponentTypesForUse -> CosmeticType 
+            entity.HasMany(i => i.CosmeticTypes)
+                .WithMany(at => at.ComponentTypes)
+                .UsingEntity<Dictionary<string, object>>(
+                    "ComponentTypeCosmeticTypes",
+                    j => j
+                        .HasOne<CosmeticType>()
+                        .WithMany()
+                        .HasForeignKey("CosmeticTypesId")
                         .OnDelete(DeleteBehavior.Cascade),
                     j => j
-                        .HasOne<IngredientType>()
+                        .HasOne<ComponentType>()
                         .WithMany()
-                        .HasForeignKey("IngredientTypesId")
+                        .HasForeignKey("ComponentTypesId")
                         .OnDelete(DeleteBehavior.Cascade),
                     j =>
                     {
-                        j.HasKey("IngredientTypesId", "AmountTypesId"); 
-                        j.ToTable("IngredientTypeAmountTypes");
+                        j.HasKey("ComponentTypesId", "CosmeticTypesId");
+                        j.ToTable("ComponentTypeCosmeticTypes");
                     });
         });
 
@@ -93,14 +151,14 @@ public class SoapAndSoulContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<IngredientImage>(entity =>
+        modelBuilder.Entity<ComponentImage>(entity =>
         {
             entity.HasKey(i => i.Id);
-            entity.HasIndex(i => i.IngredientId);
+            entity.HasIndex(i => i.ComponentId);
 
-            entity.HasOne(i => i.Ingredient)
+            entity.HasOne(i => i.Component)
                 .WithMany(i => i.Images)
-                .HasForeignKey(i => i.IngredientId)
+                .HasForeignKey(i => i.ComponentId)
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.Cascade);
         });
@@ -112,35 +170,76 @@ public class SoapAndSoulContext : DbContext
 
     private void SeedData(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<AmountType>().HasData(
-            new AmountType { Id = 1, Name = "Грам", ShortName = "г" },
-            new AmountType { Id = 2, Name = "Мілілітр", ShortName = "мл" },
-            new AmountType { Id = 3, Name = "Штука", ShortName = "шт" }
+        modelBuilder.Entity<CosmeticType>().HasData(
+            new CosmeticType{Id = 1, Name = "Мило"},
+            new CosmeticType{Id = 2, Name = "Духи"}
         );
 
-        modelBuilder.Entity<IngredientType>().HasData(
-            new IngredientType { Id = 1, Name = "Форма для мила", ShortName = "форму", Order = 1 },
-            new IngredientType { Id = 2, Name = "Мильна основа", ShortName = "основу", Order = 2 },
-            new IngredientType { Id = 3, Name = "Запашка", ShortName = "запашку", Order = 3 },
-            new IngredientType { Id = 4, Name = "Пігмент", ShortName = "пігмент", Order = 4 },
-            new IngredientType { Id = 5, Name = "Ефірне масло", ShortName = "ефірне масло", Order = 5 },
-            new IngredientType { Id = 6, Name = "Екстракт", ShortName = "екстракт", Order = 6 },
-            new IngredientType { Id = 7, Name = "Інструменти", ShortName = "інструмент", Order = 7 },
-            new IngredientType { Id = 8, Name = "Інші", ShortName = "", Order = 8 }
+        modelBuilder.Entity<MeasureType>().HasData(
+            new MeasureType { Id = 1, Name = "Грам", ShortName = "г" },
+            new MeasureType { Id = 2, Name = "Мілілітр", ShortName = "мл" },
+            new MeasureType { Id = 3, Name = "Краплі", ShortName = "крап" },
+            new MeasureType { Id = 4, Name = "Штука", ShortName = "шт" }
         );
 
-        modelBuilder.Entity("IngredientTypeAmountTypes").HasData(
-            new { IngredientTypesId = 1, AmountTypesId = 3 }, // Форма - шт
-            new { IngredientTypesId = 2, AmountTypesId = 1 }, // Основа - г
-            new { IngredientTypesId = 3, AmountTypesId = 2 }, // Запашка - мл
-            new { IngredientTypesId = 4, AmountTypesId = 2 }, // Пігмент - мл
-            new { IngredientTypesId = 4, AmountTypesId = 1 }, // Пігмент - г
-            new { IngredientTypesId = 5, AmountTypesId = 2 }, // Еф.масло - мл
-            new { IngredientTypesId = 6, AmountTypesId = 2 }, // Екстракт - мл
-            new { IngredientTypesId = 7, AmountTypesId = 3 }, // Інструменти - шт
-            new { IngredientTypesId = 8, AmountTypesId = 3 }  // Інші - шт
+        modelBuilder.Entity<ComponentType>().HasData(
+            new ComponentType { Id = 1, Name = "Форма для мила", ShortName = "форму", Order = 1,  BuyAmount = 1, IsSingleSelected = true},
+            new ComponentType { Id = 2, Name = "Мильна основа", ShortName = "основу", Order = 2, BuyAmount = 200 },
+            new ComponentType { Id = 3, Name = "Запашка", ShortName = "запашку", Order = 3, BuyAmount = 10 },
+            new ComponentType { Id = 4, Name = "Пігмент", ShortName = "пігмент", Order = 4, BuyAmount = 10 },
+            new ComponentType { Id = 5, Name = "Ефірне масло", ShortName = "ефірне масло", Order = 5, BuyAmount = 10 },
+            new ComponentType { Id = 6, Name = "Екстракт", ShortName = "екстракт", Order = 6 , BuyAmount = 10 },
+            new ComponentType { Id = 7, Name = "Інструменти", ShortName = "інструмент", Order = 7, BuyAmount = 1 },
+            new ComponentType { Id = 8, Name = "Інші", ShortName = "", Order = 8 , BuyAmount = 1 },
+
+            new ComponentType { Id = 9, Name = "Флакон для парфумів", ShortName = "флакон", Order = 1, BuyAmount = 1 , IsSingleSelected = true},
+            new ComponentType { Id = 10, Name = "Основа для парфумів", ShortName = "основу", Order = 2 , BuyAmount = 500 }
         );
 
+        modelBuilder.Entity("ComponentTypeUseMeasureTypes").HasData(
+            new { ComponentTypesId = 1, MeasureTypesId = 4 }, // Форма - шт
+            new { ComponentTypesId = 2, MeasureTypesId = 1 }, // Основа - г
+            new { ComponentTypesId = 3, MeasureTypesId = 3 }, // Запашка - мл
+            new { ComponentTypesId = 4, MeasureTypesId = 3 }, // Пігмент - крап
+            new { ComponentTypesId = 4, MeasureTypesId = 1 }, // Пігмент - крап
+            new { ComponentTypesId = 5, MeasureTypesId = 3 }, // Еф.масло - крап
+            new { ComponentTypesId = 6, MeasureTypesId = 3 }, // Екстракт - крап
+            new { ComponentTypesId = 7, MeasureTypesId = 4 }, // Інструменти - шт
+            new { ComponentTypesId = 8, MeasureTypesId = 4 }, // Інші - шт
+            
+            new { ComponentTypesId = 9, MeasureTypesId = 4 },  //Флакон для парфумів- шт
+            new { ComponentTypesId = 10, MeasureTypesId = 1 } // Основа для парфумів - г
+        );        
+        
+        modelBuilder.Entity("ComponentTypeBuyMeasureTypes").HasData(
+            new { ComponentTypesId = 1, MeasureTypesId = 4 }, // Форма - шт
+            new { ComponentTypesId = 2, MeasureTypesId = 1 }, // Основа - г
+            new { ComponentTypesId = 3, MeasureTypesId = 2 }, // Запашка - мл
+            new { ComponentTypesId = 4, MeasureTypesId = 2 }, // Пігмент - крап
+            new { ComponentTypesId = 4, MeasureTypesId = 1 }, // Пігмент - г
+            new { ComponentTypesId = 5, MeasureTypesId = 2 }, // Еф.масло - мл
+            new { ComponentTypesId = 6, MeasureTypesId = 2 }, // Екстракт - мл
+            new { ComponentTypesId = 7, MeasureTypesId = 4 }, // Інструменти - шт
+            new { ComponentTypesId = 8, MeasureTypesId = 4 }, // Інші - шт
+            
+            new { ComponentTypesId = 9, MeasureTypesId = 4 },  //Флакон для парфумів- шт
+            new { ComponentTypesId = 10, MeasureTypesId = 1 } // Основа для парфумів - г
+        );
+
+        modelBuilder.Entity("ComponentTypeCosmeticTypes").HasData(
+            new { ComponentTypesId = 1, CosmeticTypesId = 1 }, 
+            new { ComponentTypesId = 2, CosmeticTypesId = 1 }, 
+            new { ComponentTypesId = 3, CosmeticTypesId = 1 }, 
+            new { ComponentTypesId = 3, CosmeticTypesId = 2 }, 
+            new { ComponentTypesId = 4, CosmeticTypesId = 1 }, 
+            new { ComponentTypesId = 5, CosmeticTypesId = 1 }, 
+            new { ComponentTypesId = 6, CosmeticTypesId = 1 }, 
+            new { ComponentTypesId = 7, CosmeticTypesId = 1 }, 
+            new { ComponentTypesId = 8, CosmeticTypesId = 1 }, 
+
+            new { ComponentTypesId = 9, CosmeticTypesId = 2 }, 
+            new { ComponentTypesId = 10, CosmeticTypesId = 2 }
+        );
 
         base.OnModelCreating(modelBuilder); 
     }

@@ -2,32 +2,30 @@
 using SoupAndSoup.Data;
 using SoupAndSoup.Data.Models;
 
-public class IngredientService : RepositoryBase<Ingredient>
+public class ComponentService : RepositoryBase<Component>
 {
-    public IngredientService(SoapAndSoulContext context) : base(context) { }
+    public ComponentService(SoapAndSoulContext context) : base(context) { }
 
-    public override async Task<Ingredient> GetByIdAsync(int id)
+    public override async Task<Component> GetByIdAsync(int id)
     {
         return await _dbSet
-                .Include(i => i.IngredientType)
+                .Include(i => i.ComponentType)
                 .Include(i => i.Images)
-                .Include(i => i.AmountType)
 
             .FirstOrDefaultAsync(i => i.Id == id);
     }
 
-    public override  Task<List<Ingredient>> GetAllAsync()
+    public Task<List<Component>> GetAllAsync(int cosmeticType)
     {
         return _dbSet
-            .Where(i => i.IsActive) // Only get active ingredients
-                .Include(i => i.IngredientType)
-                .Include(i => i.AmountType)
+            .Where(i => i.ComponentType.CosmeticTypes.Any(c => c.Id == cosmeticType))
+                .Include(i => i.ComponentType)
                 .Include(i => i.Images)
             .AsNoTracking() // Use AsNoTracking for read-only operations
             .ToListAsync();
     }
 
-    public override async Task<bool> UpdateAsync(Ingredient entity)
+    public override async Task<bool> UpdateAsync(Component entity)
     {
         if (entity == null) throw new ArgumentNullException(nameof(entity));
 
@@ -37,7 +35,8 @@ public class IngredientService : RepositoryBase<Ingredient>
         existing.Cost = entity.Cost;
         existing.BuyAmount = entity.BuyAmount;
         existing.BuyPrice = entity.BuyPrice;
-        existing.TypicalAmountInRecipe = entity.TypicalAmountInRecipe;
+        existing.SuggestedAmount = entity.SuggestedAmount;
+        existing.UseMeasureTypeId = entity.UseMeasureTypeId;
 
         if (entity.Images.Any())
             existing.Images = entity.Images; 

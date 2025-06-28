@@ -1,19 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
-using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Media.Imaging;
-using Avalonia.Platform.Storage;
 using DynamicData;
 using ReactiveUI;
 using SoupAndSoupApp.Helpers;
 using SoupAndSoupApp.Models;
+using ComponentType = SoupAndSoupApp.Models.ComponentType;
+using MeasureType = SoupAndSoupApp.Models.MeasureType;
 
 namespace SoupAndSoupApp.ViewModels
 {
@@ -51,18 +49,17 @@ namespace SoupAndSoupApp.ViewModels
             get => _buyAmount;
             set
             {
-                ReCalculateUnitPrice(value, BuyPrice);
+                ReCalculateUnitPrice(_currentComponentType, SelectedUseMeasureType?.Selected?.MeasureType ?? null, BuyPrice, value);
                 this.RaiseAndSetIfChanged(ref _buyAmount, value);
             }
         }
-
 
         public decimal BuyPrice
         {
             get => _buyPrice;
             set
             {
-                ReCalculateUnitPrice(BuyAmount, value);
+                ReCalculateUnitPrice(_currentComponentType, SelectedUseMeasureType?.Selected?.MeasureType ?? null, value, BuyAmount);
                 this.RaiseAndSetIfChanged(ref _buyPrice, value);
             }
         }
@@ -73,18 +70,12 @@ namespace SoupAndSoupApp.ViewModels
             set => this.RaiseAndSetIfChanged(ref _unitPrice, value);
         }
 
-        public decimal TypicalAmountInRecipe
+        public decimal SuggestedAmount
         {
-            get => _typicalAmountInRecipe;
-            set => this.RaiseAndSetIfChanged(ref _typicalAmountInRecipe, value);
+            get => _suggestedAmount;
+            set => this.RaiseAndSetIfChanged(ref _suggestedAmount, value);
         }
-
-        public string TypicalAmountMeasure
-        {
-            get => _typicalAmountMeasure;
-            set => this.RaiseAndSetIfChanged(ref _typicalAmountMeasure, value);
-        }
-
+         
         public string Title
         {
             get => _title;
@@ -103,146 +94,96 @@ namespace SoupAndSoupApp.ViewModels
             set => this.RaiseAndSetIfChanged(ref _isEditMode, value);
         }
 
-        #region MeasureTypeModel
-
-        public ObservableCollection<MeasureTypeModel> MeasureTypes { get; } = new();
-
-
-        private MeasureTypeModel? _selectedMeasureType;
-        public MeasureTypeModel? SelectedMeasureType
+        public MeasureTypeVM SelectedUseMeasureType
         {
-            get => _selectedMeasureType;
-            set
-            {
-                if (_selectedMeasureType == value || value is null) return;
-
-                TypicalAmountMeasure = (MeasureType)value.Id switch
-                {
-                    MeasureType.Gram => value.ShortTitle,
-                    MeasureType.Milliliter => "крап",
-                    MeasureType.Piece => value.ShortTitle,
-                    _ => throw new ArgumentOutOfRangeException()
-                };
-                this.RaiseAndSetIfChanged(ref _selectedMeasureType, value);
-            }
+            get => _selectedUseMeasureType;
+            set => this.RaiseAndSetIfChanged(ref _selectedUseMeasureType, value);
         }
 
-
-        private bool _hasMultipleMeasureTypes;
-        public bool HasMultipleMeasureTypes
+        public MeasureTypeVM SelectedBuyMeasureType
         {
-            get => _hasMultipleMeasureTypes;
-            private set => this.RaiseAndSetIfChanged(ref _hasMultipleMeasureTypes, value);
+            get => _selectedBuyMeasureType;
+            set => this.RaiseAndSetIfChanged(ref _selectedBuyMeasureType, value);
         }
 
-        #endregion
-
-        public ReactiveCommand<Unit, NewIngredientDto?> ConfirmCommand { get; }
+        public ReactiveCommand<Unit, NewComponentDto?> ConfirmCommand { get; }
         public ReactiveCommand<Unit, Unit> CancelCommand { get; }
 
-        public Interaction<NewIngredientDto?, NewIngredientDto?> ConfirmInteraction { get; } = new();
+        public Interaction<NewComponentDto?, NewComponentDto?> ConfirmInteraction { get; } = new();
         public Interaction<Unit, Unit> CancelInteraction { get; } = new();
 
+        
+        public AddIngredientDialogViewModel() { }
 
-        public bool CanConfirm => !string.IsNullOrWhiteSpace(Name) && BuyPrice > 0 && BuyAmount > 0 && SelectedMeasureType!= null && TypicalAmountInRecipe > 0;
-
-
-        public AddIngredientDialogViewModel()
+        public AddIngredientDialogViewModel(MeasureTypeCache measureTypeCache, IUnitCostCalculator costCalculator)
         {
-            var canConfirm = this.WhenAnyValue(
+            _measureTypeCache = measureTypeCache;
+            _costCalculator = costCalculator;
+            
+            SelectedBuyMeasureType = new MeasureTypeVM();
+            SelectedUseMeasureType = new MeasureTypeVM();
+            SelectedUseMeasureType.WhenAnyValue(x => x.Selected)
+                .Subscribe(_ =>
+                {
+                    if (SelectedUseMeasureType.Selected == null) return;
+
+                    SelectedBuyMeasureType.Selected = SelectedUseMeasureType.Selected.MeasureType == MeasureType.Drop
+                        ? SelectedBuyMeasureType.MeasureTypes.FirstOrDefault(measureType => measureType.MeasureType == MeasureType.Milliliter)
+                        : SelectedBuyMeasureType.MeasureTypes.FirstOrDefault(measureType => measureType.MeasureType == SelectedUseMeasureType.Selected.MeasureType);
+
+                    ReCalculateUnitPrice(_currentComponentType, SelectedUseMeasureType.Selected.MeasureType, BuyPrice, BuyAmount);
+                })
+                .DisposeWith(Disposables);
+
+            ConfirmCommand = ReactiveCommand.CreateFromTask(ConfirmAsync, this.WhenAnyValue(
                 x => x.Name,
                 x => x.BuyPrice,
                 x => x.BuyAmount,
-                x => x.SelectedMeasureType,
-                x => x.TypicalAmountInRecipe,
-                (name, price, amount, measure, typical) =>
+                x => x.SelectedUseMeasureType.Selected,
+                x => x.SelectedBuyMeasureType.Selected,
+                x => x.SuggestedAmount,
+                (name, price, amount, useMeasure, buyMeasure, typical) =>
                     !string.IsNullOrWhiteSpace(name) &&
                     price > 0 &&
                     amount > 0 &&
-                    measure != null &&
-                    typical > 0
-            );
+                    useMeasure != null &&
+                    buyMeasure != null &&
+                    typical > 0));
 
-            ConfirmCommand = ReactiveCommand.CreateFromTask(ConfirmAsync, canConfirm);
             CancelCommand = ReactiveCommand.CreateFromTask(CancelAsync);
+
+            Reset();
         }
 
-        public void Init(IngredientModel ingredient, IEnumerable<MeasureTypeModel> measureTypes)
+        public async Task InitAsync(bool isEditMode, ComponentTypeModel componentType, ComponentModel? component)
         {
-            Init(ingredient.Type, measureTypes);
+            await InitMeasureTypes(SelectedUseMeasureType, componentType.UseMeasureTypesId);
+            await InitMeasureTypes(SelectedBuyMeasureType, componentType.BuyMeasureTypesId);
+             
+            _currentComponentType = componentType.Type;
+            IsEditMode = isEditMode;
 
-            BuyPrice = ingredient.BuyPrice;
-            BuyAmount = ingredient.Type == SoapTypeComponent.Form ? BuyAmount : ingredient.BuyAmount;
-            Name = ingredient.Name;
-            UnitPrice = ingredient.Cost;
-            Photo = ingredient.ImagePath;
-            TypicalAmountInRecipe = ingredient.TypicalAmountInRecipe;
-            SelectedMeasureType = ingredient.MeasureType;
-            
-            IsEditMode = true;
-        }
+            Title = isEditMode ? $"Редагувати {componentType.ShortTitle}" : $"Додати {componentType.ShortTitle}";
+            IsAmountVisible = !componentType.IsSingleSelected;
 
-
-        public void Init(SoapTypeComponent ingredientType, IEnumerable<MeasureTypeModel> measureTypes)
-        {
-            MeasureTypes.Clear();
-            MeasureTypes.AddRange(measureTypes.Select(_ => new MeasureTypeModel(_.Id, _.Title, _.ShortTitle, _.DisplayTitle, GetBitmapByMeasureType(_.Id))));
-
-            //MeasureTypes.AddRange(new[]
-            //{
-            //    new MeasureTypeModel(1, "Грами", "гр",GetBitmapByMeasureType(1)),
-            //    new MeasureTypeModel(2, "Мілілітри", "мл", GetBitmapByMeasureType(2)),
-            //    new MeasureTypeModel(3, "Штуки", "шт", GetBitmapByMeasureType(3)),
-            //    new MeasureTypeModel(4, "Краплі", "крап", GetBitmapByMeasureType(4)),
-            //});
-
-            SelectedMeasureType = MeasureTypes.Count > 0 ? MeasureTypes.FirstOrDefault() : null;
-            HasMultipleMeasureTypes = MeasureTypes.Count > 1;
-
-            IsAmountVisible = true;
-            Title = IsEditMode ? "Редагувати " : "Додати ";
-            switch (ingredientType)
+            if (component != null)
             {
-                case SoapTypeComponent.Form:
-                    Title += "форму";
-                    IsAmountVisible = false;
-                    BuyAmount = 1;
-                    break;
-                case SoapTypeComponent.CraftingBase:
-                    Title += "основу";
-                    BuyAmount = 200;
-                    break;
-                case SoapTypeComponent.Pigment:
-                    Title += "пігмент";
-                    BuyAmount = 10;
-                    break;
-                case SoapTypeComponent.EssentialOil:
-                    Title += "запашку";
-                    BuyAmount = 10;
-                    break;
-                case SoapTypeComponent.FragranceOil:
-                    Title += "ефірне масло";
-                    BuyAmount = 10;
-                    break;
-                case SoapTypeComponent.HerbalExtract:
-                    Title += "екстракт";
-                    BuyAmount = 10;
-                    break;
-                case SoapTypeComponent.Tools:
-                    Title += "інструмент";
-                    IsAmountVisible = false;
-                    BuyAmount = 1;
-                    break;
-                case SoapTypeComponent.Other:  
-                    Title += "інший компонент";
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(ingredientType), ingredientType, null);
+                BuyPrice = component.BuyPrice;
+                BuyAmount = component.Type == ComponentType.Form ? BuyAmount : component.BuyAmount;
+                Name = component.Name;
+                UnitPrice = component.Cost;
+                Photo = component.ImagePath;
+                SuggestedAmount = component.SuggestedAmount;
+                
+                SelectedUseMeasureType.Selected = SelectedUseMeasureType.MeasureTypes.FirstOrDefault(m => m.Id == component.UseMeasureTypeId);
+                SelectedBuyMeasureType.Selected = SelectedBuyMeasureType.MeasureTypes.FirstOrDefault(m => m.Id == component.BuyMeasureTypeId);
             }
-
-            Photo = ImageHelper.LoadFromResource(NoImage_Component_Image);
+            else
+            {
+                Photo = ImageHelper.LoadFromResource(NoImage_Component_Image);
+                BuyAmount = componentType.BuyAmount > 0 ? componentType.BuyAmount : 1;
+            }
         }
-
 
         public void Reset()
         {
@@ -251,56 +192,54 @@ namespace SoupAndSoupApp.ViewModels
             BuyPrice = 0;
             BuyAmount = 0;
             UnitPrice = 0;
-            TypicalAmountInRecipe = 0;
-            SelectedMeasureType = null;
+            SuggestedAmount = 0;
             IsAmountVisible = true;
 
-            MeasureTypes.Clear();
-            HasMultipleMeasureTypes = false;
+            SelectedUseMeasureType.MeasureTypes.Clear();
+            SelectedUseMeasureType.Selected = null;
+
+            SelectedBuyMeasureType.MeasureTypes.Clear();
+            SelectedBuyMeasureType.Selected = null;
         }
 
-        private void ReCalculateUnitPrice(decimal amount, decimal price)
+        private void ReCalculateUnitPrice(ComponentType componentType, MeasureType? measureType, decimal buyPrice, decimal buyAmount)
         {
-            UnitPrice = amount > 0
-                ? price / amount
-                : 0;
+            UnitPrice = _costCalculator.CalculateComponentCostForOneMeasure(componentType, measureType, buyPrice, buyAmount);
         }
 
+        private async Task InitMeasureTypes(MeasureTypeVM measureTypeVm, IEnumerable<int> ids)
+        {
+            var selectedUseMeasureTypes = ids.Select(_measureTypeCache.GetOrAddAsync);
+
+            measureTypeVm.MeasureTypes.AddRange(await Task.WhenAll(selectedUseMeasureTypes));
+            measureTypeVm.HasMultipleMeasureTypes = measureTypeVm.MeasureTypes.Count > 1;
+            measureTypeVm.Selected = measureTypeVm.MeasureTypes.FirstOrDefault() ?? throw new ArgumentException("Measure type must be selected.");
+        }
 
         private async Task CancelAsync()
         {
             await CancelInteraction.Handle(Unit.Default); 
         }
 
-        private async Task<NewIngredientDto?> ConfirmAsync()
+        private async Task<NewComponentDto?> ConfirmAsync()
         {
-            var newIngredient = new NewIngredientDto
+            var newIngredient = new NewComponentDto
             {
                 Name = Name,
                 Cost = UnitPrice,
                 ImagePath = NewImagePath,
-                MeasureType = SelectedMeasureType,
                 BuyAmount = BuyAmount,
                 BuyPrice = BuyPrice,
-                TypicalAmountInRecipe = TypicalAmountInRecipe, 
+                SuggestedAmount = SuggestedAmount, 
+
+                BuyMeasureType = SelectedBuyMeasureType.Selected ?? throw new ArgumentException("Buy measure type must be selected."),
+                UseMeasureType = SelectedUseMeasureType.Selected ?? throw new ArgumentException("Use measure type must be selected.")
             };
 
             await ConfirmInteraction.Handle(newIngredient);
 
-            return (NewIngredientDto?)null;
+            return (NewComponentDto?)null;
         }
-
-        private Bitmap GetBitmapByMeasureType(int id)
-        {
-            return (MeasureType)id switch
-            {
-                MeasureType.Gram => ImageHelper.LoadFromResource("Assets/Gram.png"),
-                MeasureType.Milliliter => ImageHelper.LoadFromResource("Assets/Milliliter.png"),
-                MeasureType.Piece => ImageHelper.LoadFromResource("Assets/Gram.png"),
-                _ => throw new ArgumentOutOfRangeException(),
-            };
-        }
-
 
         private decimal _buyAmount;
         private decimal _buyPrice;
@@ -308,10 +247,15 @@ namespace SoupAndSoupApp.ViewModels
         private string _name = "";
         private Bitmap? _photo = null;
         private string _title;
-        private decimal _typicalAmountInRecipe;
+        private decimal _suggestedAmount;
         private bool _isAmountVisible;
         private string _newImagePath;
-        private string _typicalAmountMeasure;
         private bool _isEditMode;
+        private readonly MeasureTypeCache _measureTypeCache;
+        private readonly IUnitCostCalculator _costCalculator;
+
+        private MeasureTypeVM _selectedUseMeasureType;
+        private MeasureTypeVM _selectedBuyMeasureType;
+        private ComponentType _currentComponentType;
     }
 }
