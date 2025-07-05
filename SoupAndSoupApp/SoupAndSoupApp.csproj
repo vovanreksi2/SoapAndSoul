@@ -29,6 +29,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="Components\SoapToast.axaml.cs">
+      <DependentUpon>SoapToast.axaml</DependentUpon>
+    </Compile>
     <Compile Update="Views\SoapDesignerView.axaml.cs">
       <DependentUpon>SoapDesignerView.axaml</DependentUpon>
     </Compile>

@@ -10,36 +10,36 @@ public class DialogService : IDialogService
 {
     private readonly MainWindow _mainWindow;
     private readonly AddIngredientDialog _dialog;
-    private readonly AddIngredientDialogViewModel _viewModel;
+    private readonly AddIngredientDialogViewModel _dialogViewModel;
     private TaskCompletionSource<NewComponentDto?> _tcs;
 
-    public DialogService(MainWindow mainWindow, AddIngredientDialog dialog, AddIngredientDialogViewModel viewModel)
+    public DialogService(MainWindow mainWindow, AddIngredientDialog dialog, AddIngredientDialogViewModel dialogViewModel)
     {
         _mainWindow = mainWindow;
 
-        _viewModel = viewModel;
+        _dialogViewModel = dialogViewModel;
         _dialog = dialog;
-        _dialog.DataContext = _viewModel;
+        _dialog.DataContext = _dialogViewModel;
 
         _mainWindow.Closed += (_, __) =>
         {
             _dialog.Close();
         };
 
-        _viewModel.ConfirmInteraction.RegisterHandler(ctx =>
+        _dialogViewModel.ConfirmInteraction.RegisterHandler(ctx =>
         {
             _dialog.Hide();
-            _viewModel.Reset();
+            _dialogViewModel.Reset();
 
             ctx.SetOutput(ctx.Input);
 
             _tcs?.TrySetResult(ctx.Input);
         });
 
-        _viewModel.CancelInteraction.RegisterHandler(ctx =>
+        _dialogViewModel.CancelInteraction.RegisterHandler(ctx =>
         {
             _dialog.Hide();
-            _viewModel.Reset();
+            _dialogViewModel.Reset();
             ctx.SetOutput(Unit.Default);
            
             _tcs?.TrySetResult(null);
@@ -50,7 +50,7 @@ public class DialogService : IDialogService
     {
         _tcs = new TaskCompletionSource<NewComponentDto?>();
 
-        await _viewModel.InitAsync(isEditMode, componentType, component);
+        await _dialogViewModel.InitAsync(isEditMode, componentType, component);
         await _dialog.ShowDialog(_mainWindow);
 
         return await _tcs.Task;

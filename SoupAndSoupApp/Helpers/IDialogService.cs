@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using SoupAndSoupApp.Models;
-using SoupAndSoupApp.ViewModels;
 
 namespace SoupAndSoupApp.Helpers;
 

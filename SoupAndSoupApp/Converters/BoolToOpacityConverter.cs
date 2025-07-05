@@ -4,14 +4,11 @@ using Avalonia.Data.Converters;
 
 namespace SoupAndSoupApp.Converters;
 
-public class NullToBooleanConverter : IValueConverter
+public class BoolToOpacityConverter : IValueConverter
 {
-    public bool Invert { get; set; } = false;
-
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    public object Convert(object? value, Type targetType, object parameter, CultureInfo culture)
     {
-        var isNull = value is null;
-        return Invert ? !isNull : isNull;
+        return value is true ? 1 : 0;
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

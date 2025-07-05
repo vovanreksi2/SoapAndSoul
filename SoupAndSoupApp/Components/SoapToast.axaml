@@ -1,0 +1,160 @@
+<UserControl
+    x:Class="SoupAndSoupApp.Components.SoapToast"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="clr-namespace:SoupAndSoupApp.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:SoupAndSoupApp.Components"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="clr-namespace:SoupAndSoupApp.Models"
+    x:Name="RootControl"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    x:DataType="models:UiNotification"
+    mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <converters:BoolToOpacityConverter x:Key="BoolToOpacityConverter" />
+
+        <SolidColorBrush x:Key="ToastSuccessBackground" Color="#E6F7ED" />
+        <SolidColorBrush x:Key="ToastSuccessBorder" Color="#52C41A" />
+        <SolidColorBrush x:Key="ToastSuccessForeground" Color="#2F5413" />
+
+        <SolidColorBrush x:Key="ToastWarningBackground" Color="#FFFBE6" />
+        <SolidColorBrush x:Key="ToastWarningBorder" Color="#FAAD14" />
+        <SolidColorBrush x:Key="ToastWarningForeground" Color="#AD8B00" />
+
+        <SolidColorBrush x:Key="ToastErrorBackground" Color="#FFF0F0" />
+        <SolidColorBrush x:Key="ToastErrorBorder" Color="#F5222D" />
+        <SolidColorBrush x:Key="ToastErrorForeground" Color="#A8071A" />
+
+        <SolidColorBrush x:Key="ToastCloseButtonForeground" Color="#999999" />
+        <SolidColorBrush x:Key="ToastCloseButtonForegroundHover" Color="#333333" />
+
+        <PathGeometry x:Key="IconCheckCircle">M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M10,17L5,12L6.41,10.59L10,14.17L17.59,6.58L19,8L10,17Z</PathGeometry>
+        <PathGeometry x:Key="IconAlertCircle">M12,2C6.47,2 2,6.47 2,12C2,17.53 6.47,22 12,22C17.53,22 22,17.53 22,12C22,6.47 17.53,2 12,2M12,17A1,1 0 0,1 11,16A1,1 0 0,1 12,15A1,1 0 0,1 13,16A1,1 0 0,1 12,17M12,7A1,1 0 0,1 11,6V12H13V6A1,1 0 0,1 12,7Z</PathGeometry>
+        <PathGeometry x:Key="IconCloseCircle">M12,2C6.47,2 2,6.47 2,12C2,17.53 6.47,22 12,22C17.53,22 22,17.53 22,12C22,6.47 17.53,2 12,2M14.59,8L12,10.59L9.41,8L8,9.41L10.59,12L8,14.59L9.41,16L12,13.41L14.59,16L16,14.59L13.41,12L16,9.41L14.59,8Z</PathGeometry>
+
+    </UserControl.Resources>
+
+    <UserControl.Styles>
+
+        <!--<Style Selector="local|SoapToast">
+
+        </Style>-->
+
+        <!--  General properties  -->
+        <Style Selector="Border.ToastNotification">
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="12 16" />
+            <Setter Property="Margin" Value="0 0 0 10" />
+            <Setter Property="Background" Value="White" />
+            <Setter Property="BoxShadow" Value="0 2 5 #0000001A" />
+            <Setter Property="Opacity" Value="{Binding Path=#RootControl.IsToastVisible, Converter={StaticResource BoolToOpacityConverter}}" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <DoubleTransition Property="Opacity" Duration="0:0:0.2" />
+                </Transitions>
+            </Setter>
+        </Style>
+
+        <Style Selector="Border.ToastNotification StackPanel.ToastContentPanel">
+            <Setter Property="Orientation" Value="Horizontal" />
+            <Setter Property="Spacing" Value="12" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+        </Style>
+
+        <Style Selector="Border.ToastNotification TextBlock.ToastMessage">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+
+        <Style Selector="Border.ToastNotification PathIcon.ToastIcon">
+            <Setter Property="Width" Value="20" />
+            <Setter Property="Height" Value="20" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="Border.ToastNotification Button.ToastCloseButton">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="5" />
+            <Setter Property="Foreground" Value="{StaticResource ToastCloseButtonForeground}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Margin" Value="0 0 0 0" />
+        </Style>
+        <Style Selector="Border.ToastNotification Button.ToastCloseButton:pointerover">
+            <Setter Property="Foreground" Value="{StaticResource ToastCloseButtonForegroundHover}" />
+        </Style>
+        <!--  General properties  END  -->
+
+        <!--  SUCCESS  -->
+
+        <Style Selector="Border.ToastNotification.Success">
+            <Setter Property="Background" Value="{StaticResource ToastSuccessBackground}" />
+            <Setter Property="BorderThickness" Value="0 0 0 0" />
+        </Style>
+        <Style Selector="Border.ToastNotification.Success TextBlock.ToastMessage">
+            <Setter Property="Foreground" Value="{StaticResource ToastSuccessForeground}" />
+        </Style>
+        <Style Selector="Border.ToastNotification.Success PathIcon.ToastIcon">
+            <Setter Property="Foreground" Value="{StaticResource ToastSuccessBorder}" />
+            <Setter Property="Data" Value="{StaticResource IconCheckCircle}" />
+        </Style>
+        <!--  SUCCESS END  -->
+
+        <!--  WARNING  -->
+        <Style Selector="Border.ToastNotification.Warning">
+            <Setter Property="Background" Value="{StaticResource ToastWarningBackground}" />
+        </Style>
+        <Style Selector="Border.ToastNotification.Warning TextBlock.ToastMessage">
+            <Setter Property="Foreground" Value="{StaticResource ToastWarningForeground}" />
+        </Style>
+        <Style Selector="Border.ToastNotification.Warning PathIcon.ToastIcon">
+            <Setter Property="Foreground" Value="{StaticResource ToastWarningBorder}" />
+            <Setter Property="Data" Value="{StaticResource IconAlertCircle}" />
+        </Style>
+        <!--  WARNING END  -->
+
+        <!--  ERROR  -->
+        <Style Selector="Border.ToastNotification.Error">
+            <Setter Property="Background" Value="{StaticResource ToastErrorBackground}" />
+        </Style>
+        <Style Selector="Border.ToastNotification.Error TextBlock.ToastMessage">
+            <Setter Property="Foreground" Value="{StaticResource ToastErrorForeground}" />
+        </Style>
+        <Style Selector="Border.ToastNotification.Error PathIcon.ToastIcon">
+            <Setter Property="Foreground" Value="{StaticResource ToastErrorBorder}" />
+            <Setter Property="Data" Value="{StaticResource IconCloseCircle}" />
+        </Style>
+        <!--  ERROR END  -->
+
+    </UserControl.Styles>
+
+    <StackPanel
+        Margin="20"
+        HorizontalAlignment="Right"
+        VerticalAlignment="Top">
+        <Border x:Name="ToastContainer" Classes="ToastNotification">
+            <Grid ColumnDefinitions="*, Auto">
+
+                <StackPanel Grid.Column="0" Classes="ToastContentPanel">
+                    <PathIcon x:Name="ToastIcon" Classes="ToastIcon" />
+
+                    <TextBlock Classes="ToastMessage" Text="{Binding #RootControl.Notification.Message}" />
+                </StackPanel>
+
+                <Button
+                    Grid.Column="1"
+                    Classes="ToastCloseButton"
+                    Click="CloseButton_Click"
+                    Content="&#x2715;" />
+            </Grid>
+        </Border>
+    </StackPanel>
+
+</UserControl>

@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using DynamicData;
 using SoupAndSoupApp.Models;
 
 namespace SoupAndSoupApp.Helpers;
@@ -9,28 +11,25 @@ public class UnitCostCalculator : IUnitCostCalculator
     private const decimal ArrangeAmountOfUseForm = 100m;
     private const decimal DropsInMilliliters = 20;
 
-    public decimal CalculateUnitCost(IEnumerable<ComponentByRecipeModel> recipeComponents, Dictionary<int, ComponentModel> cachedComponents)
+    public decimal CalculateUnitCost(IEnumerable<ComponentByRecipeModel> recipeComponents, SourceCache<ComponentModel, int> cachedComponents)
     {
         var result = 0m;
 
         foreach (var recipeComponent in recipeComponents)
         {
-            if (!cachedComponents.TryGetValue(recipeComponent.ComponentId, out var ingredientModel))
-            {
-                Debug.WriteLine($"Component with ID {recipeComponent.ComponentId} not found in cached components.");
-                continue; 
-            }
+            var component =  GetCachedComponentById(cachedComponents, recipeComponent.ComponentId);
+            if (component is null) continue;
 
-            if (ingredientModel.Type == ComponentType.Form)
+            if (component.Type == ComponentType.Form)
             {
-                result += ingredientModel.BuyPrice / ArrangeAmountOfUseForm;
+                result += component.BuyPrice / ArrangeAmountOfUseForm;
             }
-            else if ((MeasureType)ingredientModel.UseMeasureTypeId == MeasureType.Milliliter)
+            else if ((MeasureType)component.UseMeasureTypeId == MeasureType.Milliliter)
             {
-                result += ingredientModel.Cost * ConvertMilliliterInDrop(recipeComponent.Amount);
+                result += component.Cost * ConvertMilliliterInDrop(recipeComponent.Amount);
             }
             else
-                result += ingredientModel.Cost * recipeComponent.Amount;
+                result += component.Cost * recipeComponent.Amount;
         }
 
         return result;
@@ -51,7 +50,7 @@ public class UnitCostCalculator : IUnitCostCalculator
                 result += recipeComponent.Cost * ConvertMilliliterInDrop(recipeComponent.BuyAmount);
             }
             else
-                result += recipeComponent.Cost * recipeComponent.BuyAmount;
+                result += recipeComponent.Cost * recipeComponent.AmountInRecipe;
         }
 
         return result;
@@ -78,4 +77,14 @@ public class UnitCostCalculator : IUnitCostCalculator
      
         return buyPrice / buyAmount;
     }
+
+    private ComponentModel? GetCachedComponentById(SourceCache<ComponentModel, int>  cachedComponents, int id)
+    {
+        if (cachedComponents.Lookup(id).HasValue)
+            return cachedComponents.Lookup(id).Value;
+
+        Debug.WriteLine($"Component with ID {id} not found in cache.");
+        return null;
+    }
+
 }

@@ -26,12 +26,27 @@ public class RecipeService : RepositoryBase<Recipe>
             .ToListAsync();
     }
 
-    public override async Task<Recipe> CreateAsync(Recipe recipe)
+    public override async Task<Recipe?> CreateAsync(Recipe recipe)
     {
         recipe.DateOfCreate = DateTime.UtcNow;
         return await base.CreateAsync(recipe);
     }
 
+    public override async Task<bool> UpdateAsync(Recipe recipe)
+    {
+        var entity = await GetByIdAsync(recipe.Id);
+        if (entity is null)
+            return false;
+
+        _context.Entry(entity).CurrentValues.SetValues(recipe);
+
+        entity.RecipeComponents = recipe.RecipeComponents;
+        entity.Images = recipe.Images;
+
+        entity.Version += 1;
+
+        return await _context.SaveChangesAsync() > 0;
+    }
 
     public async Task<bool> SoftDelete(int id)
     {

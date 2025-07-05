@@ -1,5 +1,10 @@
-﻿using System.Reactive;
+﻿using System;
+using System.Reactive;
+using System.Reactive.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using ReactiveUI;
+using SoupAndSoupApp.Helpers;
 using SoupAndSoupApp.Models;
 
 namespace SoupAndSoupApp.ViewModels;
@@ -20,6 +25,7 @@ public class MainViewModel : ViewModelBase
         get => _currentViewModel;
         set => this.RaiseAndSetIfChanged(ref _currentViewModel, value);
     }
+
     public ReactiveCommand<Unit, Unit> ShowReceipt{ get; }
     public ReactiveCommand<Unit, Unit> ShowDesigner { get; }
 
@@ -30,15 +36,29 @@ public class MainViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _soapDesignerDataContext, value);
     }
 
-    public MainViewModel(SoapDesignerViewModel soapDesignerDataContext)
+
+    private UiNotification? _currentNotification;
+    public UiNotification? CurrentNotification
+    {
+        get => _currentNotification;
+        set => this.RaiseAndSetIfChanged(ref _currentNotification, value);
+    }
+
+    public MainViewModel(SoapDesignerViewModel soapDesignerDataContext, INotificationService notificationService)
     {
         _soapDesignerDataContext = soapDesignerDataContext;
-        
+
         IsSoupDesignerVisible = null;
 
         ShowReceipt = ReactiveCommand.Create(ShowSoupReceipt);
         ShowDesigner = ReactiveCommand.Create(ShowSoupDesigner);
-        
+
+        notificationService.Notifications
+            .ObserveOn(RxApp.MainThreadScheduler)
+            .Subscribe(notification =>
+            {
+                CurrentNotification = MapToUiNotification(notification);
+            });
     }
 
     public MainViewModel()
@@ -49,8 +69,24 @@ public class MainViewModel : ViewModelBase
         ShowDesigner = ReactiveCommand.Create(ShowSoupDesigner);
     }
 
+    private UiNotification MapToUiNotification(DomainNotificationType type)
+    {
+        //TODO: Move to a separate service or use a dictionary for mapping
+        return type switch
+        {
+            DomainNotificationType.RecipeCreated => new UiNotification("Рецепт створено", NotificationLevel.Success),
+            DomainNotificationType.RecipeUpdated => new UiNotification("Рецепт оновлено", NotificationLevel.Success),
+            DomainNotificationType.RecipeDeleted => new UiNotification("Рецепт видалено", NotificationLevel.Warning),
 
-    // Метод для переключення ViewModel
+            DomainNotificationType.ComponentCreated => new UiNotification("Компонент створено", NotificationLevel.Success),
+            DomainNotificationType.ComponentUpdated => new UiNotification("Компонент оновлено", NotificationLevel.Success),
+            DomainNotificationType.ComponentDeleted => new UiNotification("Компонент видалено", NotificationLevel.Warning),
+
+            DomainNotificationType.ErrorWhileSaving => new UiNotification("Помилка при збереженні", NotificationLevel.Error),
+            _ => new UiNotification("Невідома дія", NotificationLevel.Warning),
+        };
+    }
+
     public void ShowSoupDesigner()
     {
         IsSoupDesignerVisible = new object();

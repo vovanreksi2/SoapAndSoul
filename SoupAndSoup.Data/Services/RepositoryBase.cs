@@ -12,13 +12,13 @@ public abstract class RepositoryBase<T> : IRepository<T> where T : class
         _dbSet = _context.Set<T>();
     }
 
-    public virtual async Task<T> CreateAsync(T entity)
+    public virtual async Task<T?> CreateAsync(T entity)
     {
         if (entity == null) throw new ArgumentNullException(nameof(entity));
 
         await _dbSet.AddAsync(entity);
-        await _context.SaveChangesAsync();
-        return entity;
+        var result = await _context.SaveChangesAsync();
+        return result > 0 ? entity : null;
     }
 
     public virtual async Task<T> GetByIdAsync(int id)

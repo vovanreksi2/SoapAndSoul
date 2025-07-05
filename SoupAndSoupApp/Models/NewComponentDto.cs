@@ -1,6 +1,4 @@
-﻿using SoupAndSoupApp.Models;
-
-namespace SoupAndSoupApp.ViewModels;
+﻿namespace SoupAndSoupApp.Models;
 
 public class NewComponentDto
 {
