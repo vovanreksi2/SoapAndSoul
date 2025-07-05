@@ -1,7 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 
-namespace SoupAndSoupApp.ViewModels;
+namespace SoupAndSoupApp.Helpers;
 
 public interface IAutoSaveCandidate
 {

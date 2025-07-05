@@ -57,7 +57,7 @@ public class MainViewModel : ViewModelBase
             .ObserveOn(RxApp.MainThreadScheduler)
             .Subscribe(notification =>
             {
-                CurrentNotification = MapToUiNotification(notification);
+                CurrentNotification = notification.ToUiNotification();
             });
     }
 
@@ -67,24 +67,6 @@ public class MainViewModel : ViewModelBase
 
         ShowReceipt = ReactiveCommand.Create(ShowSoupReceipt);
         ShowDesigner = ReactiveCommand.Create(ShowSoupDesigner);
-    }
-
-    private UiNotification MapToUiNotification(DomainNotificationType type)
-    {
-        //TODO: Move to a separate service or use a dictionary for mapping
-        return type switch
-        {
-            DomainNotificationType.RecipeCreated => new UiNotification("Рецепт створено", NotificationLevel.Success),
-            DomainNotificationType.RecipeUpdated => new UiNotification("Рецепт оновлено", NotificationLevel.Success),
-            DomainNotificationType.RecipeDeleted => new UiNotification("Рецепт видалено", NotificationLevel.Warning),
-
-            DomainNotificationType.ComponentCreated => new UiNotification("Компонент створено", NotificationLevel.Success),
-            DomainNotificationType.ComponentUpdated => new UiNotification("Компонент оновлено", NotificationLevel.Success),
-            DomainNotificationType.ComponentDeleted => new UiNotification("Компонент видалено", NotificationLevel.Warning),
-
-            DomainNotificationType.ErrorWhileSaving => new UiNotification("Помилка при збереженні", NotificationLevel.Error),
-            _ => new UiNotification("Невідома дія", NotificationLevel.Warning),
-        };
     }
 
     public void ShowSoupDesigner()
