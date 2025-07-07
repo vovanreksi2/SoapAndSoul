@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using DynamicData;
@@ -11,6 +12,12 @@ public class UnitCostCalculator : IUnitCostCalculator
     private const decimal ArrangeAmountOfUseForm = 100m;
     private const decimal DropsInMilliliters = 20;
 
+    /// <summary>
+    /// Calculates the unit cost of a recipe based on its components.
+    /// </summary>
+    /// <param name="recipeComponents"></param>
+    /// <param name="cachedComponents"></param>
+    /// <returns></returns>
     public decimal CalculateUnitCost(IEnumerable<ComponentByRecipeModel> recipeComponents, SourceCache<ComponentModel, int> cachedComponents)
     {
         var result = 0m;
@@ -32,9 +39,14 @@ public class UnitCostCalculator : IUnitCostCalculator
                 result += component.Cost * recipeComponent.Amount;
         }
 
-        return result;
+        return Math.Round(result);
     }
 
+    /// <summary>
+    /// Calculates the unit cost of a collection of components.
+    /// </summary>
+    /// <param name="components"></param>
+    /// <returns></returns>
     public decimal CalculateUnitCost(IEnumerable<ComponentModel> components)
     {
         var result = 0m;
@@ -53,7 +65,7 @@ public class UnitCostCalculator : IUnitCostCalculator
                 result += recipeComponent.Cost * recipeComponent.AmountInRecipe;
         }
 
-        return result;
+        return Math.Round(result);
     }
 
     private decimal ConvertMilliliterInDrop(decimal amount)

@@ -44,11 +44,10 @@ public class RecipeModel: ReactiveObject, IDisposable
     public decimal UnitCost
     {
         get => _unitCost;
-        set => 
-            this.RaiseAndSetIfChanged(ref _unitCost, value);
+        set => this.RaiseAndSetIfChanged(ref _unitCost, value);
     }
 
-    public int PreparationTime
+    public decimal PreparationTime
     {
         get => _preparationTime;
         set => this.RaiseAndSetIfChanged(ref _preparationTime, value);
@@ -99,6 +98,6 @@ public class RecipeModel: ReactiveObject, IDisposable
     private string _name;
     private string _description;
     private decimal _amount;
-    private int _preparationTime;
+    private decimal _preparationTime;
 
 }

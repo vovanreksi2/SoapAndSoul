@@ -80,7 +80,6 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
 
     public Task Initialization { get; }
 
-    private RecipeModel? _previousSelectedRecipe; // Add this field
 
     public SoapDesignerViewModel()
     {
@@ -416,7 +415,10 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
             recipe.RecipeComponents = componentsByRecipe.Select(MapRecipeComponentModel).ToList();
         }
     }
-    private bool ShouldSaveRecipe(RecipeModel? recipe) => recipe is not null && (IsDirty || recipe.IsDirty);
+    private bool ShouldSaveRecipe(RecipeModel? recipe)
+    {
+        return recipe is not null && (IsDirty || recipe.IsDirty);
+    }
 
     private async Task<bool> AddOrUpdateRecipeAsync(RecipeModel? inputRecipe)
     {
@@ -544,7 +546,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
         result.Name = recipe.Name;
         result.Description = recipe.Description;
         result.Amount = recipe.Amount;
-        result.PreparationTime = (int)recipe.PreparationTime.TotalMinutes;
+        result.PreparationTime = (decimal)recipe.PreparationTime.TotalMinutes;
         result.DeleteReceiptCommand = DeleteReceiptCommand;
 
         result.RecipeComponents = recipe.RecipeComponents.Select(MapRecipeComponent);
@@ -563,7 +565,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
             Id = recipe.Id,
             Amount = recipe.Amount,
             Name = recipe.Name,
-            PreparationTime = TimeSpan.FromMinutes(recipe.PreparationTime),
+            PreparationTime = TimeSpan.FromMinutes((int)recipe.PreparationTime),
             Type = CosmeticType.Soap.ToString(),
             Description = recipe.Description,
             RecipeComponents = ComponentsByRecipe.Select(MapRecipeComponent).ToList()
@@ -739,4 +741,5 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
     private readonly MeasureTypeCache _measureTypeCache;
     private readonly INotificationService _notificationService;
     private bool _suppressIsDirty;
+    private RecipeModel? _previousSelectedRecipe;
 }

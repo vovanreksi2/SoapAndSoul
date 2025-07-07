@@ -1,0 +1,99 @@
+<UserControl
+    x:Class="SoupAndSoupApp.Components.EditableTextBlock"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:avalonia="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+    xmlns:components="clr-namespace:SoupAndSoupApp.Components"
+    xmlns:converters="clr-namespace:SoupAndSoupApp.Converters"
+    x:Name="RootControl"
+    x:DataType="components:EditableTextBlock">
+
+    <UserControl.Resources>
+        <converters:EditableTextBlockMultiBindConverter x:Key="EditableTextBlockMultiBindConverter" />
+
+    </UserControl.Resources>
+
+    <UserControl.Styles>
+
+        <Style Selector="Grid">
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+
+        <Style Selector="Border.BorderStyle">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="{StaticResource IngredientBorderSolidColorBrush}" />
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="BoxShadow" Value="0 0 8 #33000000" />
+            <Setter Property="Cursor" Value="Hand" />
+
+            <Setter Property="IsVisible">
+                <MultiBinding Converter="{StaticResource EditableTextBlockMultiBindConverter}">
+                    <Binding Path="#RootControl.IsEditing" />
+                    <Binding Path="#RootControl.IsPointerOver" />
+                </MultiBinding>
+            </Setter>
+        </Style>
+
+        <Style Selector="TextBlock.ReceiptTitle">
+            <Setter Property="FontFamily" Value="Sans-serif" />
+            <Setter Property="FontSize" Value="20" />
+            <Setter Property="Foreground" Value="#111827" />
+            <Setter Property="TextWrapping" Value="WrapWithOverflow" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid
+        Margin="5"
+        Background="White"
+        ColumnDefinitions="*, 25"
+        PointerPressed="DisplayTextBlock_PointerPressed">
+        <Border
+            Grid.Column="0"
+            Grid.ColumnSpan="2"
+            Classes="BorderStyle" />
+
+        <TextBlock
+            Name="DisplayTextBlock"
+            Grid.Column="0"
+            Margin="5"
+            Classes="ReceiptTitle"
+            IsVisible="{Binding !#RootControl.IsEditing}"
+            Text="{Binding #RootControl.Text}"
+            TextAlignment="Left"
+            TextWrapping="WrapWithOverflow" />
+
+        <TextBox
+            Name="EditTextBox"
+            Grid.Column="0"
+            Margin="5"
+            IsVisible="{Binding #RootControl.IsEditing}"
+            KeyDown="EditTextBox_KeyDown"
+            Text="{Binding #RootControl.Text, Mode=TwoWay}" />
+
+        <avalonia:MaterialIcon
+            Grid.Column="1"
+            Width="25"
+            Height="25"
+            Margin="0,0,5,0"
+            HorizontalAlignment="Right"
+            Kind="Edit">
+            <avalonia:MaterialIcon.IsVisible>
+                <MultiBinding Converter="{StaticResource EditableTextBlockMultiBindConverter}">
+                    <Binding Path="#RootControl.IsEditing" />
+                    <Binding Path="#RootControl.IsPointerOver" />
+                </MultiBinding>
+            </avalonia:MaterialIcon.IsVisible>
+        </avalonia:MaterialIcon>
+
+        <avalonia:MaterialIcon
+            Grid.Column="1"
+            Width="25"
+            Height="25"
+            Margin="0,0,5,0"
+            HorizontalAlignment="Right"
+            IsVisible="{Binding #RootControl.IsEditing}"
+            Kind="Check" />
+
+    </Grid>
+</UserControl>

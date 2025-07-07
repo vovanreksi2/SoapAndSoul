@@ -25,9 +25,10 @@
         <SolidColorBrush x:Key="MaterialOnSurface" Color="{DynamicResource MaterialOnSurfaceColor}" />
         <SolidColorBrush x:Key="MaterialOnSurfaceVariant" Color="{DynamicResource MaterialOnSurfaceVariantColor}" />
 
-
         <converters:OrConverter x:Key="OrConverter" />
         <converters:AndConverter x:Key="AndConverter" />
+
+
         <converters:NullToBooleanConverter x:Key="NullToTrue" />
         <converters:NullToBooleanConverter x:Key="NullToFalse" Invert="True" />
         <converters:BooleanNegationConverter x:Key="InvertBool" />
@@ -36,6 +37,10 @@
     <Application.Styles>
         <FluentTheme />
         <materialIcons:MaterialIconStyles />
+
+        <Style Selector="TextBlock">
+            <Setter Property="FontFamily" Value="Inter" />
+        </Style>
 
         <Style Selector="Button.lbButton">
             <Setter Property="Background" Value="Transparent" />

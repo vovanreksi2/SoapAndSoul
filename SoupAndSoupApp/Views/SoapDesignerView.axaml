@@ -102,9 +102,6 @@
             <Setter Property="BoxShadow" Value="0 0 8 0 #33000000" />
         </Style>
 
-        <Style Selector="TextBlock">
-            <Setter Property="FontFamily" Value="Inter" />
-        </Style>
 
         <Style Selector="TextBlock.SectionTitle">
             <Setter Property="FontSize" Value="25" />
@@ -126,6 +123,7 @@
         <Style Selector="ListBox.LbReceipts">
             <Setter Property="VerticalAlignment" Value="Top" />
             <Setter Property="SelectionMode" Value="Single" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
         </Style>
 
         <Style Selector="ListBox.LbReceipts > ListBoxItem">
@@ -270,28 +268,23 @@
                         DataContext="{Binding SelectedRecipe}"
                         RowDefinitions="Auto Auto 3*"
                         ShowGridLines="False">
-                        <TextBlock
+
+                        <components:EditableTextBlock
                             Grid.Column="0"
-                            Classes="ReceiptTitle"
+                            Margin="0,5,0,0"
+                            HorizontalAlignment="Stretch"
+                            FontSize="15"
+                            Foreground="Gray"
                             Text="{Binding Name}" />
 
-                        <TextBox Grid.Column="0" Text="{Binding Name, Mode=TwoWay}" />
-
-                        <Button
-                            Grid.Row="0"
-                            HorizontalAlignment="Right"
-                            Classes="edit-button" />
-
-                        <TextBlock
+                        <components:EditableTextBlock
                             Grid.Row="1"
                             Grid.Column="0"
                             Margin="0,5,0,0"
                             HorizontalAlignment="Stretch"
                             FontSize="15"
                             Foreground="Gray"
-                            Text="{Binding Description}"
-                            TextAlignment="Left"
-                            TextWrapping="WrapWithOverflow" />
+                            Text="{Binding Description}" />
 
                         <Grid
                             Grid.Row="2"
@@ -299,26 +292,25 @@
                             ColumnDefinitions="* * *"
                             ShowGridLines="False">
 
-                            <Border Grid.Column="0" Classes="WeightBorder" />
+                            <components:RecipeMetricsUserControl
+                                Title="Вага"
+                                Grid.Column="0"
+                                StringFormat="{}{0:F0} г"
+                                Value="{Binding Amount}" />
 
-                            <StackPanel Grid.Column="0" Classes="WeightStackPanel">
-                                <TextBlock Classes="WeightLabelText" Text="Вага" />
-                                <TextBlock Classes="WeightValueText" Text="{Binding Amount, StringFormat='{}{0:F0} г'}" />
-                            </StackPanel>
+                            <components:RecipeMetricsUserControl
+                                Title="Тривалість"
+                                Grid.Column="1"
+                                StringFormat="{}{0} хв"
+                                Value="{Binding PreparationTime}" />
 
-                            <Border Grid.Column="1" Classes="WeightBorder" />
+                            <components:RecipeMetricsUserControl
+                                Title="Собівартість"
+                                Grid.Column="2"
+                                IsReadOnly="True"
+                                StringFormat="{}{0:F0} грн"
+                                Value="{Binding UnitCost}" />
 
-                            <StackPanel Grid.Column="1" Classes="WeightStackPanel">
-                                <TextBlock Classes="WeightLabelText" Text="Тривалість" />
-                                <TextBlock Classes="WeightValueText" Text="{Binding PreparationTime, StringFormat='{}{0} хв'}" />
-                            </StackPanel>
-
-                            <Border Grid.Column="2" Classes="WeightBorder" />
-
-                            <StackPanel Grid.Column="2" Classes="WeightStackPanel">
-                                <TextBlock Classes="WeightLabelText" Text="Собівартість" />
-                                <TextBlock Classes="WeightValueText" Text="{Binding UnitCost, StringFormat='{}{0:F0} грн'}" />
-                            </StackPanel>
                         </Grid>
                     </Grid>
 
@@ -346,7 +338,6 @@
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
 
-                                    <!--  TODO: Update for getting title from type  -->
                                     <components:IngredientItemsControl
                                         GroupTitle="{Binding ComponentType.Title}"
                                         Ingredients="{Binding Components}"
