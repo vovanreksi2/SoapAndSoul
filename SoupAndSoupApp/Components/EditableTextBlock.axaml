@@ -10,21 +10,19 @@
 
     <UserControl.Resources>
         <converters:EditableTextBlockMultiBindConverter x:Key="EditableTextBlockMultiBindConverter" />
-
     </UserControl.Resources>
 
     <UserControl.Styles>
-
-        <Style Selector="Grid">
+        <Style Selector="Grid.mainGrid">
             <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Background" Value="{StaticResource CardBackgroundColor}" />
         </Style>
 
         <Style Selector="Border.BorderStyle">
             <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderBrush" Value="{StaticResource IngredientBorderSolidColorBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}" />
             <Setter Property="BorderThickness" Value="2" />
             <Setter Property="CornerRadius" Value="4" />
-            <Setter Property="BoxShadow" Value="0 0 8 #33000000" />
             <Setter Property="Cursor" Value="Hand" />
 
             <Setter Property="IsVisible">
@@ -34,20 +32,35 @@
                 </MultiBinding>
             </Setter>
         </Style>
+        <Style Selector="Border.BorderStyle:pointerover">
+            <Setter Property="Background" Value="{StaticResource TileHoverBackgroundColor}" />
+        </Style>
 
         <Style Selector="TextBlock.ReceiptTitle">
             <Setter Property="FontFamily" Value="Sans-serif" />
             <Setter Property="FontSize" Value="20" />
-            <Setter Property="Foreground" Value="#111827" />
+            <Setter Property="Foreground" Value="{StaticResource PrimaryTextColor}" />
             <Setter Property="TextWrapping" Value="WrapWithOverflow" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="TextBox">
+            <Setter Property="Foreground" Value="{StaticResource PrimaryTextColor}" />
+            <Setter Property="Background" Value="{StaticResource CardBackgroundColor}" />
+            <Setter Property="BorderBrush" Value="{StaticResource PrimaryBorderColor}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="FontSize" Value="20" />
         </Style>
     </UserControl.Styles>
 
     <Grid
         Margin="5"
-        Background="White"
+        Background="{StaticResource CardBackgroundColor}"
+        Classes="mainGrid"
         ColumnDefinitions="*, 25"
         PointerPressed="DisplayTextBlock_PointerPressed">
+
         <Border
             Grid.Column="0"
             Grid.ColumnSpan="2"
@@ -77,6 +90,7 @@
             Height="25"
             Margin="0,0,5,0"
             HorizontalAlignment="Right"
+            Classes="styledIcons"
             Kind="Edit">
             <avalonia:MaterialIcon.IsVisible>
                 <MultiBinding Converter="{StaticResource EditableTextBlockMultiBindConverter}">
@@ -92,8 +106,8 @@
             Height="25"
             Margin="0,0,5,0"
             HorizontalAlignment="Right"
+            Classes="styledIcons"
             IsVisible="{Binding #RootControl.IsEditing}"
             Kind="Check" />
-
     </Grid>
 </UserControl>

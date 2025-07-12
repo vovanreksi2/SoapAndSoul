@@ -20,7 +20,7 @@
         <converters:TextVisibilityConverter x:Key="TextVisibilityConverter" />
 
         <!--  Button  -->
-        <ControlTemplate x:Key="MoldButtonControlTemplate">
+        <ControlTemplate x:Key="MoldButtonControlTemplate" TargetType="Button">
             <Grid>
                 <Border Background="Transparent" CornerRadius="{Binding RelativeSource={RelativeSource AncestorType={x:Type Button}}, Path=CornerRadius.TopRight}" />
 
@@ -38,22 +38,22 @@
                     Spacing="8">
 
                     <Grid Width="40" Height="40">
-                        <Ellipse Fill="#F0F2FF" />
+                        <Ellipse Fill="{TemplateBinding Background}" />
                         <TextBlock
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
                             FontFamily="Regular"
-                            FontSize="20"
+                            FontSize="{TemplateBinding FontSize}"
                             FontWeight="Bold"
-                            Foreground="#5B6CFF"
+                            Foreground="{TemplateBinding Foreground}"
                             Text="+" />
                     </Grid>
 
                     <TextBlock
                         HorizontalAlignment="Center"
-                        FontSize="12"
+                        FontSize="{TemplateBinding FontSize}"
                         FontWeight="Bold"
-                        Foreground="Black"
+                        Foreground="{TemplateBinding Foreground}"
                         Text="Додати" />
 
                 </StackPanel>
@@ -70,7 +70,6 @@
             <Grid
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Stretch"
-                Background="White"
                 ColumnDefinitions="* 90"
                 RowDefinitions="100 50"
                 ShowGridLines="False"
@@ -82,7 +81,7 @@
                     Grid.RowSpan="2"
                     Grid.Column="0"
                     Grid.ColumnSpan="2"
-                    Background="White"
+                    Background="{TemplateBinding Background}"
                     CornerRadius="12" />
 
                 <Image
@@ -104,14 +103,14 @@
                     Orientation="Horizontal">
                     <Button
                         Margin="5"
-                        Classes="edit-button cbButton"
+                        Classes="edit-button miniButton cbButton"
                         Command="{Binding EditCommand}"
                         CommandParameter="{Binding .}"
                         Focusable="False"
                         IsHitTestVisible="True" />
                     <Button
                         Margin="5"
-                        Classes="delete-button cbButton"
+                        Classes="delete-button miniButton cbButton"
                         Command="{Binding DeleteCommand}"
                         CommandParameter="{Binding .}"
                         Focusable="False"
@@ -129,6 +128,7 @@
                     VerticalAlignment="Center"
                     FontSize="{TemplateBinding FontSize}"
                     FontWeight="{TemplateBinding FontWeight}"
+                    Foreground="{TemplateBinding Foreground}"
                     Text="{Binding Name}"
                     TextAlignment="Center"
                     TextTrimming="CharacterEllipsis"
@@ -161,12 +161,6 @@
                         Content="-"
                         CornerRadius="0 0 0 12" />
 
-                    <Border
-                        Grid.Column="1"
-                        VerticalAlignment="Stretch"
-                        Background="#d0d1fa"
-                        BorderThickness="0" />
-
                     <TextBox
                         Grid.Column="1"
                         Margin="0,0,0,2"
@@ -191,28 +185,8 @@
                 Height="{StaticResource IngredientCheckBoxHeight}"
                 Margin="0,0,20,30"
                 Classes="IngredientCheckBox"
-                Cursor="Hand"
-                FontSize="15"
-                FontWeight="SemiBold"
                 IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                Template="{StaticResource IngredientCBControlTemplate}">
-
-                <ToggleButton.Styles>
-                    <Style Selector="ToggleButton.IngredientCheckBox:pointerover /template/ Border">
-                        <!--<Setter Property="BorderBrush" Value="LightBlue" />-->
-                    </Style>
-
-                    <Style Selector="ToggleButton.IngredientCheckBox:checked /template/ Border">
-                        <Setter Property="BorderBrush" Value="{StaticResource PrimarySolidColorBrush}" />
-                        <Setter Property="BorderThickness" Value="3" />
-                    </Style>
-
-                    <Style Selector="ToggleButton.IngredientCheckBox:not(:checked) /template/ Border">
-                        <Setter Property="BorderBrush" Value="{StaticResource IngredientBorderSolidColorBrush}" />
-                        <Setter Property="BorderThickness" Value="1" />
-                    </Style>
-                </ToggleButton.Styles>
-            </ToggleButton>
+                Template="{StaticResource IngredientCBControlTemplate}" />
         </DataTemplate>
 
         <DataTemplate x:Key="IngredientsButtonDataTemplate" DataType="models:ComponentModel">
@@ -235,25 +209,56 @@
         <!--  Buttons  -->
         <Style Selector="Button.MoldButton">
             <Setter Property="CornerRadius" Value="6" />
-            <Setter Property="Background" Value="Transparent" />
             <Setter Property="VerticalAlignment" Value="Top" />
-
-            <Setter Property="Template" Value="{StaticResource MoldButtonControlTemplate}" />
-        </Style>
-
-        <Style Selector="Button.MoldButton:not(:pointerover)">
-            <Setter Property="BorderBrush" Value="{StaticResource IngredientBorderSolidColorBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource PrimaryAccentColorLighter}" />
+            <Setter Property="Background" Value="{StaticResource PrimaryAccentColorLighter}" />
+            <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}" />
+            <Setter Property="FontSize" Value="14" />
         </Style>
         <Style Selector="Button.MoldButton:pointerover">
-            <Setter Property="BorderBrush" Value="{StaticResource PrimarySolidColorBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource PrimaryAccentColorDarkest}" />
+            <Setter Property="Background" Value="{StaticResource PrimaryAccentColor}" />
+            <Setter Property="Foreground" Value="{StaticResource PrimaryTextColor}" />
             <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FontSize" Value="16" />
         </Style>
 
         <!--  Buttons end  -->
 
+        <!--  Toogle Styles  -->
+
+        <Style Selector="ToggleButton.IngredientCheckBox">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Background" Value="{StaticResource CardBackgroundColor}" />
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{StaticResource PrimaryTextColor}" />
+        </Style>
+        <Style Selector="ToggleButton.IngredientCheckBox:checked /template/ Border">
+            <Setter Property="BorderBrush" Value="{StaticResource PrimaryBorderColor}" />
+            <Setter Property="BorderThickness" Value="3" />
+        </Style>
+        <Style Selector="ToggleButton.IngredientCheckBox:not(:checked) /template/ Border">
+            <Setter Property="BorderBrush" Value="{StaticResource BorderColor}" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style Selector="ToggleButton.IngredientCheckBox:pointerover /template/ Border">
+            <Setter Property="BorderBrush" Value="{StaticResource PrimaryBorderColor}" />
+            <Setter Property="BorderThickness" Value="3" />
+            <Setter Property="BoxShadow" Value="{Binding Source={StaticResource BorderColor}, Converter={StaticResource ColorToBoxShadowConverter}, ConverterParameter=20}" />
+            <Setter Property="Margin" Value="2" />
+
+        </Style>
+        <Style Selector="ToggleButton.IngredientCheckBox:pointerover">
+            <Setter Property="Foreground" Value="{StaticResource PrimaryBorderColor}" />
+            <Setter Property="Background" Value="{StaticResource TileHoverBackgroundColor}" />
+            <Setter Property="FontSize" Value="18" />
+        </Style>
+        <!--  END  -->
+
         <!--  Items control  -->
         <Style Selector="ItemsControl.lbSoapComponents">
-            <Setter Property="Background" Value="White" />
+            <Setter Property="Background" Value="{StaticResource CardBackgroundColor}" />
             <Setter Property="ItemTemplate" Value="{DynamicResource {x:Type components:ItemTemplateSelector}}" />
             <Setter Property="ItemsPanel">
                 <ItemsPanelTemplate>
@@ -264,11 +269,12 @@
 
         <!--  Items control end  -->
 
+
         <!--  ToolTip  -->
 
         <Style Selector="ToolTip">
             <!--  Фон і закруглення  -->
-            <Setter Property="Background" Value="#afeeee" />
+            <Setter Property="Background" Value="{StaticResource PrimaryAccentColorDarkest}" />
             <Setter Property="Foreground" Value="Black" />
             <Setter Property="FontSize" Value="18" />
             <Setter Property="Padding" Value="15" />
@@ -309,7 +315,7 @@
         <TextBlock
             FontSize="20"
             FontWeight="Bold"
-            Foreground="#111827"
+            Foreground="{StaticResource SecondaryTextColor}"
             Text="{Binding GroupTitle, RelativeSource={RelativeSource AncestorType=components:IngredientItemsControl}}" />
 
         <ItemsControl

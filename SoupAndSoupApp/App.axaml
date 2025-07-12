@@ -7,31 +7,54 @@
     RequestedThemeVariant="Light">
 
     <Application.Resources>
-        <SolidColorBrush x:Key="PrimarySolidColorBrush" Color="#6366F1" />
-        <SolidColorBrush x:Key="MainBackgroundSolidColorBrush" Color="#FFF9FAFB" />
-        <SolidColorBrush x:Key="IngredientBorderSolidColorBrush" Color="LightGray" />
-        <SolidColorBrush x:Key="ReceiptDetailPrimarySolidColorBrush" Color="#afeeee" />
+        <!--  🎨 Основні кольори  -->
 
-        <!--  Кольори Material  -->
-        <Color x:Key="MaterialPrimaryColor">#7C3AED</Color>
-        <Color x:Key="MaterialSurfaceColor">#FFFFFF</Color>
-        <Color x:Key="MaterialSurfaceVariantColor">#F4F4F4</Color>
-        <Color x:Key="MaterialOnSurfaceColor">#1A1A1A</Color>
-        <Color x:Key="MaterialOnSurfaceVariantColor">#5F5F5F</Color>
 
-        <SolidColorBrush x:Key="MaterialPrimary" Color="{DynamicResource MaterialPrimaryColor}" />
-        <SolidColorBrush x:Key="MaterialSurface" Color="{DynamicResource MaterialSurfaceColor}" />
-        <SolidColorBrush x:Key="MaterialSurfaceVariant" Color="{DynamicResource MaterialSurfaceVariantColor}" />
-        <SolidColorBrush x:Key="MaterialOnSurface" Color="{DynamicResource MaterialOnSurfaceColor}" />
-        <SolidColorBrush x:Key="MaterialOnSurfaceVariant" Color="{DynamicResource MaterialOnSurfaceVariantColor}" />
+        <!--  Background  -->
+        <Color x:Key="MainBackgroundColor">White</Color>
+        <Color x:Key="CardBackgroundColor">#FFF9F6F3</Color>
+        <Color x:Key="TileHoverBackgroundColor">#FFFDF5F3</Color>
+
+
+        <!--  Primary Coral Accent  -->
+        <Color x:Key="PrimaryAccentColor">#FFFC897C</Color>
+        <Color x:Key="PrimaryAccentColorLighter">#FFFDE7E4</Color>
+        <Color x:Key="PrimaryAccentColorDarkest">#FFE96B5F</Color>
+
+
+        <!--  Borders / Dividers  -->
+        <Color x:Key="BorderColor">#FFD5C4BE</Color>
+        <Color x:Key="PrimaryBorderColor">#FFFC897C</Color>
+
+
+        <!--  Text  -->
+        <Color x:Key="PrimaryTextColor">#FF3C2F2B</Color>
+        <Color x:Key="SecondaryTextColor">#FF847773</Color>
+        <Color x:Key="PlaceholderTextColor">#FFEFE3DF</Color>
+        <Color x:Key="MutedTextColor">#FF9A8A84</Color>
+
+
+        <!--  Buttons  -->
+
+        <Color x:Key="ButtonHoverColor">#FFF7ADA3</Color>
+        <Color x:Key="ButtonDisabledColor">#FFEADBD7</Color>
+        <Color x:Key="ButtonForegroundColor">#FFFFFFFF</Color>
+
+
+        <!--  Natural tones / thematic  -->
+
+        <Color x:Key="NaturalGreenColor">#FF7C9A58</Color>
+        <Color x:Key="BerryRedColor">#FFB84C5C</Color>
+        <Color x:Key="PigmentPurpleColor">#FFE4D2F5</Color>
 
         <converters:OrConverter x:Key="OrConverter" />
         <converters:AndConverter x:Key="AndConverter" />
-
-
         <converters:NullToBooleanConverter x:Key="NullToTrue" />
         <converters:NullToBooleanConverter x:Key="NullToFalse" Invert="True" />
         <converters:BooleanNegationConverter x:Key="InvertBool" />
+
+        <converters:ColorToBoxShadowConverter x:Key="ColorToBoxShadowConverter" />
+
     </Application.Resources>
 
     <Application.Styles>
@@ -41,14 +64,29 @@
         <Style Selector="TextBlock">
             <Setter Property="FontFamily" Value="Inter" />
         </Style>
+        <Style Selector="materialIcons|MaterialIcon.styledIcons">
+            <Setter Property="Foreground" Value="{StaticResource BerryRedColor}" />
+        </Style>
+        <Style Selector="materialIcons|MaterialIcon.styledIcons">
+            <Setter Property="Foreground" Value="{StaticResource PrimaryAccentColorDarkest}" />
+        </Style>
+
+        <Style Selector="Button.miniButton">
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="1" />
+
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Foreground" Value="{StaticResource BerryRedColor}" />
+            <Setter Property="Background" Value="{StaticResource PrimaryAccentColorLighter}" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Width" Value="26" />
+            <Setter Property="Height" Value="26" />
+        </Style>
+        <Style Selector="Button.miniButton:pointerover">
+            <Setter Property="Foreground" Value="{StaticResource PrimaryAccentColorDarkest}" />
+        </Style>
 
         <Style Selector="Button.lbButton">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderBrush" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Padding" Value="0" />
-            <Setter Property="Cursor" Value="Hand" />
-
             <Setter Property="IsVisible">
                 <MultiBinding Converter="{StaticResource OrConverter}">
                     <Binding Path="IsPointerOver" RelativeSource="{RelativeSource AncestorType=ListBoxItem}" />
@@ -59,52 +97,35 @@
 
 
         <Style Selector="Button.cbButton">
-            <Setter Property="Background" Value="LightGray" />
-            <Setter Property="BorderBrush" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Padding" Value="0" />
-            <Setter Property="Cursor" Value="Hand" />
 
-            <Setter Property="IsVisible">
-                <MultiBinding Converter="{StaticResource OrConverter}">
-                    <Binding Path="IsPointerOver" RelativeSource="{RelativeSource AncestorType=ToggleButton}" />
-                </MultiBinding>
-            </Setter>
+            <Setter Property="IsVisible" Value="{Binding IsPointerOver, RelativeSource={RelativeSource AncestorType=ToggleButton}}" />
         </Style>
 
         <Style Selector="Button.edit-button">
             <Setter Property="Template">
                 <ControlTemplate>
-                    <Border Background="Transparent">
+                    <Border Background="{TemplateBinding Background}">
                         <materialIcons:MaterialIcon
-                            Width="22"
-                            Height="22"
-                            Kind="EditBoxOutline" />
+                            Width="{TemplateBinding Width}"
+                            Height="{TemplateBinding Height}"
+                            Kind="Edit" />
                     </Border>
                 </ControlTemplate>
             </Setter>
         </Style>
 
         <Style Selector="Button.delete-button">
-            <Setter Property="Foreground" Value="Black" />
             <Setter Property="Template">
                 <ControlTemplate>
-                    <materialIcons:MaterialIcon
-                        Width="22"
-                        Height="22"
-                        Kind="Bin" />
+                    <Border Background="{TemplateBinding Background}">
+                        <materialIcons:MaterialIcon
+                            Width="{TemplateBinding Width}"
+                            Height="{TemplateBinding Height}"
+                            Kind="Bin" />
+                    </Border>
                 </ControlTemplate>
             </Setter>
         </Style>
-
-        <Style Selector="Button.delete-button:pointerover">
-            <Setter Property="Foreground" Value="Red" />
-        </Style>
-
-        <Style Selector="Button.edit-button:pointerover">
-            <Setter Property="Foreground" Value="{StaticResource PrimarySolidColorBrush}" />
-        </Style>
-
 
     </Application.Styles>
 </Application>
