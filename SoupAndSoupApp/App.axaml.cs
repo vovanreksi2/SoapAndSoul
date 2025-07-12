@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SoupAndSoup.Data;
 using SoupAndSoupApp.Helpers;
 using SoupAndSoupApp.Models;
+using SoupAndSoupApp.Services;
 using SoupAndSoupApp.ViewModels;
 using SoupAndSoupApp.Views;
 
@@ -67,6 +68,8 @@ public partial class App : Application
         services.AddSingleton<IDialogService, DialogService>();
         
         services.AddSingleton<INotificationService, NotificationService>();
+
+        services.AddSingleton<IAzureBlobStorageService, AzureBlobStorageService>();
 
         services.AddSingleton<AddIngredientDialog>();
         services.AddSingleton<AddIngredientDialogViewModel>();

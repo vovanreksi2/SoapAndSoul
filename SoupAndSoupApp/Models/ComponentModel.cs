@@ -1,25 +1,10 @@
 ﻿using System.Windows.Input;
-using Avalonia.Media.Imaging;
 using ReactiveUI;
 
 namespace SoupAndSoupApp.Models;
 
-public class ComponentModel : ReactiveObject
+public class ComponentModel : BaseModel
 {
-    public int Id { get; set; }
-
-    public Bitmap ImagePath
-    {
-        get => _imagePath;
-        set => this.RaiseAndSetIfChanged(ref _imagePath, value);
-    }
-
-    public string Name
-    {
-        get => _name;
-        set => this.RaiseAndSetIfChanged(ref _name, value);
-    }
-
     public decimal AmountInRecipe
     {
         get => _buyAmount;
@@ -59,6 +44,4 @@ public class ComponentModel : ReactiveObject
 
     private bool _isSelected;
     private decimal _buyAmount;
-    private string _name;
-    private Bitmap _imagePath;
 }

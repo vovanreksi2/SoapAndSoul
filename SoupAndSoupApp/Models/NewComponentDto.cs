@@ -2,6 +2,7 @@
 
 public class NewComponentDto
 {
+    public bool IsPhotoChanged => !string.IsNullOrEmpty(ImagePath);
     public string ImagePath { get; set; }
     public string Name { get; set; } = string.Empty;
     public decimal SuggestedAmount { get; set; }

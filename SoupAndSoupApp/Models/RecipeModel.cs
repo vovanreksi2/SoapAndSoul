@@ -1,33 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Windows.Input;
-using Avalonia.Media.Imaging;
 using ReactiveUI;
 
 namespace SoupAndSoupApp.Models;
 
-public class RecipeModel: ReactiveObject, IDisposable
+public class RecipeModel : BaseModel, IDisposable
 {
-    private bool _suppressIsDirty;
-
-    public int Id { get; set; } 
-
-    public bool IsNewRecipe => Id == default;
-
-    public string Name
-    {
-        get => _name;
-        set => this.RaiseAndSetIfChanged(ref _name, value);
-    }
-
-    public Bitmap? ImagePath
-    {
-        get => _imagePath;
-        set => this.RaiseAndSetIfChanged(ref _imagePath, value);
-    }
+    public bool IsPhotoChanged => !string.IsNullOrEmpty(ImagePathString);
 
     public string Description
     {
@@ -71,10 +53,7 @@ public class RecipeModel: ReactiveObject, IDisposable
             .Where(x => !_suppressIsDirty && x.PropertyName != nameof(IsDirty))
             .Throttle(TimeSpan.FromMilliseconds(200))
             .ObserveOn(RxApp.MainThreadScheduler)
-            .Subscribe(_ =>
-            {
-                IsDirty = true;
-            })
+            .Subscribe(_ => { IsDirty = true; })
             .DisposeWith(_disposables);
     }
 
@@ -94,10 +73,8 @@ public class RecipeModel: ReactiveObject, IDisposable
 
 
     private decimal _unitCost;
-    private Bitmap? _imagePath;
-    private string _name;
     private string _description;
     private decimal _amount;
     private decimal _preparationTime;
-
+    private bool _suppressIsDirty;
 }
