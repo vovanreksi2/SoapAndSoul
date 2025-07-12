@@ -127,5 +127,13 @@
             </Setter>
         </Style>
 
+        <Style Selector="Button.button-mainColor">
+            <Setter Property="Background" Value="{StaticResource PrimaryAccentColor}" />
+            <Setter Property="Foreground" Value="{StaticResource ButtonForegroundColor}" />
+        </Style>
+
+        <Style Selector="Button.button-mainColor:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource ButtonHoverColor}" />
+        </Style>
     </Application.Styles>
 </Application>

@@ -165,13 +165,8 @@
             <Setter Property="CornerRadius" Value="8" />
             <Setter Property="FontSize" Value="16" />
 
-            <Setter Property="Background" Value="{StaticResource PrimaryAccentColor}" />
-            <Setter Property="Foreground" Value="{StaticResource ButtonForegroundColor}" />
         </Style>
 
-        <Style Selector="Button.MainReceipt:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{StaticResource ButtonHoverColor}" />
-        </Style>
 
 
         <!--  Buttons end  -->
@@ -197,7 +192,7 @@
                         Text="Рецепти" />
                     <Button
                         Margin="40,0,0,0"
-                        Classes="MainReceipt"
+                        Classes="MainReceipt button-mainColor"
                         Command="{Binding NewReceiptCommand}"
                         Content="+ Новий Рецепт" />
                 </WrapPanel>
@@ -259,14 +254,14 @@
                             FontSize="15"
                             Text="{Binding Name}" />
 
-                        <!--<components:EditableTextBlock
+                        <components:EditableTextBlock
                             Grid.Row="1"
                             Grid.Column="0"
                             Margin="0,5,0,0"
                             HorizontalAlignment="Stretch"
                             FontSize="15"
                             Foreground="Gray"
-                            Text="{Binding Description}" />-->
+                            Text="{Binding Description}" />
 
                         <Grid
                             Grid.Row="2"

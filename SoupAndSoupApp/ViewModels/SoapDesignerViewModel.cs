@@ -187,7 +187,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
             _cachedComponentTypes = componentTypes.ToDictionary(type => type.Id, type => new ComponentTypeModel(type));
 
             var components = await _componentService.GetAllAsync(cosmeticType);
-            ;
+            
             foreach (var mappedComponent in await Task.WhenAll(components.Select(MapComponentModelAsync)))
             {
                 _cachedComponents.AddOrUpdate(mappedComponent);
@@ -220,12 +220,17 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
 
     private void NewReceipt()
     {
-        var newRecipe = new RecipeModel
-        {
-            Name = "Нова Рецептура",
-            Description = string.Empty,
-            ImagePath = ImageHelper.LoadFromResource(NoImage_Receipt),
-        };
+        var newRecipe = new RecipeModel();
+
+        newRecipe.BeginInit();
+
+        newRecipe.Name = "Нова Рецептура";
+        newRecipe.Description = string.Empty;
+        newRecipe.ImagePath = ImageHelper.LoadFromResource(NoImage_Receipt);
+        newRecipe.DeleteReceiptCommand = DeleteReceiptCommand;
+
+        newRecipe.EndInit();
+
         Recipes.Add(newRecipe);
         IsRecipeAddMode = true;
 
@@ -234,21 +239,23 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
 
     private async Task DeleteReceiptAsync(RecipeModel recipeModel)
     {
-        var isDeleteSuccess = await _recipeService.SoftDelete(recipeModel.Id);
-        NotifyResult(isDeleteSuccess, DomainNotificationType.RecipeDeleted);
-
-        if (!isDeleteSuccess)
+        if (!recipeModel.IsNew)
         {
-            LogError("Failed to delete recipe with ID {recipeId}, Name: {recipeName}", recipeModel.Id, recipeModel.Name);
-            return;
+            var isDeleteSuccess = await _recipeService.SoftDelete(recipeModel.Id);
+            NotifyResult(isDeleteSuccess, DomainNotificationType.RecipeDeleted);
+
+            if (!isDeleteSuccess)
+            {
+                LogError("Failed to delete recipe with ID {recipeId}, Name: {recipeName}", recipeModel.Id, recipeModel.Name);
+                return;
+            }
+
+            await DeleteImageAsync(recipeModel);
+            LogError("Success for delete recipe with ID {recipeId}, Name: {recipeName}", recipeModel.Id, recipeModel.Name);
         }
 
         Recipes.Remove(recipeModel);
         SelectedRecipe = Recipes.Count > 0 ? Recipes.FirstOrDefault() : null;
-        
-        LogError("Success for delete recipe with ID {recipeId}, Name: {recipeName}", recipeModel.Id, recipeModel.Name);
-       
-        await DeleteImageAsync(recipeModel);
     }
 
 
@@ -268,12 +275,15 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
         await ExecuteCompensatingTransaction(async () =>
         {
             await UpdateComponentImageAsync(newComponentDto);
-            var component = MapComponent(newComponentDto, group.ComponentType.Type);
+            var dbComponent = MapComponent(newComponentDto, group.ComponentType.Type);
 
-            var newlySavedComponent  = await SaveNewComponentAsync(component, group.ComponentType.Type);
+            var newlySavedComponent  = await SaveNewComponentAsync(dbComponent, group.ComponentType.Type);
             if (newlySavedComponent is null) return false;
 
-            await UpdateGroupComponentsAsync(group, newlySavedComponent );
+            var component = await MapComponentModelAsync(newlySavedComponent);
+            _cachedComponents.AddOrUpdate(component);
+
+            UpdateGroupComponents(group, component);
             LogError("Success for save component with ID {componentId}, Name: {componentName}", component.Id, component.Name);
 
             return true;
@@ -351,17 +361,18 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
         LogError("Failed to save new component{componentName} of type {componentType}.", component.Name, type);
         return result;
     }    
-    private async Task UpdateGroupComponentsAsync(ComponentGroup group, Component saveResult)
+    private void UpdateGroupComponents(ComponentGroup group, ComponentModel newComponent)
     {
         var tmpList = new List<ComponentModel>();
         tmpList.AddRange(group.Components);
-        tmpList.Add(await MapComponentModelAsync(saveResult));
+        tmpList.Add(newComponent);
 
         group.Components.Clear();
         group.Components.AddRange(
             tmpList
                 .OrderBy(x => IsLatin(x.Name))
                 .ThenBy(x => x.Name));
+
     }
 
 
@@ -665,6 +676,11 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
         new[] { ".jpg", ".jpeg", ".png" }.Contains(ext.ToLower());
     private Task<string?> UploadComponentImageAsync(string imagePath)
     {
+        if (string.IsNullOrEmpty(imagePath) || !File.Exists(imagePath))
+        {
+            LogError("File not found on local machine. FilePath: {localFilePath}", imagePath);
+            return Task.FromResult<string?>(null);
+        }
         var ext = Path.GetExtension(imagePath);
         if (!IsValidExtension(ext))
             throw new InvalidOperationException("Unsupported image extension.");
@@ -815,19 +831,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
 
         result.ImagePath = await LoadFromResourceAsync(result, NoImage_Component_Image);
 
-        result
-                .WhenAnyValue(x => x.IsSelected)
-                .Where(_ => !_suppressSelectionChange)
-                .Skip(1)
-                .Subscribe(_ => { HandleSelectedComponentChanged(result); })
-                .DisposeWith(Disposables);
-
-        result
-            .WhenAnyValue(x => x.AmountInRecipe)
-            .Skip(1)
-            .Subscribe(_ => { HandleAmountComponentChanged(result);})
-            .DisposeWith(Disposables);
-
+        SubscribeOnComponentChanges(result);
         return result;
     }
 
@@ -885,6 +889,21 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
         return ImageHelper.LoadFromResource(defaultImageUrl);
     }
 
+    private void SubscribeOnComponentChanges(ComponentModel component)
+    {
+        component
+            .WhenAnyValue(x => x.IsSelected)
+            .Where(_ => !_suppressSelectionChange)
+            .Skip(1)
+            .Subscribe(_ => { HandleSelectedComponentChanged(component); })
+            .DisposeWith(Disposables);
+
+        component
+            .WhenAnyValue(x => x.AmountInRecipe)
+            .Skip(1)
+            .Subscribe(_ => { HandleAmountComponentChanged(component); })
+            .DisposeWith(Disposables);
+    }
 
     public Bitmap GetBitmapFromStream(Stream stream)
     {

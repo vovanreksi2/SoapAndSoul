@@ -8,7 +8,6 @@ using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
 using SoupAndSoup.Data;
 using SoupAndSoupApp.Helpers;
-using SoupAndSoupApp.Models;
 using SoupAndSoupApp.Services;
 using SoupAndSoupApp.ViewModels;
 using SoupAndSoupApp.Views;

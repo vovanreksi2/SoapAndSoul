@@ -69,4 +69,5 @@ public partial class IngredientItemsControl : UserControl
     private void OnIngredientsChanged(AvaloniaPropertyChangedEventArgs e)
     {
     }
+ 
 }

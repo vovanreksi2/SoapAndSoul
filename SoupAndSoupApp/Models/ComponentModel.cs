@@ -5,10 +5,19 @@ namespace SoupAndSoupApp.Models;
 
 public class ComponentModel : BaseModel
 {
+    public const decimal DefaultIncreaseAmount = 10m;
+
+    public ComponentModel()
+    {
+        IncreaseAmountCommand = ReactiveCommand.Create(() => AmountInRecipe+= DefaultIncreaseAmount);
+        DecreaseAmountCommand = ReactiveCommand.Create(() => { if (AmountInRecipe > 0) AmountInRecipe-= DefaultIncreaseAmount; });
+    }
+
+
     public decimal AmountInRecipe
     {
-        get => _buyAmount;
-        set => this.RaiseAndSetIfChanged(ref _buyAmount, value);
+        get => _amountInRecipe;
+        set => this.RaiseAndSetIfChanged(ref _amountInRecipe, value);
     }
 
     public decimal BuyAmount
@@ -41,7 +50,10 @@ public class ComponentModel : BaseModel
 
     public ICommand EditCommand { get; set; }
     public ICommand DeleteCommand { get; set; }
+    public ICommand IncreaseAmountCommand { get; }
+    public ICommand DecreaseAmountCommand { get; }
 
     private bool _isSelected;
     private decimal _buyAmount;
+    private decimal _amountInRecipe;
 }

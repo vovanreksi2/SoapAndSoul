@@ -85,6 +85,7 @@
                     CornerRadius="12" />
 
                 <Image
+                    x:Name="IngredientImage"
                     Grid.Row="0"
                     Grid.Column="0"
                     Grid.ColumnSpan="2"
@@ -93,6 +94,7 @@
                     IsHitTestVisible="False"
                     Source="{Binding ImagePath}"
                     Stretch="Uniform" />
+
 
                 <StackPanel
                     Grid.Row="0"
@@ -158,18 +160,25 @@
 
                     <Button
                         Grid.Column="0"
+                        Classes="button-mainColor"
+                        Command="{Binding DecreaseAmountCommand}"
                         Content="-"
                         CornerRadius="0 0 0 12" />
 
                     <TextBox
                         Grid.Column="1"
-                        Margin="0,0,0,2"
+                        Margin="0,0,0,3"
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Top"
                         HorizontalContentAlignment="Center"
+                        BorderBrush="{StaticResource PrimaryAccentColorLighter}"
                         Text="{Binding AmountInRecipe, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat='{}{0:F0}'}" />
+
                     <Button
                         Grid.Column="2"
+                        Margin="0,0,2,2"
+                        Classes="button-mainColor"
+                        Command="{Binding IncreaseAmountCommand}"
                         Content="+"
                         CornerRadius="0 0 12 0" />
 
@@ -210,7 +219,7 @@
         <Style Selector="Button.MoldButton">
             <Setter Property="CornerRadius" Value="6" />
             <Setter Property="VerticalAlignment" Value="Top" />
-            <Setter Property="BorderBrush" Value="{StaticResource PrimaryAccentColorLighter}" />
+            <Setter Property="BorderBrush" Value="{StaticResource PrimaryAccentColor}" />
             <Setter Property="Background" Value="{StaticResource PrimaryAccentColorLighter}" />
             <Setter Property="Foreground" Value="{StaticResource SecondaryTextColor}" />
             <Setter Property="FontSize" Value="14" />
@@ -234,6 +243,12 @@
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Foreground" Value="{StaticResource PrimaryTextColor}" />
         </Style>
+        <Style Selector="ToggleButton.IngredientCheckBox:not(:checked):pointerover">
+            <Setter Property="Foreground" Value="{StaticResource PrimaryBorderColor}" />
+            <Setter Property="Background" Value="{StaticResource TileHoverBackgroundColor}" />
+            <Setter Property="FontSize" Value="18" />
+        </Style>
+
         <Style Selector="ToggleButton.IngredientCheckBox:checked /template/ Border">
             <Setter Property="BorderBrush" Value="{StaticResource PrimaryBorderColor}" />
             <Setter Property="BorderThickness" Value="3" />
@@ -242,18 +257,16 @@
             <Setter Property="BorderBrush" Value="{StaticResource BorderColor}" />
             <Setter Property="BorderThickness" Value="1" />
         </Style>
-        <Style Selector="ToggleButton.IngredientCheckBox:pointerover /template/ Border">
+        <Style Selector="ToggleButton.IngredientCheckBox:not(:checked):pointerover /template/ Border">
             <Setter Property="BorderBrush" Value="{StaticResource PrimaryBorderColor}" />
             <Setter Property="BorderThickness" Value="3" />
             <Setter Property="BoxShadow" Value="{Binding Source={StaticResource BorderColor}, Converter={StaticResource ColorToBoxShadowConverter}, ConverterParameter=20}" />
             <Setter Property="Margin" Value="2" />
+        </Style>
 
-        </Style>
-        <Style Selector="ToggleButton.IngredientCheckBox:pointerover">
-            <Setter Property="Foreground" Value="{StaticResource PrimaryBorderColor}" />
-            <Setter Property="Background" Value="{StaticResource TileHoverBackgroundColor}" />
-            <Setter Property="FontSize" Value="18" />
-        </Style>
+
+
+
         <!--  END  -->
 
         <!--  Items control  -->
