@@ -71,14 +71,17 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
         }
     }
 
-    public ObservableCollection<ComponentGroup> ComponentGroups { get; set; } = new();
-
     
     private readonly SourceCache<ComponentModel, int> _cachedComponents = new(component => component.Id);
 
 
     private readonly ReadOnlyObservableCollection<ComponentModel> _componentsByRecipe = ReadOnlyObservableCollection<ComponentModel>.Empty;
     public ReadOnlyObservableCollection<ComponentModel> ComponentsByRecipe => _componentsByRecipe;
+
+
+    private   ReadOnlyObservableCollection<ComponentGroup> _componentGroups = ReadOnlyObservableCollection<ComponentGroup>.Empty;
+    public ReadOnlyObservableCollection<ComponentGroup> ComponentGroups => _componentGroups;
+
 
     public bool IsDirty { get; set; }
 
@@ -135,6 +138,35 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
                 .DisposeWith(Disposables);
 
 
+            _cachedComponents.Connect()
+                .Group(c => c.Type)
+                .Transform(group =>
+                {
+                    _cachedComponentTypes.TryGetValue(group.Key, out var componentType);
+
+                    var groupVm = new ComponentGroup
+                    {
+                        ComponentType = componentType,
+                        NewComponentCommand = NewComponentCommand,
+                        Components = new ObservableCollectionExtended<ComponentModel>()
+                    };
+
+                    group.Cache.Connect()
+                        .AutoRefreshOnObservable(_ => _.WhenAnyPropertyChanged())
+                        .Sort(SortExpressionComparer<ComponentModel>
+                            .Ascending(c => IsLatin(c.Name))
+                            .ThenByAscending(c => c.Name))
+
+                        .Bind(groupVm.Components)
+                        .Subscribe();
+
+                    return groupVm;
+                })
+                .Sort(SortExpressionComparer<ComponentGroup>.Ascending(g => g.ComponentType.Order))
+                .Bind(out _componentGroups)
+                .Subscribe();
+
+
             this.WhenAnyValue(x => x.SelectedRecipe)
                 .Where(x => x != null) // Optional: skip nulls
                 .SelectMany(async newValue =>
@@ -184,28 +216,31 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
             _suppressIsDirty = true;
 
             var componentTypes = await _componentTypeService.GetAllAsync(cosmeticType);
-            _cachedComponentTypes = componentTypes.ToDictionary(type => type.Id, type => new ComponentTypeModel(type));
+            _cachedComponentTypes = componentTypes.ToDictionary(type => (ComponentType)type.Id, type => new ComponentTypeModel(type));
+
+            foreach (var type in _cachedComponentTypes)
+            {
+                _cachedComponents.AddOrUpdate(new ComponentModel
+                {
+                    Id = -(int)type.Key,
+                    IsSelected = false,
+                    IsButton = true,
+                    Type = type.Key,
+                });
+            }
 
             var components = await _componentService.GetAllAsync(cosmeticType);
-            
             foreach (var mappedComponent in await Task.WhenAll(components.Select(MapComponentModelAsync)))
             {
                 _cachedComponents.AddOrUpdate(mappedComponent);
             }
-
-            ComponentGroups.AddRange(
-                _cachedComponentTypes
-                    .OrderBy(_ => _.Value.Order)
-                    .Select(componentType =>
-                        MapComponentGroup(componentType.Value,
-                            _cachedComponents.Items.Where(_ => _.Type == componentType.Value.Type)))
-            );
-
+         
             var recipes = await _recipeService.GetAllAsync();
             var recipeModelTasks = recipes.Select(MapRecipe);
 
             Recipes.AddRange(await Task.WhenAll(recipeModelTasks));
             SelectedRecipe = Recipes.FirstOrDefault();
+
         }
         catch (Exception e)
         {
@@ -283,7 +318,6 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
             var component = await MapComponentModelAsync(newlySavedComponent);
             _cachedComponents.AddOrUpdate(component);
 
-            UpdateGroupComponents(group, component);
             LogError("Success for save component with ID {componentId}, Name: {componentName}", component.Id, component.Name);
 
             return true;
@@ -361,20 +395,6 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
         LogError("Failed to save new component{componentName} of type {componentType}.", component.Name, type);
         return result;
     }    
-    private void UpdateGroupComponents(ComponentGroup group, ComponentModel newComponent)
-    {
-        var tmpList = new List<ComponentModel>();
-        tmpList.AddRange(group.Components);
-        tmpList.Add(newComponent);
-
-        group.Components.Clear();
-        group.Components.AddRange(
-            tmpList
-                .OrderBy(x => IsLatin(x.Name))
-                .ThenBy(x => x.Name));
-
-    }
-
 
     private async Task<bool> SaveExistingComponentAsync(Component component, ComponentType type)
     {
@@ -599,7 +619,8 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
 
         void UpdateComponents(IEnumerable<ComponentModel> components, ComponentType typeComponent)
         {
-            foreach (var component in components.Where(_ => _.Type == typeComponent && _.Id != componentModel.Id))
+            var tmpList = new List<ComponentModel>(components);
+            foreach (var component in tmpList.Where(_ => _.Type == typeComponent && _.Id != componentModel.Id))
             {
                 component.IsSelected = false;
             }
@@ -786,21 +807,6 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
             Amount = componentModel.AmountInRecipe
         };
 
-    private ComponentGroup MapComponentGroup(ComponentTypeModel componentType, IEnumerable<ComponentModel> components)
-    {
-        var componentGroup = new ComponentGroup
-        {
-            NewComponentCommand = NewComponentCommand,
-            ComponentType = componentType
-        };
-
-        var list = components
-            .OrderBy(x => IsLatin(x.Name))
-            .ThenBy(x => x.Name).ToList();
-        componentGroup.Components.AddRange(list);
-        
-        return componentGroup;
-    }
 
     private async Task<ComponentModel> MapComponentModelAsync(Component component)
     {
@@ -995,7 +1001,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
     private string _newImagePath;
     private readonly IUnitCostCalculator _unitCostCalc;
     private bool _suppressSelectionChange;
-    private Dictionary<int, ComponentTypeModel> _cachedComponentTypes;
+    private Dictionary<ComponentType, ComponentTypeModel> _cachedComponentTypes;
     private readonly MeasureTypeCache _measureTypeCache;
     private readonly INotificationService _notificationService;
     private bool _suppressIsDirty;

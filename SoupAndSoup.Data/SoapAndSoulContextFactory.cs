@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
-using Microsoft.EntityFrameworkCore;
 
 namespace SoupAndSoup.Data
 {
@@ -14,8 +9,7 @@ namespace SoupAndSoup.Data
         {
             var optionsBuilder = new DbContextOptionsBuilder<SoapAndSoulContext>();
 
-            // ❗ Обов’язково вкажи свій правильний рядок з'єднання
-            var connectionString = "Server=(localdb)\\mssqllocaldb;Database=SoapAndSoulDb_New;Trusted_Connection=True;MultipleActiveResultSets=true";
+            var connectionString = "Server=(localdb)\\mssqllocaldb;Database=SoapAndSoulDb_New2;Trusted_Connection=True;MultipleActiveResultSets=true";
 
             optionsBuilder.UseSqlServer(connectionString);
 

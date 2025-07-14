@@ -169,7 +169,7 @@ namespace SoupAndSoupApp.ViewModels
             if (component != null)
             {
                 BuyPrice = component.BuyPrice;
-                BuyAmount = component.Type == ComponentType.Form ? BuyAmount : component.BuyAmount;
+                BuyAmount = component.BuyAmount;
                 Name = component.Name;
                 UnitPrice = component.Cost;
                 Photo = component.ImagePath;
