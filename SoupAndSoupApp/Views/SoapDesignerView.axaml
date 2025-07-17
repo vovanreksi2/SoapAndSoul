@@ -201,7 +201,7 @@
                     Grid.Row="1"
                     Grid.Column="0"
                     Margin="0,30,0,0"
-                    Text="Знайти рецепт" />
+                    Text="{Binding SearchString}" />
 
                 <ListBox
                     Grid.Row="2"

@@ -13,6 +13,7 @@ using System.Windows.Input;
 using Avalonia.Media.Imaging;
 using DynamicData;
 using DynamicData.Binding;
+using FuzzySharp;
 using ReactiveUI;
 using SoupAndSoup.Data.Models;
 using SoupAndSoup.Data.Services;
@@ -57,7 +58,10 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
         }
     }
 
-    public ObservableCollection<RecipeModel> Recipes { get; } = new();
+    private readonly SourceCache<RecipeModel, int> _cachedRecipes = new(recipe => recipe.Id);
+
+    private readonly ReadOnlyObservableCollection<RecipeModel> _recipes = ReadOnlyObservableCollection<RecipeModel>.Empty;
+    public ReadOnlyObservableCollection<RecipeModel> Recipes => _recipes;
 
     public RecipeModel? SelectedRecipe
     {
@@ -79,7 +83,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
     public ReadOnlyObservableCollection<ComponentModel> ComponentsByRecipe => _componentsByRecipe;
 
 
-    private   ReadOnlyObservableCollection<ComponentGroup> _componentGroups = ReadOnlyObservableCollection<ComponentGroup>.Empty;
+    private readonly ReadOnlyObservableCollection<ComponentGroup> _componentGroups = ReadOnlyObservableCollection<ComponentGroup>.Empty;
     public ReadOnlyObservableCollection<ComponentGroup> ComponentGroups => _componentGroups;
 
 
@@ -87,7 +91,20 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
 
     public Task Initialization { get; }
 
+    public string SearchString
+    {
+        get => _searchString;
+        set
+        {
+            if (_searchString == value) return;
+            this.RaiseAndSetIfChanged(ref _searchString, value.Trim());
 
+            _cachedRecipes.Connect()
+                .AutoRefreshOnObservable(_ => Observable.Return(Unit.Default)); 
+
+        }
+    }
+    
     public SoapDesignerViewModel( )
     {
         InitView();
@@ -164,8 +181,15 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
                 })
                 .Sort(SortExpressionComparer<ComponentGroup>.Ascending(g => g.ComponentType.Order))
                 .Bind(out _componentGroups)
-                .Subscribe();
+                .Subscribe()
+                .DisposeWith(Disposables);
 
+            _cachedRecipes.Connect()
+                .Filter(FilterRecipes)
+                .Sort(SortExpressionComparer<RecipeModel>.Ascending(r => r.Name))
+                .Bind(out _recipes)
+                .Subscribe()
+                .DisposeWith(Disposables);
 
             this.WhenAnyValue(x => x.SelectedRecipe)
                 .Where(x => x != null) // Optional: skip nulls
@@ -185,6 +209,12 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
                     return Unit.Default;
                 })
                 .Subscribe()
+                .DisposeWith(Disposables);
+
+            this.WhenAnyValue(x => x.SearchString)
+                .Throttle(TimeSpan.FromMilliseconds(300)) // debounce optional
+                .DistinctUntilChanged()
+                .Subscribe(_ => _cachedRecipes.Refresh())
                 .DisposeWith(Disposables);
 
         }
@@ -234,11 +264,15 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
             {
                 _cachedComponents.AddOrUpdate(mappedComponent);
             }
-         
+
             var recipes = await _recipeService.GetAllAsync();
             var recipeModelTasks = recipes.Select(MapRecipe);
 
-            Recipes.AddRange(await Task.WhenAll(recipeModelTasks));
+            foreach (var recipeModel in await Task.WhenAll(recipeModelTasks))
+            {
+                _cachedRecipes.AddOrUpdate(recipeModel);
+            }
+
             SelectedRecipe = Recipes.FirstOrDefault();
 
         }
@@ -251,7 +285,6 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
             _suppressIsDirty = false;
         }
     }
-
 
     private void NewReceipt()
     {
@@ -266,7 +299,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
 
         newRecipe.EndInit();
 
-        Recipes.Add(newRecipe);
+        _cachedRecipes.AddOrUpdate(newRecipe);
         IsRecipeAddMode = true;
 
         SelectedRecipe = newRecipe;
@@ -289,7 +322,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
             LogError("Success for delete recipe with ID {recipeId}, Name: {recipeName}", recipeModel.Id, recipeModel.Name);
         }
 
-        Recipes.Remove(recipeModel);
+        _cachedRecipes.Remove(recipeModel.Id);
         SelectedRecipe = Recipes.Count > 0 ? Recipes.FirstOrDefault() : null;
     }
 
@@ -978,6 +1011,22 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
     }
 
 
+   
+    private bool FilterRecipes(RecipeModel recipe)
+    {
+        var searchString = SearchString?.Trim()?.ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+
+        var contains = recipe.Name.Contains(searchString, StringComparison.OrdinalIgnoreCase) ||
+                       recipe.Description.Contains(searchString, StringComparison.OrdinalIgnoreCase);
+
+        var fuzzyScore = Fuzz.PartialRatio(searchString, recipe.Name.ToLowerInvariant()) > 60 ||
+                         Fuzz.PartialRatio(searchString, recipe.Description.ToLowerInvariant()) > 60;
+
+        return contains || fuzzyScore;
+    }
+
     /// IAutoSaveCandidate implementation 
     public Task<bool> SaveIfNeededAsync(CancellationToken cancellationToken = default)
     {
@@ -1007,4 +1056,5 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
     private bool _suppressIsDirty;
     private RecipeModel? _previousSelectedRecipe;
     private readonly IAzureBlobStorageService _blobStorageService;
+    private string _searchString;
 }
