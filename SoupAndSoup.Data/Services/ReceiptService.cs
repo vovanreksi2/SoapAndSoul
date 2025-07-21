@@ -15,10 +15,11 @@ public class RecipeService : RepositoryBase<Recipe>
             .FirstOrDefaultAsync(r => r.Id == id);
     }
 
-    public override async Task<List<Recipe>> GetAllAsync(bool noTracking = false)
+    public async Task<List<Recipe>> GetAllAsync(int cosmeticType, bool noTracking = false)
     {
         return await _dbSet
             .Where(r=> r.IsActive)
+            .Where(r=> r.CosmeticTypeId == cosmeticType)
             .Include(r => r.RecipeComponents)
                 .ThenInclude(ri => ri.Component)
                     .ThenInclude(i=> i.Images)

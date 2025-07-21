@@ -6,7 +6,8 @@
     xmlns:components="clr-namespace:SoupAndSoupApp.Components"
     xmlns:converters="clr-namespace:SoupAndSoupApp.Converters"
     x:Name="RootControl"
-    x:DataType="components:EditableTextBlock">
+    x:DataType="components:EditableTextBlock"
+    ClipToBounds="False">
 
     <UserControl.Resources>
         <converters:EditableTextBlockMultiBindConverter x:Key="EditableTextBlockMultiBindConverter" />
@@ -21,7 +22,7 @@
         <Style Selector="Border.BorderStyle">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderBrush" Value="{StaticResource BorderColor}" />
-            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="BorderThickness" Value="0" />
             <Setter Property="CornerRadius" Value="4" />
             <Setter Property="Cursor" Value="Hand" />
 
@@ -33,13 +34,17 @@
             </Setter>
         </Style>
         <Style Selector="Border.BorderStyle:pointerover">
+            <Setter Property="BoxShadow" Value="{Binding Source={StaticResource BorderColor}, Converter={StaticResource ColorToBoxShadowConverter}, ConverterParameter=20}" />
             <Setter Property="Background" Value="{StaticResource TileHoverBackgroundColor}" />
         </Style>
+        <Style Selector="Border.BorderStyle:not(:pointerover)">
+            <Setter Property="BoxShadow" Value="{Binding Source={StaticResource BorderColor}, Converter={StaticResource ColorToBoxShadowConverter}, ConverterParameter=8}" />
+        </Style>
 
-        <Style Selector="TextBlock.ReceiptTitle">
-            <Setter Property="FontFamily" Value="Sans-serif" />
-            <Setter Property="FontSize" Value="20" />
-            <Setter Property="Foreground" Value="{StaticResource PrimaryTextColor}" />
+        <Style Selector="TextBlock.Title">
+            <Setter Property="FontFamily" Value="{Binding #RootControl.FontFamily}" />
+            <Setter Property="FontSize" Value="{Binding #RootControl.FontSize}" />
+            <Setter Property="Foreground" Value="{Binding #RootControl.Foreground}" />
             <Setter Property="TextWrapping" Value="WrapWithOverflow" />
             <Setter Property="HorizontalAlignment" Value="Left" />
             <Setter Property="VerticalAlignment" Value="Center" />
@@ -55,7 +60,6 @@
     </UserControl.Styles>
 
     <Grid
-        Margin="5"
         Background="{StaticResource CardBackgroundColor}"
         Classes="mainGrid"
         ColumnDefinitions="*, 25"
@@ -64,13 +68,14 @@
         <Border
             Grid.Column="0"
             Grid.ColumnSpan="2"
+            Margin="-5"
             Classes="BorderStyle" />
 
         <TextBlock
             Name="DisplayTextBlock"
             Grid.Column="0"
-            Margin="5"
-            Classes="ReceiptTitle"
+            VerticalAlignment="Top"
+            Classes="Title"
             IsVisible="{Binding !#RootControl.IsEditing}"
             Text="{Binding #RootControl.Text}"
             TextAlignment="Left"

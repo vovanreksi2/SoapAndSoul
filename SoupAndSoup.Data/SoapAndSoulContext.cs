@@ -172,7 +172,8 @@ public class SoapAndSoulContext : DbContext
     {
         modelBuilder.Entity<CosmeticType>().HasData(
             new CosmeticType{Id = 1, Name = "Мило"},
-            new CosmeticType{Id = 2, Name = "Духи"}
+            new CosmeticType{Id = 2, Name = "Духи"},
+            new CosmeticType{Id = 3, Name = "Всі"}
         );
 
         modelBuilder.Entity<MeasureType>().HasData(

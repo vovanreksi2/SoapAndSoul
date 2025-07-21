@@ -11,7 +11,6 @@
 
 
         <!--  Background  -->
-        <Color x:Key="MainBackgroundColor">White</Color>
         <Color x:Key="CardBackgroundColor">#FFF9F6F3</Color>
         <Color x:Key="TileHoverBackgroundColor">#FFFDF5F3</Color>
 

@@ -11,10 +11,7 @@ public class Recipe
     public string Name { get; set; }
 
     public string Description { get; set; }
-
-    [Required, MaxLength(50)]
-    public string Type { get; set; } 
-
+ 
     public DateTime DateOfCreate { get; set; }
 
     public decimal Amount { get; set; }
@@ -27,7 +24,10 @@ public class Recipe
 
     public ICollection<RecipeComponent> RecipeComponents { get; set; }
         
-    public ICollection<RecipeImage> Images { get; set; } 
+    public ICollection<RecipeImage> Images { get; set; }
+
+    public int CosmeticTypeId { get; set; }
+    public CosmeticType CosmeticType { get; set; }
 
     public Recipe()
     {

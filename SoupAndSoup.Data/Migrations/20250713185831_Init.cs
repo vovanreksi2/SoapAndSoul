@@ -58,26 +58,6 @@ namespace SoupAndSoup.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Recipes",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Type = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    DateOfCreate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    PreparationTime = table.Column<TimeSpan>(type: "time", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    Version = table.Column<long>(type: "bigint", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Recipes", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "ComponentTypeCosmeticTypes",
                 columns: table => new
                 {
@@ -102,6 +82,32 @@ namespace SoupAndSoup.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Recipes",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    DateOfCreate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    PreparationTime = table.Column<TimeSpan>(type: "time", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    Version = table.Column<long>(type: "bigint", nullable: false),
+                    CosmeticTypeId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Recipes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Recipes_CosmeticTypes_CosmeticTypeId",
+                        column: x => x.CosmeticTypeId,
+                        principalTable: "CosmeticTypes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Components",
                 columns: table => new
                 {
@@ -115,7 +121,8 @@ namespace SoupAndSoup.Data.Migrations
                     BuyPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     ComponentTypeId = table.Column<int>(type: "int", nullable: false),
                     UseMeasureTypeId = table.Column<int>(type: "int", nullable: false),
-                    BuyMeasureTypeId = table.Column<int>(type: "int", nullable: false)
+                    BuyMeasureTypeId = table.Column<int>(type: "int", nullable: false),
+                    CosmeticTypeId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -124,6 +131,12 @@ namespace SoupAndSoup.Data.Migrations
                         name: "FK_Components_ComponentTypes_ComponentTypeId",
                         column: x => x.ComponentTypeId,
                         principalTable: "ComponentTypes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Components_CosmeticTypes_CosmeticTypeId",
+                        column: x => x.CosmeticTypeId,
+                        principalTable: "CosmeticTypes",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
@@ -244,13 +257,13 @@ namespace SoupAndSoup.Data.Migrations
                         column: x => x.ComponentId,
                         principalTable: "Components",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_RecipeComponents_Recipes_RecipeId",
                         column: x => x.RecipeId,
                         principalTable: "Recipes",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.InsertData(
@@ -276,7 +289,8 @@ namespace SoupAndSoup.Data.Migrations
                 values: new object[,]
                 {
                     { 1, "Мило" },
-                    { 2, "Духи" }
+                    { 2, "Духи" },
+                    { 3, "Всі" }
                 });
 
             migrationBuilder.InsertData(
@@ -360,6 +374,11 @@ namespace SoupAndSoup.Data.Migrations
                 column: "ComponentTypeId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Components_CosmeticTypeId",
+                table: "Components",
+                column: "CosmeticTypeId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Components_Name",
                 table: "Components",
                 column: "Name");
@@ -395,6 +414,11 @@ namespace SoupAndSoup.Data.Migrations
                 column: "RecipeId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Recipes_CosmeticTypeId",
+                table: "Recipes",
+                column: "CosmeticTypeId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Recipes_Name",
                 table: "Recipes",
                 column: "Name");
@@ -422,9 +446,6 @@ namespace SoupAndSoup.Data.Migrations
                 name: "RecipeImages");
 
             migrationBuilder.DropTable(
-                name: "CosmeticTypes");
-
-            migrationBuilder.DropTable(
                 name: "Components");
 
             migrationBuilder.DropTable(
@@ -435,6 +456,9 @@ namespace SoupAndSoup.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "MeasureTypes");
+
+            migrationBuilder.DropTable(
+                name: "CosmeticTypes");
         }
     }
 }

@@ -14,7 +14,7 @@ using SoupAndSoupApp.Views;
 
 namespace SoupAndSoupApp;
 
-public partial class App : Application
+public class App : Application
 {
     private const int DelayAfterSaveMilliseconds = 2000;
 
@@ -60,22 +60,23 @@ public partial class App : Application
         services.AddSingleton<MainViewModel>();
 
         services.AddSingleton<SoapDesignerView>();
-        services.AddSingleton<SoapDesignerViewModel>();
-
-        services.AddSingleton<IAutoSaveCandidate>(sp => sp.GetRequiredService<SoapDesignerViewModel>());
-
-        services.AddSingleton<IDialogService, DialogService>();
-        
-        services.AddSingleton<INotificationService, NotificationService>();
-
-        services.AddSingleton<IAzureBlobStorageService, AzureBlobStorageService>();
+        services.AddTransient<SoapDesignerViewModel>();
 
         services.AddSingleton<AddIngredientDialog>();
         services.AddSingleton<AddIngredientDialogViewModel>();
 
+        services.AddSingleton<IDialogService, DialogService>();
+        
+        services.AddSingleton<IDesignerViewModelFactory, DesignerViewModelFactory>();
+        services.AddSingleton<IActiveViewModelRegistry, ActiveViewModelRegistry>();
+
+        services.AddSingleton<INotificationService, NotificationService>();
+
+        services.AddSingleton<IAzureBlobStorageService, AzureBlobStorageService>();
+
         services.AddSingleton<IUnitCostCalculator, UnitCostCalculator>();
         services.AddSingleton<MeasureTypeCache>();
-
+        
         services.AddSoupAndSoulDb();
     }
 
@@ -113,8 +114,15 @@ public partial class App : Application
 
     private static async Task<bool?> SaveAllWithAutoSaveCandidates()
     {
-        var autoSaveCandidates = ServiceProvider.GetServices<IAutoSaveCandidate>().ToList();
-        if (autoSaveCandidates.All(saveCandidate=> !saveCandidate.ShouldSave()))
+        var viewModelRegistry = ServiceProvider.GetService<IActiveViewModelRegistry>();
+        if (viewModelRegistry == null)
+        {
+            Console.WriteLine("No active view model registry found.");
+            return null; // No candidates to save
+        }
+
+        var autoSaveCandidates = viewModelRegistry.GetActiveViewModels();
+        if (autoSaveCandidates.All(saveCandidate => !saveCandidate.ShouldSave()))
         {
             Console.WriteLine("At least one auto-save candidate returned null, indicating no save was needed.");
             return null; // No candidates to save

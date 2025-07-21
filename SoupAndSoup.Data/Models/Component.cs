@@ -32,4 +32,7 @@ public class Component
     public ICollection<RecipeComponent> RecipeComponents { get; set; } = new List<RecipeComponent>();
 
     public ICollection<ComponentImage> Images { get; set; } = new List<ComponentImage>();
+    
+    public int CosmeticTypeId { get; set; }
+    public CosmeticType CosmeticType { get; set; }
 }

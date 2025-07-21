@@ -26,7 +26,7 @@ using CosmeticType = SoupAndSoupApp.Models.CosmeticType;
 
 namespace SoupAndSoupApp.ViewModels;
 
-public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
+public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitializableVM
 {
     public const string NoImage_Receipt = "Assets/No_Receipt_Photo.png";
     public const string NoImage_Component_Image = "Assets/No_Component_Photo.png";
@@ -60,7 +60,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
 
     private readonly SourceCache<RecipeModel, int> _cachedRecipes = new(recipe => recipe.Id);
 
-    private readonly ReadOnlyObservableCollection<RecipeModel> _recipes = ReadOnlyObservableCollection<RecipeModel>.Empty;
+    private ReadOnlyObservableCollection<RecipeModel> _recipes = ReadOnlyObservableCollection<RecipeModel>.Empty;
     public ReadOnlyObservableCollection<RecipeModel> Recipes => _recipes;
 
     public RecipeModel? SelectedRecipe
@@ -79,17 +79,15 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
     private readonly SourceCache<ComponentModel, int> _cachedComponents = new(component => component.Id);
 
 
-    private readonly ReadOnlyObservableCollection<ComponentModel> _componentsByRecipe = ReadOnlyObservableCollection<ComponentModel>.Empty;
+    private ReadOnlyObservableCollection<ComponentModel> _componentsByRecipe = ReadOnlyObservableCollection<ComponentModel>.Empty;
     public ReadOnlyObservableCollection<ComponentModel> ComponentsByRecipe => _componentsByRecipe;
 
 
-    private readonly ReadOnlyObservableCollection<ComponentGroup> _componentGroups = ReadOnlyObservableCollection<ComponentGroup>.Empty;
+    private ReadOnlyObservableCollection<ComponentGroup> _componentGroups = ReadOnlyObservableCollection<ComponentGroup>.Empty;
     public ReadOnlyObservableCollection<ComponentGroup> ComponentGroups => _componentGroups;
 
 
     public bool IsDirty { get; set; }
-
-    public Task Initialization { get; }
 
     public string SearchString
     {
@@ -127,62 +125,74 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
         _notificationService = notificationService;
         _blobStorageService = blobStorageService;
 
-        try
-        {
-            Initialization = InitializeAsync();
+        InitView();
+    }
 
-            _cachedComponents.Connect()
-                .AutoRefresh(x => x.IsSelected)
-                .AutoRefresh(x => x.AmountInRecipe)
-                .ObserveOn(RxApp.MainThreadScheduler)
-                .Subscribe(_ =>
+
+    private void InitView()
+    {
+        NewReceiptCommand = ReactiveCommand.Create(NewReceipt);
+        DeleteReceiptCommand = ReactiveCommand.CreateFromTask<RecipeModel>(DeleteReceiptAsync);
+
+        NewComponentCommand = ReactiveCommand.CreateFromTask<ComponentType>(AddComponentAsync);
+        EditComponentCommand = ReactiveCommand.CreateFromTask<ComponentModel>(EditComponentAsync);
+        DeleteComponentCommand = ReactiveCommand.CreateFromTask<ComponentModel>(DeleteComponentAsync, Observable.Return(true));
+
+        SetupRx();
+    }
+
+    private void SetupRx()
+    {
+        _cachedComponents.Connect()
+            .AutoRefresh(x => x.IsSelected)
+            .AutoRefresh(x => x.AmountInRecipe)
+            .ObserveOn(RxApp.MainThreadScheduler)
+            .Subscribe(_ =>
+            {
+                if (_suppressIsDirty) return;
+                IsDirty = true;
+            })
+            .DisposeWith(Disposables);
+
+        _cachedComponents.Connect()
+            .AutoRefresh(x => x.IsSelected)
+            .Filter(x => x.IsSelected)
+            .Sort(SortExpressionComparer<ComponentModel>
+                .Ascending(x => x.Type)
+                .ThenByAscending(x => IsLatin(x.Name))
+                .ThenByAscending(x => x.Name))
+            .Bind(out _componentsByRecipe)
+            .DisposeMany()
+            .Subscribe()
+            .DisposeWith(Disposables);
+
+        _cachedComponents.Connect()
+            .Group(c => c.Type)
+            .Transform(group =>
+            {
+                _cachedComponentTypes.TryGetValue(group.Key, out var componentType);
+
+                var groupVm = new ComponentGroup
                 {
-                    if (_suppressIsDirty) return;
-                    IsDirty = true;
-                })
-                .DisposeWith(Disposables);
+                    ComponentType = componentType,
+                    NewComponentCommand = NewComponentCommand,
+                    Components = new ObservableCollectionExtended<ComponentModel>()
+                };
 
-            _cachedComponents.Connect()
-                .AutoRefresh(x => x.IsSelected)
-                .Filter(x => x.IsSelected)
-                .Sort(SortExpressionComparer<ComponentModel>
-                    .Ascending(x => x.Type)
-                    .ThenByAscending(x => IsLatin(x.Name))
-                    .ThenByAscending(x => x.Name))
-                .Bind(out _componentsByRecipe)
-                .DisposeMany()
-                .Subscribe()
-                .DisposeWith(Disposables);
+                group.Cache.Connect()
+                    .AutoRefreshOnObservable(_ => _.WhenAnyPropertyChanged())
+                    .Sort(SortExpressionComparer<ComponentModel>
+                        .Ascending(c => IsLatin(c.Name))
+                        .ThenByAscending(c => c.Name))
+                    .Bind(groupVm.Components)
+                    .Subscribe();
 
-
-            _cachedComponents.Connect()
-                .Group(c => c.Type)
-                .Transform(group =>
-                {
-                    _cachedComponentTypes.TryGetValue(group.Key, out var componentType);
-
-                    var groupVm = new ComponentGroup
-                    {
-                        ComponentType = componentType,
-                        NewComponentCommand = NewComponentCommand,
-                        Components = new ObservableCollectionExtended<ComponentModel>()
-                    };
-
-                    group.Cache.Connect()
-                        .AutoRefreshOnObservable(_ => _.WhenAnyPropertyChanged())
-                        .Sort(SortExpressionComparer<ComponentModel>
-                            .Ascending(c => IsLatin(c.Name))
-                            .ThenByAscending(c => c.Name))
-
-                        .Bind(groupVm.Components)
-                        .Subscribe();
-
-                    return groupVm;
-                })
-                .Sort(SortExpressionComparer<ComponentGroup>.Ascending(g => g.ComponentType.Order))
-                .Bind(out _componentGroups)
-                .Subscribe()
-                .DisposeWith(Disposables);
+                return groupVm;
+            })
+            .Sort(SortExpressionComparer<ComponentGroup>.Ascending(g => g.ComponentType.Order))
+            .Bind(out _componentGroups)
+            .Subscribe()
+            .DisposeWith(Disposables);
 
             _cachedRecipes.Connect()
                 .Filter(FilterRecipes)
@@ -217,36 +227,19 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
                 .Subscribe(_ => _cachedRecipes.Refresh())
                 .DisposeWith(Disposables);
 
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"‼️ Exception: {ex.Message}");
-            Debug.WriteLine(ex.StackTrace);
-        }
+        } 
 
-        InitView();
-    }
-
-
-    private void InitView()
+    public async Task InitializeAsync()
     {
-        NewReceiptCommand = ReactiveCommand.Create(NewReceipt);
-        DeleteReceiptCommand = ReactiveCommand.CreateFromTask<RecipeModel>(DeleteReceiptAsync);
+        if (_isInitialized) return;
 
-        NewComponentCommand = ReactiveCommand.CreateFromTask<ComponentType>(AddComponentAsync);
-        EditComponentCommand = ReactiveCommand.CreateFromTask<ComponentModel>(EditComponentAsync);
-        DeleteComponentCommand = ReactiveCommand.CreateFromTask<ComponentModel>(DeleteComponentAsync, Observable.Return(true));
-    }
-
-    private async Task InitializeAsync()
-    {
-        const int cosmeticType = (int)CosmeticType.Soap;
         try
         {
             _suppressIsDirty = true;
 
-            var componentTypes = await _componentTypeService.GetAllAsync(cosmeticType);
-            _cachedComponentTypes = componentTypes.ToDictionary(type => (ComponentType)type.Id, type => new ComponentTypeModel(type));
+            var componentTypes = await _componentTypeService.GetAllAsync((int)_currentCosmeticType);
+            _cachedComponentTypes =
+                componentTypes.ToDictionary(type => (ComponentType)type.Id, type => new ComponentTypeModel(type));
 
             foreach (var type in _cachedComponentTypes)
             {
@@ -259,30 +252,36 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
                 });
             }
 
-            var components = await _componentService.GetAllAsync(cosmeticType);
+            var components = await _componentService.GetAllAsync((int)_currentCosmeticType);
             foreach (var mappedComponent in await Task.WhenAll(components.Select(MapComponentModelAsync)))
             {
                 _cachedComponents.AddOrUpdate(mappedComponent);
             }
 
-            var recipes = await _recipeService.GetAllAsync();
-            var recipeModelTasks = recipes.Select(MapRecipe);
+            var recipes = await _recipeService.GetAllAsync((int)_currentCosmeticType);
+            var recipeModels = await Task.WhenAll(recipes.Select(MapRecipe));
 
-            foreach (var recipeModel in await Task.WhenAll(recipeModelTasks))
+            if (recipeModels.Any())
             {
-                _cachedRecipes.AddOrUpdate(recipeModel);
+                foreach (var recipeModel in recipeModels)
+                {
+                    _cachedRecipes.AddOrUpdate(recipeModel);
+                }
+                SelectedRecipe = Recipes.FirstOrDefault();
             }
-
-            SelectedRecipe = Recipes.FirstOrDefault();
-
+            else
+                NewReceipt();
+  
         }
         catch (Exception e)
         {
-            Debug.WriteLine($"‼️ Exception during initialization: {e.Message}");
+            _notificationService.Notify(DomainNotificationType.ErrorDuringInit);
+            LogError("!‼️ Exception during initialization", e);
         }
         finally
         {
             _suppressIsDirty = false;
+            _isInitialized = true;
         }
     }
 
@@ -810,7 +809,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
             Amount = recipe.Amount,
             Name = recipe.Name,
             PreparationTime = TimeSpan.FromMinutes((int)recipe.PreparationTime),
-            Type = CosmeticType.Soap.ToString(),
+            CosmeticTypeId = (int)_currentCosmeticType,
             Description = recipe.Description,
             RecipeComponents = ComponentsByRecipe.Select(MapRecipeComponent).ToList(),
         };
@@ -885,7 +884,8 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
             BuyMeasureTypeId = componentDto.BuyMeasureType.Id,
             SuggestedAmount = (int)componentDto.SuggestedAmount,
             BuyAmount = (int)componentDto.BuyAmount,
-            BuyPrice = componentDto.BuyPrice
+            BuyPrice = componentDto.BuyPrice,
+            CosmeticTypeId = (int)_currentCosmeticType
         };
 
         if (ingredientId.HasValue)
@@ -1010,6 +1010,10 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
         _notificationService.Notify(type);
     }
 
+    public void SetType(CosmeticType mode)
+    {
+        _currentCosmeticType = mode;
+    }
 
    
     private bool FilterRecipes(RecipeModel recipe)
@@ -1056,5 +1060,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate
     private bool _suppressIsDirty;
     private RecipeModel? _previousSelectedRecipe;
     private readonly IAzureBlobStorageService _blobStorageService;
+    private CosmeticType _currentCosmeticType;
+    private bool _isInitialized;
     private string _searchString;
 }

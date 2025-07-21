@@ -9,7 +9,7 @@ namespace SoupAndSoup.Data
         {
             var optionsBuilder = new DbContextOptionsBuilder<SoapAndSoulContext>();
 
-            var connectionString = "Server=(localdb)\\mssqllocaldb;Database=SoapAndSoulDb_New4;Trusted_Connection=True;MultipleActiveResultSets=true";
+            var connectionString = "Server=(localdb)\\mssqllocaldb;Database=SoapAndSoulDb_New3;Trusted_Connection=True;MultipleActiveResultSets=true";
 
             optionsBuilder.UseSqlServer(connectionString);
 

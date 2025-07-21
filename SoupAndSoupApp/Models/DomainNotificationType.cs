@@ -10,5 +10,6 @@ public enum DomainNotificationType
     ComponentUpdated,
     ComponentDeleted,
 
-    ErrorWhileSaving
+    ErrorWhileSaving,
+    ErrorDuringInit
 }

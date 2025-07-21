@@ -17,6 +17,7 @@ public static class UiNotificationExtensions
             DomainNotificationType.ComponentDeleted => new UiNotification("Компонент видалено", NotificationLevel.Warning),
 
             DomainNotificationType.ErrorWhileSaving => new UiNotification("Помилка при збереженні", NotificationLevel.Error),
+            DomainNotificationType.ErrorDuringInit => new UiNotification("Помилка при ініціалізації", NotificationLevel.Error),
             _ => new UiNotification("Невідома дія", NotificationLevel.Warning),
         };
     }

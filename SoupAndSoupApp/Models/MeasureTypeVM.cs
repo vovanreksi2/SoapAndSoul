@@ -2,6 +2,8 @@
 using ReactiveUI;
 using SoupAndSoupApp.Models;
 
+namespace SoupAndSoupApp.ViewModels;
+
 public class MeasureTypeVM: ReactiveObject
 {
     public ObservableCollection<MeasureTypeModel> MeasureTypes

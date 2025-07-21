@@ -10,7 +10,7 @@ public static class DataModelAddExtension
     {
         services.AddDbContext<SoapAndSoulContext>(options =>
         {
-            options.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=SoapAndSoulDb_new4;Trusted_Connection=True;")
+            options.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=SoapAndSoulDb_new3;Trusted_Connection=True;")
                 .EnableSensitiveDataLogging();
 
             //options.UseAzureSql(

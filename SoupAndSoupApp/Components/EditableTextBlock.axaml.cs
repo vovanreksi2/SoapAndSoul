@@ -5,6 +5,7 @@ using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
+using Avalonia.Media;
 using Avalonia.VisualTree;
 
 namespace SoupAndSoupApp.Components;
@@ -51,6 +52,62 @@ public partial class EditableTextBlock : UserControl
             }
         }
     }
+
+    #region Constructor
+
+    public static readonly StyledProperty<FontFamily> FontFamilyProperty =
+        AvaloniaProperty.Register<EditableTextBlock, FontFamily>(
+            nameof(FontFamily),
+            defaultBindingMode: BindingMode.OneWay
+        );
+
+    public FontFamily FontFamily
+    {
+        get => GetValue(FontFamilyProperty);
+        set => SetValue(FontFamilyProperty, value);
+    }
+
+    public static readonly StyledProperty<double> FontSizeProperty =
+        AvaloniaProperty.Register<EditableTextBlock, double>(
+            nameof(FontSize),
+            defaultValue: 12.0,
+            defaultBindingMode: BindingMode.OneWay
+        );
+
+    public double FontSize
+    {
+        get => GetValue(FontSizeProperty);
+        set => SetValue(FontSizeProperty, value);
+    }
+
+    public static readonly StyledProperty<IBrush> ForegroundProperty =
+        AvaloniaProperty.Register<EditableTextBlock, IBrush>(
+            nameof(Foreground),
+            defaultBindingMode: BindingMode.OneWay
+        );
+
+    public IBrush Foreground
+    {
+        get => GetValue(ForegroundProperty);
+        set => SetValue(ForegroundProperty, value);
+    }
+
+
+    public static readonly StyledProperty<TextWrapping> TextWrappingProperty =
+        AvaloniaProperty.Register<EditableTextBlock, TextWrapping>(
+            nameof(TextWrapping),
+            defaultValue: TextWrapping.NoWrap,
+            defaultBindingMode: BindingMode.OneWay
+        );
+
+    public TextWrapping TextWrapping
+    {
+        get => GetValue(TextWrappingProperty);
+        set => SetValue(TextWrappingProperty, value);
+    }
+
+
+    #endregion
 
     public EditableTextBlock()
     {

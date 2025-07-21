@@ -12,7 +12,7 @@ using SoupAndSoup.Data;
 namespace SoupAndSoup.Data.Migrations
 {
     [DbContext(typeof(SoapAndSoulContext))]
-    [Migration("20250627180636_Init")]
+    [Migration("20250713185831_Init")]
     partial class Init
     {
         /// <inheritdoc />
@@ -261,6 +261,9 @@ namespace SoupAndSoup.Data.Migrations
                     b.Property<int>("ComponentTypeId")
                         .HasColumnType("int");
 
+                    b.Property<int>("CosmeticTypeId")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("Cost")
                         .HasColumnType("decimal(18,2)");
 
@@ -283,6 +286,8 @@ namespace SoupAndSoup.Data.Migrations
                     b.HasIndex("BuyMeasureTypeId");
 
                     b.HasIndex("ComponentTypeId");
+
+                    b.HasIndex("CosmeticTypeId");
 
                     b.HasIndex("Name");
 
@@ -467,6 +472,11 @@ namespace SoupAndSoup.Data.Migrations
                         {
                             Id = 2,
                             Name = "Духи"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = "Всі"
                         });
                 });
 
@@ -530,6 +540,9 @@ namespace SoupAndSoup.Data.Migrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int>("CosmeticTypeId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("DateOfCreate")
                         .HasColumnType("datetime2");
 
@@ -548,15 +561,12 @@ namespace SoupAndSoup.Data.Migrations
                     b.Property<TimeSpan>("PreparationTime")
                         .HasColumnType("time");
 
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
                     b.Property<long>("Version")
                         .HasColumnType("bigint");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CosmeticTypeId");
 
                     b.HasIndex("Name");
 
@@ -665,6 +675,12 @@ namespace SoupAndSoup.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("SoupAndSoup.Data.Models.CosmeticType", "CosmeticType")
+                        .WithMany()
+                        .HasForeignKey("CosmeticTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("SoupAndSoup.Data.Models.MeasureType", "UseMeasureType")
                         .WithMany("ComponentsUsingAsUseMeasureType")
                         .HasForeignKey("UseMeasureTypeId")
@@ -674,6 +690,8 @@ namespace SoupAndSoup.Data.Migrations
                     b.Navigation("BuyMeasureType");
 
                     b.Navigation("ComponentType");
+
+                    b.Navigation("CosmeticType");
 
                     b.Navigation("UseMeasureType");
                 });
@@ -686,6 +704,17 @@ namespace SoupAndSoup.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Component");
+                });
+
+            modelBuilder.Entity("SoupAndSoup.Data.Models.Recipe", b =>
+                {
+                    b.HasOne("SoupAndSoup.Data.Models.CosmeticType", "CosmeticType")
+                        .WithMany()
+                        .HasForeignKey("CosmeticTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CosmeticType");
                 });
 
             modelBuilder.Entity("SoupAndSoup.Data.Models.RecipeComponent", b =>
