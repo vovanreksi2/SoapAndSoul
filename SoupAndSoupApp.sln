@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SoupAndSoupApp.Desktop", "S
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SoupAndSoup.Data", "SoupAndSoup.Data\SoupAndSoup.Data.csproj", "{E63BB8DC-2564-439D-802C-6A3094163D5B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SoapAndSoul.Infrastructure", "SoapAndSoul.Infastructure\SoapAndSoul.Infrastructure.csproj", "{5D4FD2F9-3631-4630-9169-D95A5687BC9D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{E63BB8DC-2564-439D-802C-6A3094163D5B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E63BB8DC-2564-439D-802C-6A3094163D5B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E63BB8DC-2564-439D-802C-6A3094163D5B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5D4FD2F9-3631-4630-9169-D95A5687BC9D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5D4FD2F9-3631-4630-9169-D95A5687BC9D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5D4FD2F9-3631-4630-9169-D95A5687BC9D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5D4FD2F9-3631-4630-9169-D95A5687BC9D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
