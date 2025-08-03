@@ -6,6 +6,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using SoupAndSoup.Data;
 using SoupAndSoupApp.Helpers;
 using SoupAndSoupApp.Services;
@@ -18,70 +19,52 @@ public class App : Application
 {
     private const int DelayAfterSaveMilliseconds = 2000;
 
-    public static IServiceProvider ServiceProvider { get; private set; }
+    private MainWindow _mainWindow;
+    private MainViewModel _mainViewModel;
+    
+    private IServiceProvider _serviceProvider;
+    private ILogger<App> _logger;
 
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
     }
 
+    public void InjectServiceProvider(IServiceProvider serviceProvider)
+    {
+        _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+
+        _mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
+        _mainViewModel = _serviceProvider.GetRequiredService<MainViewModel>();
+       
+        _logger = _serviceProvider.GetRequiredService<ILogger<App>>();
+    }
+
     public override void OnFrameworkInitializationCompleted()
     {
-        var services = new ServiceCollection();
-
-        RegisterServices(services);
-
-        ServiceProvider = services.BuildServiceProvider();
-
         switch (ApplicationLifetime)
         {
             case IClassicDesktopStyleApplicationLifetime desktop:
-            {
-                desktop.MainWindow = ServiceProvider.GetRequiredService<MainWindow>();
-                desktop.MainWindow.DataContext = ServiceProvider.GetRequiredService<MainViewModel>();
+                {
+                    desktop.MainWindow = _mainWindow;
+                    desktop.MainWindow.DataContext = _mainViewModel;
 
-                desktop.MainWindow.Closing += MainWindowOnClosing;
-               
-                break;
-            }
+                    desktop.MainWindow.Closing += MainWindowOnClosing;
+
+                    break;
+                }
             case ISingleViewApplicationLifetime singleViewPlatform:
-                singleViewPlatform.MainView = ServiceProvider.GetRequiredService<MainWindow>();
-                singleViewPlatform.MainView.DataContext = ServiceProvider.GetRequiredService<MainViewModel>();
+
+                singleViewPlatform.MainView = _mainWindow;
+                singleViewPlatform.MainView.DataContext = _mainViewModel;
                 break;
         }
-
 
         base.OnFrameworkInitializationCompleted();
     }
 
-    private static void RegisterServices(IServiceCollection services)
-    {
-        services.AddSingleton<MainWindow>();
-        services.AddSingleton<MainViewModel>();
-
-        services.AddSingleton<SoapDesignerView>();
-        services.AddTransient<SoapDesignerViewModel>();
-
-        services.AddSingleton<AddIngredientDialog>();
-        services.AddSingleton<AddIngredientDialogViewModel>();
-
-        services.AddSingleton<IDialogService, DialogService>();
-        
-        services.AddSingleton<IDesignerViewModelFactory, DesignerViewModelFactory>();
-        services.AddSingleton<IActiveViewModelRegistry, ActiveViewModelRegistry>();
-
-        services.AddSingleton<INotificationService, NotificationService>();
-
-        services.AddSingleton<IAzureBlobStorageService, AzureBlobStorageService>();
-
-        services.AddSingleton<IUnitCostCalculator, UnitCostCalculator>();
-        services.AddSingleton<MeasureTypeCache>();
-        
-        services.AddSoupAndSoulDb();
-    }
-
-
-    private static async void MainWindowOnClosing(object? sender, WindowClosingEventArgs e)
+    
+    private async void MainWindowOnClosing(object? sender, WindowClosingEventArgs e)
     {
         e.Cancel = true;
 
@@ -112,9 +95,9 @@ public class App : Application
         }
     }
 
-    private static async Task<bool?> SaveAllWithAutoSaveCandidates()
+    private async Task<bool?> SaveAllWithAutoSaveCandidates()
     {
-        var viewModelRegistry = ServiceProvider.GetService<IActiveViewModelRegistry>();
+        var viewModelRegistry = _serviceProvider.GetService<IActiveViewModelRegistry>();
         if (viewModelRegistry == null)
         {
             Console.WriteLine("No active view model registry found.");
@@ -139,10 +122,39 @@ public class App : Application
         return false;
     }
 
-    private static void ForceCloseWindow(object? sender)
+    private void ForceCloseWindow(object? sender)
     {
         var mainWindow = sender as MainWindow;
         mainWindow.Closing -= MainWindowOnClosing; // Unsubscribe from the event to prevent recursion
         mainWindow.Close();
+    }
+}
+
+public static class AppBuilderExtensions
+{
+    public static void UseSoapAndSoulApp(this IServiceCollection services)
+    {
+        services.AddSingleton<MainWindow>();
+        services.AddSingleton<MainViewModel>();
+
+        services.AddSingleton<SoapDesignerView>();
+        services.AddTransient<SoapDesignerViewModel>();
+
+        services.AddSingleton<AddIngredientDialog>();
+        services.AddSingleton<AddIngredientDialogViewModel>();
+
+        services.AddSingleton<IDialogService, DialogService>();
+
+        services.AddSingleton<IDesignerViewModelFactory, DesignerViewModelFactory>();
+        services.AddSingleton<IActiveViewModelRegistry, ActiveViewModelRegistry>();
+
+        services.AddSingleton<INotificationService, NotificationService>();
+
+        services.AddSingleton<IAzureBlobStorageService, AzureBlobStorageService>();
+
+        services.AddSingleton<IUnitCostCalculator, UnitCostCalculator>();
+        services.AddSingleton<MeasureTypeCache>();
+
+        services.AddSoupAndSoulDb();
     }
 }
