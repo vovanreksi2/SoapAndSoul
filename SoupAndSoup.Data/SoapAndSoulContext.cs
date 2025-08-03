@@ -19,6 +19,7 @@ public class SoapAndSoulContext : DbContext
         : base(options)
     {
         Debug.WriteLine("==> Using DB: " + Database.GetDbConnection().ConnectionString);
+        Database.Migrate();
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
