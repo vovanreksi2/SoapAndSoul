@@ -7,7 +7,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using SoupAndSoupApp.Helpers;
+using SoupAndSoupApp.Helpers.Autosave;
 using SoupAndSoupApp.ViewModels;
 using SoupAndSoupApp.Views;
 

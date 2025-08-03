@@ -2,7 +2,7 @@
 using DynamicData;
 using SoupAndSoupApp.Models;
 
-namespace SoupAndSoupApp.Helpers;
+namespace SoupAndSoupApp.Helpers.Calculators;
 
 public  interface IUnitCostCalculator
 {

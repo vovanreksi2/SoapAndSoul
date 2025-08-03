@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Azure.Storage.Blobs;
 
-namespace SoupAndSoupApp.Services;
+namespace SoupAndSoupApp.ExternalServices;
 
 public class AzureBlobStorageService : IAzureBlobStorageService
 {

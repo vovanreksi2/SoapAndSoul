@@ -1,8 +1,13 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SoupAndSoup.Data;
-using SoupAndSoupApp.Helpers;
-using SoupAndSoupApp.Services;
+using SoupAndSoupApp.ExternalServices;
+using SoupAndSoupApp.Helpers.Autosave;
+using SoupAndSoupApp.Helpers.Cache;
+using SoupAndSoupApp.Helpers.Calculators;
+using SoupAndSoupApp.Helpers.Navigation;
+using SoupAndSoupApp.Helpers.Notifications;
+using SoupAndSoupApp.Helpers.UI;
 using SoupAndSoupApp.ViewModels;
 using SoupAndSoupApp.Views;
 

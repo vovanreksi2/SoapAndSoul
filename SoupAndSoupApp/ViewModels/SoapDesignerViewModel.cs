@@ -17,9 +17,15 @@ using FuzzySharp;
 using ReactiveUI;
 using SoupAndSoup.Data.Models;
 using SoupAndSoup.Data.Services;
+using SoupAndSoupApp.ExternalServices;
 using SoupAndSoupApp.Helpers;
+using SoupAndSoupApp.Helpers.Autosave;
+using SoupAndSoupApp.Helpers.Cache;
+using SoupAndSoupApp.Helpers.Calculators;
+using SoupAndSoupApp.Helpers.Navigation;
+using SoupAndSoupApp.Helpers.Notifications;
+using SoupAndSoupApp.Helpers.UI;
 using SoupAndSoupApp.Models;
-using SoupAndSoupApp.Services;
 using ComponentType = SoupAndSoupApp.Models.ComponentType;
 using CosmeticType = SoupAndSoupApp.Models.CosmeticType;
 

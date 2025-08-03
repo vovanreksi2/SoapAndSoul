@@ -4,7 +4,7 @@ using SoupAndSoupApp.Models;
 using SoupAndSoupApp.ViewModels;
 using SoupAndSoupApp.Views;
 
-namespace SoupAndSoupApp.Helpers;
+namespace SoupAndSoupApp.Helpers.UI;
 
 public class DialogService : IDialogService
 {

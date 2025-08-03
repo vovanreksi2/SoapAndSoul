@@ -1,6 +1,6 @@
 ﻿using SoupAndSoupApp.Models;
 
-namespace SoupAndSoupApp.Helpers;
+namespace SoupAndSoupApp.Helpers.Notifications;
 
 public static class UiNotificationExtensions
 {
