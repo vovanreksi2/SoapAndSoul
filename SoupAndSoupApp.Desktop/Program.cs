@@ -2,6 +2,8 @@
 
 using Avalonia;
 using Avalonia.ReactiveUI;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace SoupAndSoupApp.Desktop;
 
@@ -13,18 +15,31 @@ class Program
     [STAThread]
     public static void Main(string[] args)
     {
-        BuildAvaloniaApp()
-            .WithDeveloperTools()
+        var hostBuilder = Host.CreateDefaultBuilder(args)
+            .ConfigureServices(services =>
+            {
+                services.UseSoapAndSoulApp();
+            })
+            .ConfigureLogging(logging =>
+            {
+                logging.AddConsole();
+            });
+
+        BuildAvaloniaApp(hostBuilder.Build())
             .StartWithClassicDesktopLifetime(args);
     }
 
-    // Avalonia configuration, don't remove; also used by visual designer.
-    public static AppBuilder BuildAvaloniaApp()
+    public static AppBuilder BuildAvaloniaApp(IHost host)
     {
         return AppBuilder.Configure<App>()
             .UsePlatformDetect()
             .WithInterFont()
             .LogToTrace()
-            .UseReactiveUI();
+            .UseReactiveUI()
+            .AfterSetup(builder =>
+            {
+                var app = (App)builder.Instance!;
+                app.InjectServiceProvider(host.Services);
+            });
     }
 }
