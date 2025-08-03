@@ -22,7 +22,9 @@ class Program
             })
             .ConfigureServices((hostContext, services) =>
             {
-                services.UseSoapAndSoulApp(hostContext.Configuration);
+                services
+                    .AddSoapAndSoulAppServices()
+                    .ConfigureSoapAndSoulApp(hostContext.Configuration);
             })
             .ConfigureLogging(logging =>
             {

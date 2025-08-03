@@ -5,9 +5,9 @@ using SoupAndSoup.Data.Services;
 
 namespace SoupAndSoup.Data;
 
-public static class DataModelAddExtension
+public static class DatabaseServiceCollectionExtensions
 {
-    public static IServiceCollection AddSoupAndSoulDb (this IServiceCollection services)
+    public static IServiceCollection AddSoupAndSoulDbServices (this IServiceCollection services)
     {
         services.AddDbContextFactory<SoapAndSoulContext>((serviceProvider, options) =>
         {
