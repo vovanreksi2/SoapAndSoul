@@ -1,14 +1,15 @@
 ﻿using System;
 using System.Threading.Tasks;
+using SoupAndSoup.Data.Services;
 using SoupAndSoupApp.Models;
 
 namespace SoupAndSoupApp.Helpers;
 
 public class MeasureTypeCache: MemoryCache<MeasureTypeModel>
 {
-    private readonly MeasureTypesService _measureTypesService;
+    private readonly IMeasureTypesService _measureTypesService;
 
-    public MeasureTypeCache(MeasureTypesService measureTypesService)
+    public MeasureTypeCache(IMeasureTypesService measureTypesService)
     {
         _measureTypesService = measureTypesService;
     }

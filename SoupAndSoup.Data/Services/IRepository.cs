@@ -1,8 +1,8 @@
 ﻿public interface IRepository<T> where T : class
 {
-    Task<T?> CreateAsync(T entity);
-    Task<T> GetByIdAsync(int id);
-    Task<List<T>> GetAllAsync(bool noTracking = false);
-    Task<bool> UpdateAsync(T entity);
-    Task<bool> DeleteAsync(int id);
+    public Task<T?> CreateAsync(T entity);
+    public Task<T> GetByIdAsync(int id);
+    public Task<List<T>> GetAllAsync(bool noTracking = false);
+    public Task<bool> UpdateAsync(T entity);
+    public Task<bool> DeleteAsync(int id);
 }

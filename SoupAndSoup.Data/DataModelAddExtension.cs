@@ -22,10 +22,10 @@ public static class DataModelAddExtension
                 options.EnableSensitiveDataLogging();
         });
 
-        services.AddScoped<RecipeService>();
-        services.AddScoped<ComponentService>();
-        services.AddScoped<ComponentTypeService>();
-        services.AddScoped<MeasureTypesService>();
+        services.AddSingleton<IRecipeService, RecipeService>();
+        services.AddSingleton<IComponentService, ComponentService>();
+        services.AddSingleton<IComponentTypeService, ComponentTypeService>();
+        services.AddSingleton<IMeasureTypesService, MeasureTypesService>();
 
         return services;
     }

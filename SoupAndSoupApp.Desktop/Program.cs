@@ -16,15 +16,9 @@ class Program
     public static void Main(string[] args)
     {
         var hostBuilder = Host.CreateDefaultBuilder(args)
-            .UseDefaultServiceProvider(options =>
-            {
-                options.ValidateScopes = false;
-                options.ValidateOnBuild = false;
-            })
             .ConfigureAppConfiguration((hostContext, config) =>
             {
                 config.AddUserSecrets<Program>(optional: true);
-
             })
             .ConfigureServices((hostContext, services) =>
             {
