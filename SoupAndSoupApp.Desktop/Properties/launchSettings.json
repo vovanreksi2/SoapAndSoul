@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "SoupAndSoupApp.Desktop": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Production"
+      }
+    }
+  }
+}

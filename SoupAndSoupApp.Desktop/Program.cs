@@ -1,7 +1,7 @@
 ﻿using System;
-
 using Avalonia;
 using Avalonia.ReactiveUI;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -16,15 +16,25 @@ class Program
     public static void Main(string[] args)
     {
         var hostBuilder = Host.CreateDefaultBuilder(args)
-            .ConfigureServices(services =>
+            .UseDefaultServiceProvider(options =>
             {
-                services.UseSoapAndSoulApp();
+                options.ValidateScopes = false;
+                options.ValidateOnBuild = false;
+            })
+            .ConfigureAppConfiguration((hostContext, config) =>
+            {
+                config.AddUserSecrets<Program>(optional: true);
+
+            })
+            .ConfigureServices((hostContext, services) =>
+            {
+                services.UseSoapAndSoulApp(hostContext.Configuration);
             })
             .ConfigureLogging(logging =>
             {
                 logging.AddConsole();
             });
-
+        
         BuildAvaloniaApp(hostBuilder.Build())
             .StartWithClassicDesktopLifetime(args);
     }
