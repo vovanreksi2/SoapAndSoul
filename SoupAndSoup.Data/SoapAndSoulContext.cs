@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SoupAndSoup.Data.Models;
 
 namespace SoupAndSoup.Data;
@@ -18,7 +17,6 @@ public class SoapAndSoulContext : DbContext
     public SoapAndSoulContext(DbContextOptions<SoapAndSoulContext> options)
         : base(options)
     {
-        Debug.WriteLine("==> Using DB: " + Database.GetDbConnection().ConnectionString);
         Database.Migrate();
     }
 
