@@ -1,7 +1,9 @@
-﻿using SoupAndSoup.Data;
+﻿using Microsoft.EntityFrameworkCore;
 using SoupAndSoup.Data.Models;
 
-public class MeasureTypesService : RepositoryBase<MeasureType>
+namespace SoupAndSoup.Data.Services;
+
+public class MeasureTypesService : RepositoryBase<MeasureType>, IMeasureTypesService
 {
-    public MeasureTypesService(SoapAndSoulContext context) : base(context) { }
+    public MeasureTypesService(IDbContextFactory<SoapAndSoulContext> contextFactory) : base(contextFactory) { }
 }

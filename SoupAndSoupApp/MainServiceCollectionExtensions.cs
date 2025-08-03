@@ -8,9 +8,16 @@ using SoupAndSoupApp.Views;
 
 namespace SoupAndSoupApp;
 
-public static class AppBuilderExtensions
+public static class MainServiceCollectionExtensions
 {
-    public static void UseSoapAndSoulApp(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection ConfigureSoapAndSoulApp(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<DatabaseSettings>(configuration.GetSection("DatabaseSettings"));
+
+        return services;
+    }
+
+    public static IServiceCollection AddSoapAndSoulAppServices(this IServiceCollection services)
     {
         services.AddSingleton<MainWindow>();
         services.AddSingleton<MainViewModel>();
@@ -32,9 +39,9 @@ public static class AppBuilderExtensions
 
         services.AddSingleton<IUnitCostCalculator, UnitCostCalculator>();
         services.AddSingleton<MeasureTypeCache>();
-        
-        services.Configure<DatabaseSettings>(configuration.GetSection("DatabaseSettings"));
  
-        services.AddSoupAndSoulDb();
+        services.AddSoupAndSoulDbServices();
+        
+        return services;
     }
 }

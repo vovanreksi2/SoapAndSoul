@@ -1,58 +1,63 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using SoupAndSoup.Data;
 using SoupAndSoup.Data.Models;
 
-public class ComponentService : RepositoryBase<Component>
+namespace SoupAndSoup.Data.Services;
+
+public class ComponentService : RepositoryBase<Component>, IComponentService
 {
-    public ComponentService(SoapAndSoulContext context) : base(context) { }
+    public ComponentService(IDbContextFactory<SoapAndSoulContext> contextFactory) : base(contextFactory) { }
 
-    public override async Task<Component> GetByIdAsync(int id)
-    {
-        return await _dbSet
+    public override Task<Component?> GetByIdAsync(int id) =>
+        UseContextAsync((context, dbSet) =>
+            dbSet
                 .Include(i => i.ComponentType)
                 .Include(i => i.Images)
+                .FirstOrDefaultAsync(i => i.Id == id)
+        );
 
-            .FirstOrDefaultAsync(i => i.Id == id);
-    }
-
-    public Task<List<Component>> GetAllAsync(int cosmeticType)
-    {
-        return _dbSet
+    public Task<List<Component>> GetAllAsync(int cosmeticType) =>
+        UseContextAsync((context, dbSet) => dbSet
             .Where(i => i.ComponentType.CosmeticTypes.Any(c => c.Id == cosmeticType))
-                .Include(i => i.ComponentType)
-                .Include(i => i.Images)
-            .AsNoTracking() // Use AsNoTracking for read-only operations
-            .ToListAsync();
-    }
+            .Include(i => i.ComponentType)
+            .Include(i => i.Images)
+            .AsNoTracking()
+            .ToListAsync()
+        );
 
-    public override async Task<bool> UpdateAsync(Component entity)
+    public override Task<bool> UpdateAsync(Component entity)
     {
         if (entity == null) throw new ArgumentNullException(nameof(entity));
 
-        var existing = await GetByIdAsync(entity.Id);
+        return UseContextAsync(async (context, dbSet) =>
+        {
+            var existing = await dbSet
+                .Include(i => i.ComponentType)
+                .Include(i => i.Images)
+                .FirstOrDefaultAsync(i => i.Id == entity.Id);
 
-        existing.Name = entity.Name;
-        existing.Cost = entity.Cost;
-        existing.BuyAmount = entity.BuyAmount;
-        existing.BuyPrice = entity.BuyPrice;
-        existing.SuggestedAmount = entity.SuggestedAmount;
-        existing.UseMeasureTypeId = entity.UseMeasureTypeId;
+            if (existing is null)
+                return false;
 
-        if (entity.Images.Any())
-            existing.Images = entity.Images; 
+            context.Entry(existing).CurrentValues.SetValues(entity);
 
-        _dbSet.Update(existing);
-        return await _context.SaveChangesAsync() > 0;
+            if (entity.Images.Any())
+                existing.Images = entity.Images;
+
+            context.Entry(existing).State = EntityState.Modified;
+            return await context.SaveChangesAsync() > 0;
+        });
     }
 
-    public async Task<bool> SoftDeleteAsync(int id)
-    {
-        var entity = await GetByIdAsync(id);
-        if (entity == null)
-            return false;
+    public Task<bool> SoftDeleteAsync(int id) =>
+        UseContextAsync(async (context, dbSet) =>
+        {
+            var entity = await dbSet.FindAsync(id);
+            if (entity == null)
+                return false;
 
-        entity.IsActive = false;
-        await _context.SaveChangesAsync();
-        return true;
-    }
+            entity.IsActive = false;
+            context.Entry(entity).State = EntityState.Modified;
+
+            return await context.SaveChangesAsync() > 0;
+        });
 }

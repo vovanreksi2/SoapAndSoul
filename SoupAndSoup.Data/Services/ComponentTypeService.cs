@@ -1,21 +1,20 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using SoupAndSoup.Data;
 using SoupAndSoup.Data.Models;
 
-public class ComponentTypeService : RepositoryBase<ComponentType>
+namespace SoupAndSoup.Data.Services;
+
+public class ComponentTypeService : RepositoryBase<ComponentType>, IComponentTypeService
 {
-    public ComponentTypeService(SoapAndSoulContext context) : base(context)
-    {
+    public ComponentTypeService(IDbContextFactory<SoapAndSoulContext> contextFactory) : base(contextFactory) { }
 
-    }
-
-    public   async Task<List<ComponentType>> GetAllAsync(int cosmeticType)
+    public Task<List<ComponentType>> GetAllAsync(int cosmeticType)
     {
-        return await _dbSet
-            .Where(i => i.CosmeticTypes.Any(c => c.Id == cosmeticType))
-            .Include(i => i.UseMeasureTypes)
-            .Include(i => i.BuyMeasureTypes)
-            .ToListAsync();
+        return UseContextAsync((context, dbSet) =>
+            dbSet.Where(i => i.CosmeticTypes.Any(c => c.Id == cosmeticType))
+                .Include(i => i.UseMeasureTypes)
+                .Include(i => i.BuyMeasureTypes)
+                .ToListAsync()
+        );
     }
 
 }

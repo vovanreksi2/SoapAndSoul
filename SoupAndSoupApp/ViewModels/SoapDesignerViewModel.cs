@@ -109,9 +109,9 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
     }
 
     public SoapDesignerViewModel(
-        RecipeService recipeService,
-        ComponentService componentService,
-        ComponentTypeService componentTypeService,
+        IRecipeService recipeService,
+        IComponentService componentService,
+        IComponentTypeService componentTypeService,
         IDialogService dialogService, IUnitCostCalculator unitCostCalc, MeasureTypeCache measureTypeCache,
         INotificationService notificationService, IAzureBlobStorageService blobStorageService)
     {
@@ -1043,9 +1043,9 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
     }
     /// IAutoSaveCandidate implementation END
 
-    private readonly RecipeService _recipeService;
-    private readonly ComponentService _componentService;
-    private readonly ComponentTypeService _componentTypeService;
+    private readonly IRecipeService _recipeService;
+    private readonly IComponentService _componentService;
+    private readonly IComponentTypeService _componentTypeService;
 
     private readonly IDialogService _dialogService;
 

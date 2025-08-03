@@ -3,55 +3,73 @@ using SoupAndSoup.Data;
 
 public abstract class RepositoryBase<T> : IRepository<T> where T : class
 {
-    protected readonly SoapAndSoulContext _context;
-    protected readonly DbSet<T> _dbSet;
+    private readonly IDbContextFactory<SoapAndSoulContext> _contextFactory;
 
-    protected RepositoryBase(SoapAndSoulContext context)
+    protected RepositoryBase(IDbContextFactory<SoapAndSoulContext> contextFactory)
     {
-        _context = context;
-        _dbSet = _context.Set<T>();
+        _contextFactory = contextFactory;
     }
 
-    public virtual async Task<T?> CreateAsync(T entity)
+
+    public virtual Task<T?> CreateAsync(T entity)
     {
         if (entity == null) throw new ArgumentNullException(nameof(entity));
 
-        await _dbSet.AddAsync(entity);
-        var result = await _context.SaveChangesAsync();
-        return result > 0 ? entity : null;
+        return UseContextAsync(async (context, dbSet) =>
+        {
+            await dbSet.AddAsync(entity);
+            var result = await context.SaveChangesAsync();
+
+            return result > 0 ? entity : null;
+        });
     }
 
-    public virtual async Task<T> GetByIdAsync(int id)
+    public virtual Task<T?> GetByIdAsync(int id)
     {
-        return await _dbSet.FindAsync(id);
+        return UseContextAsync(async (context, dbSet) => await dbSet.FindAsync(id));
     }
 
-    public virtual async Task<List<T>> GetAllAsync(bool noTracking = false)
+    public virtual Task<List<T>> GetAllAsync(bool noTracking = false)
     {
-        if (noTracking) 
-            return await _dbSet.AsNoTracking().ToListAsync();
-
-        return await _dbSet.ToListAsync();
+        return UseContextAsync((context, dbSet) => noTracking
+            ? dbSet.AsNoTracking().ToListAsync()
+            : dbSet.ToListAsync());
     }
 
-    public virtual async Task<bool> UpdateAsync(T entity)
+    public virtual Task<bool> UpdateAsync(T entity)
     {
         if (entity == null) throw new ArgumentNullException(nameof(entity));
 
-        _dbSet.Update(entity);
-        await _context.SaveChangesAsync();
-        
-        return true;
+        return UseContextAsync(async (context, dbSet) =>
+        {
+            dbSet.Update(entity);
+
+            var result = await context.SaveChangesAsync();
+            return result > 0;
+        });
     }
 
-    public virtual async Task<bool> DeleteAsync(int id)
+    public virtual Task<bool> DeleteAsync(int id)
     {
-        var entity = await GetByIdAsync(id);
-        if (entity == null)
-            return false;
+        return UseContextAsync(async (context, dbSet) =>
+        {
+            var entity = await dbSet.FindAsync(id);
+            if (entity == null) return false;
 
-        _dbSet.Remove(entity);
-        await _context.SaveChangesAsync();
-        return true;
+            dbSet.Remove(entity);
+            var result = await context.SaveChangesAsync();
+            return result > 0;
+        });
+    }
+
+    protected async Task<TResult> UseContextAsync<TResult>(Func<SoapAndSoulContext, DbSet<T>, Task<TResult>> func)
+    {
+        if (func == null) throw new ArgumentNullException(nameof(func));
+
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        if (context == null) throw new InvalidOperationException("Failed to create a database context.");
+
+        var dbSet = context.Set<T>();
+        return await func(context, dbSet);
     }
 }
