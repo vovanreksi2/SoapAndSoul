@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using SoupAndSoup.Data.Services;
 
 namespace SoupAndSoup.Data;
@@ -8,11 +9,19 @@ public static class DataModelAddExtension
 {
     public static IServiceCollection AddSoupAndSoulDb (this IServiceCollection services)
     {
-        services.AddDbContext<SoapAndSoulContext>(options =>
+        services.AddDbContextFactory<SoapAndSoulContext>((serviceProvider, options) =>
         {
-            options.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=SoapAndSoulDb_new3;Trusted_Connection=True;")
-                .EnableSensitiveDataLogging();
+            var dbSettings = serviceProvider.GetRequiredService<IOptions<DatabaseSettings>>();
+            
+            if (dbSettings.Value.IsAzureDb)
+                options.UseAzureSql(dbSettings.Value.ConnectionString);
+            else
+                options.UseSqlServer(dbSettings.Value.ConnectionString);
+
+            if (dbSettings.Value.EnableSensitiveDataLogging)
+                options.EnableSensitiveDataLogging();
         });
+
         services.AddScoped<RecipeService>();
         services.AddScoped<ComponentService>();
         services.AddScoped<ComponentTypeService>();

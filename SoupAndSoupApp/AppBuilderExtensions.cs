@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using SoupAndSoup.Data;
 using SoupAndSoupApp.Helpers;
 using SoupAndSoupApp.Services;
@@ -9,7 +10,7 @@ namespace SoupAndSoupApp;
 
 public static class AppBuilderExtensions
 {
-    public static void UseSoapAndSoulApp(this IServiceCollection services)
+    public static void UseSoapAndSoulApp(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddSingleton<MainWindow>();
         services.AddSingleton<MainViewModel>();
@@ -31,7 +32,9 @@ public static class AppBuilderExtensions
 
         services.AddSingleton<IUnitCostCalculator, UnitCostCalculator>();
         services.AddSingleton<MeasureTypeCache>();
-
+        
+        services.Configure<DatabaseSettings>(configuration.GetSection("DatabaseSettings"));
+ 
         services.AddSoupAndSoulDb();
     }
 }
