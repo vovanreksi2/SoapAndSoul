@@ -24,7 +24,6 @@ using SoupAndSoupApp.Helpers.Cache;
 using SoupAndSoupApp.Helpers.Calculators;
 using SoupAndSoupApp.Helpers.Navigation;
 using SoupAndSoupApp.Helpers.Notifications;
-using SoupAndSoupApp.Helpers.UI;
 using SoupAndSoupApp.Models;
 using ComponentType = SoupAndSoupApp.Models.ComponentType;
 using CosmeticType = SoupAndSoupApp.Models.CosmeticType;

@@ -7,7 +7,6 @@ using SoupAndSoupApp.Helpers.Cache;
 using SoupAndSoupApp.Helpers.Calculators;
 using SoupAndSoupApp.Helpers.Navigation;
 using SoupAndSoupApp.Helpers.Notifications;
-using SoupAndSoupApp.Helpers.UI;
 using SoupAndSoupApp.ViewModels;
 using SoupAndSoupApp.Views;
 

@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using SoupAndSoupApp.Models;
 
-namespace SoupAndSoupApp.Helpers.UI;
+namespace SoupAndSoupApp.Helpers.Navigation;
 
 public interface IDialogService
 {
