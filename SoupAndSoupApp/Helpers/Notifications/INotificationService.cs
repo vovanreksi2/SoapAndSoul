@@ -1,7 +1,7 @@
 ﻿using System;
 using SoupAndSoupApp.Models;
 
-namespace SoupAndSoupApp.Helpers;
+namespace SoupAndSoupApp.Helpers.Notifications;
 
 public interface INotificationService
 {

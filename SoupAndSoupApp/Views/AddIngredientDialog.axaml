@@ -20,22 +20,6 @@
         <viewModels:AddIngredientDialogViewModel />
     </Design.DataContext>
 
-
-    <Window.Resources>
-        <!--  Кольори Material  -->
-        <Color x:Key="MaterialPrimaryColor">#7C3AED</Color>
-        <Color x:Key="MaterialSurfaceColor">#FFFFFF</Color>
-        <Color x:Key="MaterialSurfaceVariantColor">#F4F4F4</Color>
-        <Color x:Key="MaterialOnSurfaceColor">#1A1A1A</Color>
-        <Color x:Key="MaterialOnSurfaceVariantColor">#5F5F5F</Color>
-
-        <SolidColorBrush x:Key="MaterialPrimary" Color="{DynamicResource MaterialPrimaryColor}" />
-        <SolidColorBrush x:Key="MaterialSurface" Color="{DynamicResource MaterialSurfaceColor}" />
-        <SolidColorBrush x:Key="MaterialSurfaceVariant" Color="{DynamicResource MaterialSurfaceVariantColor}" />
-        <SolidColorBrush x:Key="MaterialOnSurface" Color="{DynamicResource MaterialOnSurfaceColor}" />
-        <SolidColorBrush x:Key="MaterialOnSurfaceVariant" Color="{DynamicResource MaterialOnSurfaceVariantColor}" />
-    </Window.Resources>
-
     <Window.Styles>
         <Styles>
 
@@ -118,7 +102,7 @@
 
     <Border
         Padding="32"
-        Background="White"
+        Background="{StaticResource CardBackgroundColor}"
         CornerRadius="12">
         <StackPanel Spacing="20">
 
@@ -227,14 +211,14 @@
             <!--  Підсумок ціни  -->
             <Border
                 Padding="12"
-                Background="{DynamicResource MaterialSurfaceVariant}"
+                Background="{StaticResource PrimaryAccentColorLighter}"
                 CornerRadius="8">
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <Image
                         Width="20"
                         Height="20"
                         Source="/Assets/lightbulb_icon.png" />
-                    <TextBlock FontWeight="Medium" Foreground="{DynamicResource MaterialPrimary}">
+                    <TextBlock FontWeight="Medium" Foreground="{StaticResource PrimaryAccentColorDarkest}">
                         <TextBlock.Text>
                             <MultiBinding StringFormat="Ціна за {0}: {1:F2} грн">
                                 <Binding Path="SelectedUseMeasureType.Selected.ShortTitle" />
@@ -257,10 +241,8 @@
                     Content="Скасувати"
                     IsCancel="True" />
                 <Button
-                    Background="#7C3AED"
-                    Classes="rounded"
+                    Classes="button-mainColor"
                     Command="{Binding ConfirmCommand}"
-                    Foreground="White"
                     IsDefault="True">
                     <Button.Content>
                         <Grid>

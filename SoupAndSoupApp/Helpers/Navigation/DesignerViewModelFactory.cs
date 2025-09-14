@@ -1,9 +1,10 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
+using SoupAndSoupApp.Helpers.Autosave;
 using SoupAndSoupApp.Models;
 using SoupAndSoupApp.ViewModels;
 
-namespace SoupAndSoupApp.Helpers;
+namespace SoupAndSoupApp.Helpers.Navigation;
 
 public class DesignerViewModelFactory : IDesignerViewModelFactory
 {
@@ -20,6 +21,7 @@ public class DesignerViewModelFactory : IDesignerViewModelFactory
     {
         var vm = _serviceProvider.GetRequiredService<SoapDesignerViewModel>();
         vm.SetType(type);
+
         _viewModelRegistry.Register(vm);
         return vm;
     }

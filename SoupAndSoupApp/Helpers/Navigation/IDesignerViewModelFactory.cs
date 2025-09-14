@@ -1,7 +1,7 @@
 ﻿using SoupAndSoupApp.Models;
 using SoupAndSoupApp.ViewModels;
 
-namespace SoupAndSoupApp.Helpers;
+namespace SoupAndSoupApp.Helpers.Navigation;
 
 public interface IDesignerViewModelFactory
 {

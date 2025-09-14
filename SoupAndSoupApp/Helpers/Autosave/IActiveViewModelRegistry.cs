@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace SoupAndSoupApp.Helpers;
+namespace SoupAndSoupApp.Helpers.Autosave;
 
 public interface IActiveViewModelRegistry
 {

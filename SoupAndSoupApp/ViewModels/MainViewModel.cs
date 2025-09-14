@@ -5,7 +5,9 @@ using System.Linq;
 using System.Reactive.Linq;
 using System.Windows.Input;
 using ReactiveUI;
-using SoupAndSoupApp.Helpers;
+using SoupAndSoupApp.Helpers.Autosave;
+using SoupAndSoupApp.Helpers.Navigation;
+using SoupAndSoupApp.Helpers.Notifications;
 using SoupAndSoupApp.Models;
 
 namespace SoupAndSoupApp.ViewModels;

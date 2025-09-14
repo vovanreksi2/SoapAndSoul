@@ -2,7 +2,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SoupAndSoupApp.Services;
+namespace SoupAndSoupApp.ExternalServices;
 
 public interface IAzureBlobStorageService
 {

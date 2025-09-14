@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace SoupAndSoupApp.Helpers;
+namespace SoupAndSoupApp.Helpers.Navigation;
 
 public interface IInitializableVM
 {

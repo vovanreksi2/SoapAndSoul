@@ -9,6 +9,8 @@ using Avalonia.Media.Imaging;
 using DynamicData;
 using ReactiveUI;
 using SoupAndSoupApp.Helpers;
+using SoupAndSoupApp.Helpers.Cache;
+using SoupAndSoupApp.Helpers.Calculators;
 using SoupAndSoupApp.Models;
 using ComponentType = SoupAndSoupApp.Models.ComponentType;
 using MeasureType = SoupAndSoupApp.Models.MeasureType;

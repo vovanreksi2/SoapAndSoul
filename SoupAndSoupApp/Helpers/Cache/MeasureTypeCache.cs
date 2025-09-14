@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using SoupAndSoup.Data.Services;
 using SoupAndSoupApp.Models;
 
-namespace SoupAndSoupApp.Helpers;
+namespace SoupAndSoupApp.Helpers.Cache;
 
 public class MeasureTypeCache: MemoryCache<MeasureTypeModel>
 {
