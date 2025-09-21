@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Diagnostics;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using SoupAndSoup.Data.Services;
@@ -18,8 +19,9 @@ public static class DatabaseServiceCollectionExtensions
             else
                 options.UseSqlServer(dbSettings.Value.ConnectionString);
 
-            if (dbSettings.Value.EnableSensitiveDataLogging)
-                options.EnableSensitiveDataLogging();
+            if (!dbSettings.Value.EnableSensitiveDataLogging) return;
+            options.EnableSensitiveDataLogging();
+            options.EnableDetailedErrors(); 
         });
 
         services.AddSingleton<IRecipeService, RecipeService>();

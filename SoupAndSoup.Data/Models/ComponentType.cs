@@ -2,7 +2,6 @@
 
 namespace SoupAndSoup.Data.Models;
 
-//Type like: CraftingBase, SoapForm, ParfumForm...
 public class ComponentType
 {
     [Key]

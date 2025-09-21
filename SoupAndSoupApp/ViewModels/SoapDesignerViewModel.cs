@@ -106,7 +106,6 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
 
             _cachedRecipes.Connect()
                 .AutoRefreshOnObservable(_ => Observable.Return(Unit.Default)); 
-
         }
     }
     
@@ -255,10 +254,17 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
         try
         {
             _suppressIsDirty = true;
+
             await Task.WhenAll(
-                LoadComponentTypesAsync(), 
-                LoadComponentsAsync(), 
+                LoadComponentTypesAsync(),
+                LoadComponentsAsync(),
                 LoadRecipesAsync());
+
+            if (Recipes.Any())
+                SelectedRecipe = Recipes.FirstOrDefault();
+            else
+                CreateNewRecipePlaceholder();
+
         }
         catch (Exception e)
         {
@@ -317,17 +323,9 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
                 var recipes = await _recipeService.GetAllAsync((int)_currentCosmeticType);
                 var recipeModels = await Task.WhenAll(recipes.Select(MapRecipe));
 
-                if (recipeModels.Any())
-                {
-                    foreach (var recipeModel in recipeModels)
-                        _cachedRecipes.AddOrUpdate(recipeModel);
+                foreach (var recipeModel in recipeModels)
+                    _cachedRecipes.AddOrUpdate(recipeModel);
 
-                    SelectedRecipe = Recipes.FirstOrDefault();
-                }
-                else
-                {
-                    CreateNewRecipePlaceholder();
-                }
             },
             ("cosmetic.type", _currentCosmeticType));
     }
