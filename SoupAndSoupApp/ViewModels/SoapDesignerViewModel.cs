@@ -11,10 +11,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia.Media.Imaging;
+using Microsoft.Extensions.Logging;
 using DynamicData;
 using DynamicData.Binding;
 using FuzzySharp;
 using ReactiveUI;
+using SoapAndSoul.Infrastructure;
 using SoupAndSoup.Data.Models;
 using SoupAndSoup.Data.Services;
 using SoupAndSoupApp.ExternalServices;
@@ -118,7 +120,9 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
         IComponentService componentService,
         IComponentTypeService componentTypeService,
         IDialogService dialogService, IUnitCostCalculator unitCostCalc, MeasureTypeCache measureTypeCache,
-        INotificationService notificationService, IAzureBlobStorageService blobStorageService)
+        INotificationService notificationService, IAzureBlobStorageService blobStorageService, 
+        ILogger<SoapDesignerViewModel> logger, 
+        InstrumentationOpenTelemetry instrumentation)
     {
         _recipeService = recipeService;
         _componentService = componentService;
@@ -129,6 +133,8 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
         _measureTypeCache = measureTypeCache;
         _notificationService = notificationService;
         _blobStorageService = blobStorageService;
+        _logger = logger;
+        _activitySource = instrumentation.ActivitySource;
 
         InitView();
     }
@@ -136,7 +142,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
 
     private void InitView()
     {
-        NewReceiptCommand = ReactiveCommand.Create(NewReceipt);
+        NewReceiptCommand = ReactiveCommand.Create(CreateNewRecipePlaceholder);
         DeleteReceiptCommand = ReactiveCommand.CreateFromTask<RecipeModel>(DeleteReceiptAsync);
 
         NewComponentCommand = ReactiveCommand.CreateFromTask<ComponentType>(AddComponentAsync);
@@ -236,61 +242,145 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
 
     public async Task InitializeAsync()
     {
-        if (_isInitialized) return;
+        _logger.LogInformation("InitializeAsync invoked for {CosmeticType}", _currentCosmeticType);
+        if (_isInitialized)
+        {
+            _logger.LogInformation("InitializeAsync skipped: already initialized");
+            return;
+        }
+
+        using var activity = _activitySource.StartActivity("InitializeAsync", ActivityKind.Client);
+        activity?.SetTag("cosmetic.type", _currentCosmeticType.ToString());
 
         try
         {
             _suppressIsDirty = true;
-
-            var componentTypes = await _componentTypeService.GetAllAsync((int)_currentCosmeticType);
-            _cachedComponentTypes =
-                componentTypes.ToDictionary(type => (ComponentType)type.Id, type => new ComponentTypeModel(type));
-
-            foreach (var type in _cachedComponentTypes)
-            {
-                _cachedComponents.AddOrUpdate(new ComponentModel
-                {
-                    Id = -(int)type.Key,
-                    IsSelected = false,
-                    IsButton = true,
-                    Type = type.Key,
-                });
-            }
-
-            var components = await _componentService.GetAllAsync((int)_currentCosmeticType);
-            foreach (var mappedComponent in await Task.WhenAll(components.Select(MapComponentModelAsync)))
-            {
-                _cachedComponents.AddOrUpdate(mappedComponent);
-            }
-
-            var recipes = await _recipeService.GetAllAsync((int)_currentCosmeticType);
-            var recipeModels = await Task.WhenAll(recipes.Select(MapRecipe));
-
-            if (recipeModels.Any())
-            {
-                foreach (var recipeModel in recipeModels)
-                {
-                    _cachedRecipes.AddOrUpdate(recipeModel);
-                }
-                SelectedRecipe = Recipes.FirstOrDefault();
-            }
-            else
-                NewReceipt();
-  
+            await Task.WhenAll(
+                LoadComponentTypesAsync(), 
+                LoadComponentsAsync(), 
+                LoadRecipesAsync());
         }
         catch (Exception e)
         {
+            HandleInitException(e, activity);
             _notificationService.Notify(DomainNotificationType.ErrorDuringInit);
-            LogError("!‼️ Exception during initialization", e);
         }
         finally
         {
             _suppressIsDirty = false;
             _isInitialized = true;
+            _logger.LogInformation("InitializeAsync: Completed for {CosmeticType}", _currentCosmeticType);
         }
     }
 
-    private void NewReceipt()
+    private Task LoadComponentTypesAsync()
+    {
+         return RunWithActivity(
+            nameof(LoadComponentTypesAsync),
+            async () =>
+            {
+                var componentTypes = await _componentTypeService.GetAllAsync((int)_currentCosmeticType);
+
+                _cachedComponentTypes = componentTypes.ToDictionary(
+                    type => (ComponentType)type.Id,
+                    type => new ComponentTypeModel(type));
+
+                foreach (var type in _cachedComponentTypes)
+                {
+                    _cachedComponents.AddOrUpdate(CreateButtonComponent(type.Key));
+                }
+            },
+            ("componentTypes.count", _cachedComponents.Count), ("cosmetic.type", _currentCosmeticType));
+    }
+    private Task LoadComponentsAsync( )
+    {
+        return RunWithActivity(
+            nameof(LoadComponentsAsync),
+            async () =>
+            {
+                var components = await _componentService.GetAllAsync((int)_currentCosmeticType);
+
+                foreach (var mappedComponent in await Task.WhenAll(components.Select(MapComponentModelAsync)))
+                {
+                    _cachedComponents.AddOrUpdate(mappedComponent);
+                }
+            },
+            ("components.count", _cachedComponents.Count),
+            ("cosmetic.type", _currentCosmeticType));
+    }
+    private Task LoadRecipesAsync()
+    {
+        return RunWithActivity(
+            nameof(LoadRecipesAsync),
+            async () =>
+            {
+                var recipes = await _recipeService.GetAllAsync((int)_currentCosmeticType);
+                var recipeModels = await Task.WhenAll(recipes.Select(MapRecipe));
+
+                if (recipeModels.Any())
+                {
+                    foreach (var recipeModel in recipeModels)
+                        _cachedRecipes.AddOrUpdate(recipeModel);
+
+                    SelectedRecipe = Recipes.FirstOrDefault();
+                }
+                else
+                {
+                    CreateNewRecipePlaceholder();
+                }
+            },
+            ("cosmetic.type", _currentCosmeticType));
+    }
+
+    private async Task RunWithActivity(
+        string activityName,
+        Func<Task> action,
+        params (string Key, object Value)[] tags)
+    {
+        using var activity = _activitySource.StartActivity(activityName);
+
+        try
+        {
+            await action();
+
+            _logger.LogInformation("Loaded  items for {CosmeticType}", _currentCosmeticType);
+
+            foreach (var (key, value) in tags)
+            {
+                activity?.SetTag(key, value);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in {ActivityName}", activityName);
+
+            activity.SetTag("error", true);
+
+            var exceptionEvent = new ActivityEvent(
+                "exception",
+                tags: new ActivityTagsCollection
+                {
+                    { "exception.type", ex.GetType().FullName },
+                    { "exception.message", ex.Message },
+                    { "exception.stacktrace", ex.StackTrace }
+                });
+
+            activity.AddEvent(exceptionEvent);
+            throw;
+        }
+    }
+     
+    private ComponentModel CreateButtonComponent(ComponentType type)
+    {
+        return new ComponentModel
+        {
+            Id = -(int)type, // Negative ID indicates button component
+            IsSelected = false,
+            IsButton = true,
+            Type = type,
+        };
+    }
+    private void CreateNewRecipePlaceholder()
     {
         var newRecipe = new RecipeModel();
 
@@ -307,6 +397,27 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
         IsRecipeAddMode = true;
 
         SelectedRecipe = newRecipe;
+    }
+        
+    private void HandleInitException(Exception e, Activity? activity)
+    {
+        _logger.LogError(e, "Exception during initialization");
+        if (activity is null) return;
+
+        activity.SetStatus(ActivityStatusCode.Error);
+
+        activity.SetTag("error", true);
+
+        var exceptionEvent = new ActivityEvent(
+            "exception",
+            tags: new ActivityTagsCollection
+            {
+                { "exception.type", e.GetType().FullName },
+                { "exception.message", e.Message },
+                { "exception.stacktrace", e.StackTrace }
+            });
+
+        activity.AddEvent(exceptionEvent);
     }
 
     private async Task DeleteReceiptAsync(RecipeModel recipeModel)
@@ -1064,6 +1175,9 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
     private readonly INotificationService _notificationService;
     private bool _suppressIsDirty;
     private RecipeModel? _previousSelectedRecipe;
+    private readonly ILogger<SoapDesignerViewModel> _logger;
+    private readonly ActivitySource _activitySource;
+
     private readonly IAzureBlobStorageService _blobStorageService;
     private CosmeticType _currentCosmeticType;
     private bool _isInitialized;

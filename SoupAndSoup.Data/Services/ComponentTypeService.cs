@@ -10,9 +10,11 @@ public class ComponentTypeService : RepositoryBase<ComponentType>, IComponentTyp
     public Task<List<ComponentType>> GetAllAsync(int cosmeticType)
     {
         return UseContextAsync((context, dbSet) =>
-            dbSet.Where(i => i.CosmeticTypes.Any(c => c.Id == cosmeticType))
+            dbSet
+                .Include(i => i.CosmeticTypes)
                 .Include(i => i.UseMeasureTypes)
                 .Include(i => i.BuyMeasureTypes)
+                .Where(i => i.CosmeticTypes.Any(c => c.Id == cosmeticType))
                 .ToListAsync()
         );
     }

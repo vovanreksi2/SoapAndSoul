@@ -57,3 +57,4 @@ public class ComponentModel : BaseModel
     private decimal _buyAmount;
     private decimal _amountInRecipe;
 }
+
