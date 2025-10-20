@@ -18,7 +18,7 @@ public class SoapAndSoulContext : DbContext
         : base(options)
     {
         Database.Migrate();
-    }
+    } 
      
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
