@@ -21,8 +21,8 @@ public class RecipeService : RepositoryBase<Recipe>, IRecipeService
                 .Where(r => r.IsActive)
                 .Where(r => r.CosmeticTypeId == cosmeticType)
                 .Include(r => r.RecipeComponents)
-                .ThenInclude(ri => ri.Component)
-                .ThenInclude(i => i.Images)
+                    .ThenInclude(ri => ri.Component)
+                    .ThenInclude(i => i.Images)
                 .Include(r => r.Images)
                 .AsQueryable();
                        

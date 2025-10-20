@@ -18,8 +18,8 @@ public class SoapAndSoulContext : DbContext
         : base(options)
     {
         Database.Migrate();
-    }
-
+    } 
+     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         // Index on Recipe.Name for fast searching
@@ -166,6 +166,14 @@ public class SoapAndSoulContext : DbContext
 
         base.OnModelCreating(modelBuilder);
     }
+
+//#if DEBUG
+//    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+//    {
+//        optionsBuilder.LogTo(message => Debug.WriteLine(message), LogLevel.Information);
+//        optionsBuilder.EnableSensitiveDataLogging();
+//    }
+//#endif
 
     private void SeedData(ModelBuilder modelBuilder)
     {

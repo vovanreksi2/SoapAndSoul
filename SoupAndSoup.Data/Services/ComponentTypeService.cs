@@ -11,10 +11,10 @@ public class ComponentTypeService : RepositoryBase<ComponentType>, IComponentTyp
     {
         return UseContextAsync((context, dbSet) =>
             dbSet.Where(i => i.CosmeticTypes.Any(c => c.Id == cosmeticType))
+                .Include(i => i.CosmeticTypes)
                 .Include(i => i.UseMeasureTypes)
                 .Include(i => i.BuyMeasureTypes)
-                .ToListAsync()
-        );
+                .ToListAsync());
     }
 
 }
