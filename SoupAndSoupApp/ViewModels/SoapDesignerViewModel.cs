@@ -35,14 +35,14 @@ namespace SoupAndSoupApp.ViewModels;
 
 public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitializableVM
 {
-    public const string NoImage_Receipt = "Assets/No_Receipt_Photo.png";
+    public const string NoImageRecipe = "Assets/No_Receipt_Photo.png";
     public const string NoImage_Component_Image = "Assets/No_Component_Photo.png";
 
     private static readonly TimeSpan SearchDebounceDelay = TimeSpan.FromMilliseconds(300);
     private const int FuzzyMatchThreshold = 60;
 
-    public ICommand NewReceiptCommand { get; private set; }
-    public ReactiveCommand<RecipeModel, Unit> DeleteReceiptCommand { get; private set; }
+    public ICommand NewRecipeCommand { get; private set; }
+    public ReactiveCommand<RecipeModel, Unit> DeleteRecipeCommand { get; private set; }
 
     public ReactiveCommand<ComponentType, Unit> NewComponentCommand { get; private set; }
     public ReactiveCommand<ComponentModel, Unit> EditComponentCommand { get; private set; }
@@ -141,8 +141,8 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
 
     private void InitView()
     {
-        NewReceiptCommand = ReactiveCommand.Create(CreateNewRecipePlaceholder);
-        DeleteReceiptCommand = ReactiveCommand.CreateFromTask<RecipeModel>(DeleteReceiptAsync);
+        NewRecipeCommand = ReactiveCommand.Create(CreateNewRecipePlaceholder);
+        DeleteRecipeCommand = ReactiveCommand.CreateFromTask<RecipeModel>(DeleteRecipeAsync);
 
         NewComponentCommand = ReactiveCommand.CreateFromTask<ComponentType>(AddComponentAsync);
         EditComponentCommand = ReactiveCommand.CreateFromTask<ComponentModel>(EditComponentAsync);
@@ -386,8 +386,8 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
 
         newRecipe.Name = "Нова Рецептура";
         newRecipe.Description = string.Empty;
-        newRecipe.ImagePath = ImageHelper.LoadFromResource(NoImage_Receipt);
-        newRecipe.DeleteReceiptCommand = DeleteReceiptCommand;
+        newRecipe.ImagePath = ImageHelper.LoadFromResource(NoImageRecipe);
+        newRecipe.DeleteRecipeCommand = DeleteRecipeCommand;
 
         newRecipe.EndInit();
 
@@ -418,7 +418,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
         activity.AddEvent(exceptionEvent);
     }
 
-    private async Task DeleteReceiptAsync(RecipeModel recipeModel)
+    private async Task DeleteRecipeAsync(RecipeModel recipeModel)
     {
         if (!recipeModel.IsNew)
         {
@@ -902,12 +902,12 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
         result.Description = recipe.Description;
         result.Amount = recipe.Amount;
         result.PreparationTime = (decimal)recipe.PreparationTime.TotalMinutes;
-        result.DeleteReceiptCommand = DeleteReceiptCommand;
+        result.DeleteRecipeCommand = DeleteRecipeCommand;
 
         result.RecipeComponents = recipe.RecipeComponents.Select(MapRecipeComponent);
 
         result.ImagePathString = recipe.Images.FirstOrDefault()?.ImageUrl ?? string.Empty;
-        result.ImagePath = await LoadFromResourceAsync(result, NoImage_Receipt);
+        result.ImagePath = await LoadFromResourceAsync(result, NoImageRecipe);
 
         result.UnitCost = _unitCostCalc.CalculateUnitCost(result.RecipeComponents, _cachedComponents);
 
@@ -928,7 +928,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
             RecipeComponents = ComponentsByRecipe.Select(MapRecipeComponent).ToList(),
         };
 
-        if (!string.IsNullOrEmpty(recipe.ImagePathString) && recipe.ImagePathString != NoImage_Receipt)
+        if (!string.IsNullOrEmpty(recipe.ImagePathString) && recipe.ImagePathString != NoImageRecipe)
             result.Images = new List<RecipeImage> { new() { ImageUrl = recipe.ImagePathString } };
 
         return result;

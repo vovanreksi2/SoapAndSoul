@@ -37,7 +37,7 @@ public class RecipeModel : BaseModel, IDisposable
         set => this.RaiseAndSetIfChanged(ref _preparationTime, value);
     }
 
-    public ICommand? DeleteReceiptCommand { get; set; }
+    public ICommand? DeleteRecipeCommand { get; set; }
 
     public IEnumerable<ComponentByRecipeModel> RecipeComponents { get; set; }
 
