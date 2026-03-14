@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /d/Code/SoupAndSoupApp log --oneline -20)",
+      "Bash(git -C /d/Code/SoupAndSoupApp log --name-status -5)",
+      "Bash(xargs ls -la)",
+      "Bash(git -C /d/Code/SoupAndSoupApp log --oneline)",
+      "WebFetch(domain:api.nuget.org)"
+    ]
+  }
+}
