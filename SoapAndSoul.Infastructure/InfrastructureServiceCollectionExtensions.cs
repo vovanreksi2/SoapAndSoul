@@ -14,6 +14,7 @@ public static class InfrastructureServiceCollectionExtensions
     public static IServiceCollection AddInfraSoapAndSoulServices(this IServiceCollection services)
     {
         services.AddSingleton<IAzureBlobStorageService, AzureBlobStorageService>();
+        services.AddSingleton<InstrumentationOpenTelemetry>();
         
         return services;
     }

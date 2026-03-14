@@ -19,8 +19,10 @@ public class ComponentService : RepositoryBase<Component>, IComponentService
         UseContextAsync((context, dbSet) => dbSet
             .Where(i => i.ComponentType.CosmeticTypes.Any(c => c.Id == cosmeticType))
             .Include(i => i.ComponentType)
+                .ThenInclude(i=> i.CosmeticTypes)
             .Include(i => i.Images)
             .AsNoTracking()
+            .AsSplitQuery()
             .ToListAsync()
         );
 

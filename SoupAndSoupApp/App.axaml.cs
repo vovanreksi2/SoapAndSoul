@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
@@ -16,6 +17,7 @@ namespace SoupAndSoupApp;
 public class App : Application
 {
     private const int DelayAfterSaveMilliseconds = 2000;
+    private static readonly ActivitySource ActivitySource = new("SoupAndSoupApp");
 
     private MainWindow _mainWindow;
     private MainViewModel _mainViewModel;
@@ -36,6 +38,15 @@ public class App : Application
         _mainViewModel = _serviceProvider.GetRequiredService<MainViewModel>();
        
         _logger = _serviceProvider.GetRequiredService<ILogger<App>>();
+        
+        // Test logging functionality
+        _logger.LogInformation("Application started successfully - ServiceProvider injected");
+        
+        // Test ActivitySource functionality
+        using var activity = ActivitySource.StartActivity("AppStartup", ActivityKind.Internal);
+        activity?.SetTag("operation", "service_provider_injection");
+        activity?.SetTag("app.name", "SoupAndSoupApp");
+        _logger.LogInformation("Test activity created for App startup");
     }
 
     public override void OnFrameworkInitializationCompleted()

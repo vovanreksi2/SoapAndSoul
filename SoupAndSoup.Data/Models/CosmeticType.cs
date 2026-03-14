@@ -2,7 +2,8 @@
 
 namespace SoupAndSoup.Data.Models;
 
-public  class CosmeticType
+//Type like: CraftingBase, SoapForm, ParfumForm...
+public class CosmeticType
 {
     [Key]
     public int Id { get; set; }
