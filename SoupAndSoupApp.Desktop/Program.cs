@@ -46,7 +46,6 @@ internal class Program
                             .AddSqlClientInstrumentation(options =>
                             {
                                 options.RecordException = true;
-                                options.SetDbStatementForText = false;
                             })
                             .AddSource("SoapAndSoul")
                             .SetSampler(new AlwaysOnSampler());
