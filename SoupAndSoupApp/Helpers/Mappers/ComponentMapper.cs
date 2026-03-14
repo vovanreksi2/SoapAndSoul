@@ -1,0 +1,81 @@
+using System.Linq;
+using System.Threading.Tasks;
+using System.Windows.Input;
+using SoupAndSoup.Data.Models;
+using SoupAndSoupApp.Helpers.Cache;
+using SoupAndSoupApp.Helpers.Images;
+using SoupAndSoupApp.Models;
+using ComponentType = SoupAndSoupApp.Models.ComponentType;
+using CosmeticType = SoupAndSoupApp.Models.CosmeticType;
+
+namespace SoupAndSoupApp.Helpers.Mappers;
+
+public class ComponentMapper : IComponentMapper
+{
+    private readonly MeasureTypeCache _measureTypeCache;
+    private readonly IImageService _imageService;
+
+    public ComponentMapper(MeasureTypeCache measureTypeCache, IImageService imageService)
+    {
+        _measureTypeCache = measureTypeCache;
+        _imageService = imageService;
+    }
+
+    public async Task<ComponentModel> MapToModelAsync(Component component, ICommand editCommand,
+        ICommand deleteCommand, string noImageUrl)
+    {
+        var componentType = (ComponentType)component.ComponentTypeId;
+
+        var result = new ComponentModel
+        {
+            Id = component.Id,
+            Name = component.Name,
+            Cost = component.Cost,
+
+            SuggestedAmount = component.SuggestedAmount,
+            BuyPrice = component.BuyPrice,
+            BuyAmount = component.BuyAmount,
+
+            DeleteCommand = deleteCommand,
+            EditCommand = editCommand,
+            ShowAmountInButton = componentType != ComponentType.Form,
+            Type = componentType,
+
+            BuyMeasureTypeId = component.BuyMeasureTypeId,
+            UseMeasureTypeId = component.UseMeasureTypeId,
+            BuyMeasureTypeShortTitle = (await _measureTypeCache.GetOrAddAsync(component.BuyMeasureTypeId)).ShortTitle,
+            UseMeasureTypeShortTitle = (await _measureTypeCache.GetOrAddAsync(component.UseMeasureTypeId)).ShortTitle,
+
+            ImagePathString = component.Images.FirstOrDefault()?.ImageUrl,
+        };
+
+        result.ImagePath = await _imageService.LoadImageOrDefaultAsync(result.ImagePathString, result.Id, noImageUrl);
+
+        return result;
+    }
+
+    public Component MapToEntity(NewComponentDto dto, ComponentType type,
+        CosmeticType cosmeticType, int? existingId = null)
+    {
+        var component = new Component
+        {
+            Cost = dto.Cost,
+            Name = dto.Name,
+            ComponentTypeId = (int)type,
+            UseMeasureTypeId = dto.UseMeasureType.Id,
+            BuyMeasureTypeId = dto.BuyMeasureType.Id,
+            SuggestedAmount = (int)dto.SuggestedAmount,
+            BuyAmount = (int)dto.BuyAmount,
+            BuyPrice = dto.BuyPrice,
+            CosmeticTypeId = (int)cosmeticType
+        };
+
+        if (existingId.HasValue)
+            component.Id = existingId.Value;
+
+        if (!string.IsNullOrEmpty(dto.ImagePath))
+            component.Images.Add(new ComponentImage { ImageUrl = dto.ImagePath });
+
+        return component;
+    }
+}

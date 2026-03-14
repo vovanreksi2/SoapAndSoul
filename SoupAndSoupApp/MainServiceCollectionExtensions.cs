@@ -5,8 +5,11 @@ using SoupAndSoup.Data;
 using SoupAndSoupApp.Helpers.Autosave;
 using SoupAndSoupApp.Helpers.Cache;
 using SoupAndSoupApp.Helpers.Calculators;
+using SoupAndSoupApp.Helpers.Images;
+using SoupAndSoupApp.Helpers.Mappers;
 using SoupAndSoupApp.Helpers.Navigation;
 using SoupAndSoupApp.Helpers.Notifications;
+using SoupAndSoupApp.Helpers.Rules;
 using SoupAndSoupApp.ViewModels;
 using SoupAndSoupApp.Views;
 
@@ -43,6 +46,21 @@ public static class MainServiceCollectionExtensions
 
         services.AddSingleton<IUnitCostCalculator, UnitCostCalculator>();
         services.AddSingleton<MeasureTypeCache>();
+
+        // Image service
+        services.AddSingleton<IImageService, ImageService>();
+
+        // Mappers
+        services.AddSingleton<IRecipeMapper, RecipeMapper>();
+        services.AddSingleton<IComponentMapper, ComponentMapper>();
+
+        // Component selection rules
+        services.AddSingleton<IComponentSelectionRule, FormSelectionRule>();
+        services.AddSingleton<IComponentSelectionRule, EssentialOilSelectionRule>();
+        services.AddSingleton<IComponentSelectionRule, FragranceOilSelectionRule>();
+        services.AddSingleton<IComponentSelectionRule, CraftingBaseSelectionRule>();
+        services.AddSingleton<IComponentSelectionRule, DefaultAmountSelectionRule>();
+        services.AddSingleton<IComponentSelectionRuleEngine, ComponentSelectionRuleEngine>();
 
         services.AddInfraSoapAndSoulServices();
 

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Disposables;
@@ -10,7 +9,6 @@ using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using Avalonia.Media.Imaging;
 using Microsoft.Extensions.Logging;
 using DynamicData;
 using DynamicData.Binding;
@@ -22,10 +20,12 @@ using SoupAndSoup.Data.Services;
 using SoupAndSoupApp.ExternalServices;
 using SoupAndSoupApp.Helpers;
 using SoupAndSoupApp.Helpers.Autosave;
-using SoupAndSoupApp.Helpers.Cache;
 using SoupAndSoupApp.Helpers.Calculators;
+using SoupAndSoupApp.Helpers.Images;
+using SoupAndSoupApp.Helpers.Mappers;
 using SoupAndSoupApp.Helpers.Navigation;
 using SoupAndSoupApp.Helpers.Notifications;
+using SoupAndSoupApp.Helpers.Rules;
 using SoupAndSoupApp.Models;
 using ComponentType = SoupAndSoupApp.Models.ComponentType;
 using CosmeticType = SoupAndSoupApp.Models.CosmeticType;
@@ -118,10 +118,14 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
         IRecipeService recipeService,
         IComponentService componentService,
         IComponentTypeService componentTypeService,
-        IDialogService dialogService, IUnitCostCalculator unitCostCalc, MeasureTypeCache measureTypeCache,
-        INotificationService notificationService, IAzureBlobStorageService blobStorageService, 
-        ILogger<SoapDesignerViewModel> logger, 
-        InstrumentationOpenTelemetry instrumentation)
+        IDialogService dialogService, IUnitCostCalculator unitCostCalc,
+        INotificationService notificationService, IAzureBlobStorageService blobStorageService,
+        ILogger<SoapDesignerViewModel> logger,
+        InstrumentationOpenTelemetry instrumentation,
+        IImageService imageService,
+        IRecipeMapper recipeMapper,
+        IComponentMapper componentMapper,
+        IComponentSelectionRuleEngine ruleEngine)
     {
         _recipeService = recipeService;
         _componentService = componentService;
@@ -129,11 +133,14 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
 
         _dialogService = dialogService;
         _unitCostCalc = unitCostCalc;
-        _measureTypeCache = measureTypeCache;
         _notificationService = notificationService;
         _blobStorageService = blobStorageService;
         _logger = logger;
         _activitySource = instrumentation.ActivitySource;
+        _imageService = imageService;
+        _recipeMapper = recipeMapper;
+        _componentMapper = componentMapper;
+        _ruleEngine = ruleEngine;
 
         InitView();
     }
@@ -566,7 +573,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
         cachedComponent.SuggestedAmount = updatedComponent.SuggestedAmount;
         cachedComponent.Type = (ComponentType)updatedComponent.ComponentTypeId;
 
-        cachedComponent.ImagePath = await LoadFromResourceAsync(updatedComponent);
+        cachedComponent.ImagePath = await _imageService.LoadImageOrDefaultAsync(updatedComponent, NoImage_Component_Image);
     }
 
 
@@ -663,7 +670,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
 
         void UpdateRecipeComponents(RecipeModel recipe)
         {
-            recipe.RecipeComponents = componentsByRecipe.Select(MapRecipeComponentModel).ToList();
+            recipe.RecipeComponents = componentsByRecipe.Select(_recipeMapper.MapToComponentByRecipeModel).ToList();
         }
     }
     private bool ShouldSaveRecipe(RecipeModel? recipe)
@@ -724,53 +731,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
 
     private void UpdateComponentInGroupAccordingToRules(ComponentModel componentModel)
     {
-        //TODO: Change to dictionary
-        switch (componentModel.Type)
-        {
-            case ComponentType.Form:
-                UpdateComponents(ComponentsByRecipe, componentModel.Type);
-
-                var craftingBase = ComponentsByRecipe.FirstOrDefault(_ => _.Type == ComponentType.CraftingBase);
-                if (craftingBase != null)
-                    craftingBase.AmountInRecipe = componentModel.SuggestedAmount;
-                break;
-
-            case ComponentType.EssentialOil:
-                UpdateComponents(ComponentsByRecipe, ComponentType.FragranceOil);
-                componentModel.AmountInRecipe = componentModel.SuggestedAmount;
-                break;
-
-            case ComponentType.FragranceOil:
-                UpdateComponents(ComponentsByRecipe, ComponentType.EssentialOil);
-                componentModel.AmountInRecipe = componentModel.SuggestedAmount;
-                break;
-
-            case ComponentType.CraftingBase:
-                var form = ComponentsByRecipe.FirstOrDefault(_ => _.Type == ComponentType.Form);
-                if (form != null && componentModel.IsSelected)
-                    componentModel.AmountInRecipe = form.SuggestedAmount;
-                else
-                    componentModel.AmountInRecipe = componentModel.SuggestedAmount;
-
-                break;
-            case ComponentType.Pigment:
-            case ComponentType.HerbalExtract:
-            case ComponentType.Tools:
-            case ComponentType.Other:
-                componentModel.AmountInRecipe = componentModel.SuggestedAmount;
-                break;
-            default:
-                throw new ArgumentOutOfRangeException();
-        }
-
-        void UpdateComponents(IEnumerable<ComponentModel> components, ComponentType typeComponent)
-        {
-            var tmpList = new List<ComponentModel>(components);
-            foreach (var component in tmpList.Where(_ => _.Type == typeComponent && _.Id != componentModel.Id))
-            {
-                component.IsSelected = false;
-            }
-        }
+        _ruleEngine.ApplySelectionRules(componentModel, [.. ComponentsByRecipe]);
     }
 
     private void ReCalculateUnitCost(IEnumerable<ComponentModel> components)
@@ -817,171 +778,37 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
             return false;
         }
     }
-    private async Task UpdateComponentImageAsync(NewComponentDto newComponentDto)
+    private Task UpdateComponentImageAsync(NewComponentDto newComponentDto)
     {
-        if (!newComponentDto.IsPhotoChanged) return;
+        return _imageService.UpdateComponentImageAsync(newComponentDto);
+    }
 
-        var uploadResult = await UploadComponentImageAsync(newComponentDto.ImagePath);
-        if (uploadResult is null)
-            _logger.LogError("Failed to upload component image by {imagePath} for component {componentName}",
-                newComponentDto.ImagePath, newComponentDto.Name);
-        else
-            newComponentDto.ImagePath = uploadResult;
-    } 
-    private async Task UpdateRecipeImageAsync(RecipeModel recipe)
+    private Task UpdateRecipeImageAsync(RecipeModel recipe)
     {
-        var uploadResult = await UploadComponentImageAsync(NewImagePath);
-        if (uploadResult is null)
-            _logger.LogError("Failed to upload component image by {imagePath} for component {componentName}",
-                NewImagePath, recipe.Name);
-        else
-            recipe.ImagePathString = uploadResult;
+        return _imageService.UpdateRecipeImageAsync(recipe, NewImagePath);
+    }
+
+    private Task DeleteImageAsync(BaseModel baseModel)
+    {
+        return _imageService.DeleteImageAsync(baseModel);
     }
 
 
-    private bool IsValidExtension(string ext) =>
-        new[] { ".jpg", ".jpeg", ".png" }.Contains(ext.ToLower());
-    private Task<string?> UploadComponentImageAsync(string imagePath)
+    private Task<RecipeModel> MapRecipe(Recipe recipe)
     {
-        if (string.IsNullOrEmpty(imagePath) || !File.Exists(imagePath))
-        {
-            _logger.LogWarning("File not found on local machine. FilePath: {localFilePath}", imagePath);
-            return Task.FromResult<string?>(null);
-        }
-        var ext = Path.GetExtension(imagePath);
-        if (!IsValidExtension(ext))
-            throw new InvalidOperationException("Unsupported image extension.");
-
-        var photoName = $"{Guid.NewGuid()}{ext}";
-        return UploadImageToBlobAsync(photoName, imagePath);
-    }
-    private async Task<string?> UploadImageToBlobAsync(string blobName, string localImagePath)
-    {
-        if (string.IsNullOrEmpty(localImagePath) || !File.Exists(localImagePath))
-        {
-            _logger.LogWarning("File not found on local machine. FilePath: {localFilePath}", localImagePath);
-            return null;
-        }
-
-        await using var stream = File.OpenRead(localImagePath);
-        var success = await _blobStorageService.UploadBlobAsync(blobName, stream);
-
-        return success ? blobName : null;
-    }
-    private async Task<Bitmap?> DownloadImageFromBlobAsync(string blobName)
-    {
-        if (string.IsNullOrEmpty(blobName)) return null;
-        var stream = await _blobStorageService.DownloadBlobAsync(blobName);
-        
-        return stream == null ? null : GetBitmapFromStream(stream);
-    }
-    private async Task DeleteImageAsync(BaseModel baseModel)
-    {
-        if (string.IsNullOrEmpty(baseModel.ImagePathString))
-        {
-            _logger.LogInformation("Component with ID {componentId} has no image to delete. Name: {componentName}", baseModel.Id, baseModel.Name);
-            return;
-        }
-
-        var deleteResult = await _blobStorageService.DeleteBlobAsync(baseModel.ImagePathString);
-        if (deleteResult)
-            _logger.LogInformation("Image deleted successfully for component with ID {componentId}, Name: {componentName}", baseModel.Id, baseModel.Name);
-        else
-            _logger.LogError("Failed to delete image for component with ID {componentId}, Name: {componentName}", baseModel.Id, baseModel.Name);
+        return _recipeMapper.MapToModelAsync(recipe, DeleteRecipeCommand, _cachedComponents, NoImageRecipe);
     }
 
-
-    private async Task<RecipeModel> MapRecipe(Recipe recipe)
-    {
-        var result = new RecipeModel();
-
-        result.BeginInit();
-
-        result.Id = recipe.Id;
-        result.Name = recipe.Name;
-        result.Description = recipe.Description;
-        result.Amount = recipe.Amount;
-        result.PreparationTime = (decimal)recipe.PreparationTime.TotalMinutes;
-        result.DeleteRecipeCommand = DeleteRecipeCommand;
-
-        result.RecipeComponents = recipe.RecipeComponents.Select(MapRecipeComponent);
-
-        result.ImagePathString = recipe.Images.FirstOrDefault()?.ImageUrl ?? string.Empty;
-        result.ImagePath = await LoadFromResourceAsync(result, NoImageRecipe);
-
-        result.UnitCost = _unitCostCalc.CalculateUnitCost(result.RecipeComponents, _cachedComponents);
-
-        result.EndInit();
-
-        return result;
-    }
     private Recipe MapRecipe(RecipeModel recipe)
     {
-        var result = new Recipe
-        {
-            Id = recipe.Id,
-            Amount = recipe.Amount,
-            Name = recipe.Name,
-            PreparationTime = TimeSpan.FromMinutes((int)recipe.PreparationTime),
-            CosmeticTypeId = (int)_currentCosmeticType,
-            Description = recipe.Description,
-            RecipeComponents = ComponentsByRecipe.Select(MapRecipeComponent).ToList(),
-        };
-
-        if (!string.IsNullOrEmpty(recipe.ImagePathString) && recipe.ImagePathString != NoImageRecipe)
-            result.Images = new List<RecipeImage> { new() { ImageUrl = recipe.ImagePathString } };
-
-        return result;
+        return _recipeMapper.MapToEntity(recipe, ComponentsByRecipe, _currentCosmeticType, NoImageRecipe);
     }
-
-    private ComponentByRecipeModel MapRecipeComponent(RecipeComponent componentByRecipeModel) =>
-        new()
-        {
-            ComponentId = componentByRecipeModel.ComponentId,
-            Amount = componentByRecipeModel.Amount
-        };
-    private ComponentByRecipeModel MapRecipeComponentModel(ComponentModel componentByRecipeModel) =>
-        new()
-        {
-            ComponentId = componentByRecipeModel.Id,
-            Amount = componentByRecipeModel.AmountInRecipe
-        }; 
-    private RecipeComponent MapRecipeComponent(ComponentModel componentModel) =>
-        new()
-        {
-            ComponentId = componentModel.Id,
-            Amount = componentModel.AmountInRecipe
-        };
 
 
     private async Task<ComponentModel> MapComponentModelAsync(Component component)
     {
-        var componentType = (ComponentType)component.ComponentTypeId;
-
-        var result = new ComponentModel
-        {
-            Id = component.Id,
-            Name = component.Name,
-            Cost = component.Cost,
-
-            SuggestedAmount = component.SuggestedAmount,
-            BuyPrice = component.BuyPrice,
-            BuyAmount = component.BuyAmount,
-
-            DeleteCommand = DeleteComponentCommand,
-            EditCommand = EditComponentCommand,
-            ShowAmountInButton = componentType != ComponentType.Form,
-            Type = componentType,
-            
-            BuyMeasureTypeId = component.BuyMeasureTypeId,
-            UseMeasureTypeId = component.UseMeasureTypeId,
-            BuyMeasureTypeShortTitle = (await _measureTypeCache.GetOrAddAsync(component.BuyMeasureTypeId)).ShortTitle,
-            UseMeasureTypeShortTitle = (await _measureTypeCache.GetOrAddAsync(component.UseMeasureTypeId)).ShortTitle,
-            
-            ImagePathString = component.Images.FirstOrDefault()?.ImageUrl,
-        };
-
-        result.ImagePath = await LoadFromResourceAsync(result, NoImage_Component_Image);
+        var result = await _componentMapper.MapToModelAsync(
+            component, EditComponentCommand, DeleteComponentCommand, NoImage_Component_Image);
 
         SubscribeOnComponentChanges(result);
         return result;
@@ -989,58 +816,9 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
 
     private Component MapComponent(NewComponentDto componentDto, ComponentType ingredientType, int? ingredientId = null)
     {
-        var ingredient = new Component
-        {
-            Cost = componentDto.Cost,
-            Name = componentDto.Name,
-            ComponentTypeId = (int)ingredientType,
-            UseMeasureTypeId = componentDto.UseMeasureType.Id,
-            BuyMeasureTypeId = componentDto.BuyMeasureType.Id,
-            SuggestedAmount = (int)componentDto.SuggestedAmount,
-            BuyAmount = (int)componentDto.BuyAmount,
-            BuyPrice = componentDto.BuyPrice,
-            CosmeticTypeId = (int)_currentCosmeticType
-        };
-
-        if (ingredientId.HasValue)
-            ingredient.Id = ingredientId.Value;
-
-        if (!string.IsNullOrEmpty(componentDto.ImagePath))
-            ingredient.Images.Add(new ComponentImage { ImageUrl = componentDto.ImagePath });
-
-        return ingredient;
+        return _componentMapper.MapToEntity(componentDto, ingredientType, _currentCosmeticType, ingredientId);
     }
 
-
-    private Task<Bitmap> LoadFromResourceAsync(Component component)
-    {
-        var imageIsExisting = component.Images.Any();
-        if (!imageIsExisting)
-            return Task.FromResult(ImageHelper.LoadFromResource(NoImage_Component_Image));
-
-        var imageUrl = component.Images.FirstOrDefault()?.ImageUrl;
-        return LoadFromResourceAsync(new BaseModel
-        {
-            Id = component.Id,
-            Name = component.Name,
-            ImagePathString = imageUrl ?? string.Empty
-        }, NoImage_Component_Image);
-    }
-    private async Task<Bitmap> LoadFromResourceAsync(BaseModel baseModel, string defaultImageUrl)
-    {
-        var imageUrl = baseModel.ImagePathString;
-        if (string.IsNullOrEmpty(imageUrl))
-        {
-            _logger.LogWarning("Image URL is null or empty for component ID {componentId}. Using default image.", baseModel.Id);
-            return ImageHelper.LoadFromResource(defaultImageUrl);
-        }
-
-        var imageBitmap = await DownloadImageFromBlobAsync(imageUrl);
-        if (imageBitmap is not null) return imageBitmap;
-
-        _logger.LogWarning("Could not find or download component ID {componentId}. Using default image.", baseModel.Id);
-        return ImageHelper.LoadFromResource(defaultImageUrl);
-    }
 
     private void SubscribeOnComponentChanges(ComponentModel component)
     {
@@ -1056,40 +834,6 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
             .Skip(1)
             .Subscribe(_ => { HandleAmountComponentChanged(component); })
             .DisposeWith(Disposables);
-    }
-
-    public Bitmap GetBitmapFromStream(Stream stream)
-    {
-        // The stream must be readable and positioned at the beginning.
-        if (stream == null || !stream.CanRead)
-        {
-            throw new ArgumentException("Stream is not valid or readable.");
-        }
-
-        // Ensure the stream is at the beginning.
-        // This is crucial if the stream was read from previously.
-        if (stream.CanSeek)
-        {
-            stream.Position = 0;
-        }
-
-        // The most common "gotcha":
-        // The Bitmap object keeps a lock on the stream for its entire lifetime.
-        // If you dispose of the stream before you are done with the bitmap,
-        // you will get a "GDI+ generic error".
-        // Therefore, you should NOT wrap the stream in a `using` statement here
-        // if you intend to return the Bitmap.
-        // The caller who receives the Bitmap is responsible for its disposal,
-        // which in turn will release the stream.
-
-        // A safer way is to copy the stream to a MemoryStream, which you can keep alive.
-        var memoryStream = new MemoryStream();
-        stream.CopyTo(memoryStream);
-        memoryStream.Position = 0; // Rewind the memory stream.
-
-        // Now, create the bitmap from the memory stream.
-        // The original stream can now be safely closed if needed.
-        return new Bitmap(memoryStream);
     }
 
     private bool IsLatin(string name)
@@ -1165,7 +909,6 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
     private readonly IUnitCostCalculator _unitCostCalc;
     private bool _suppressSelectionChange;
     private Dictionary<ComponentType, ComponentTypeModel> _cachedComponentTypes;
-    private readonly MeasureTypeCache _measureTypeCache;
     private readonly INotificationService _notificationService;
     private bool _suppressIsDirty;
     private RecipeModel? _previousSelectedRecipe;
@@ -1173,6 +916,10 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
     private readonly ActivitySource _activitySource;
 
     private readonly IAzureBlobStorageService _blobStorageService;
+    private readonly IImageService _imageService;
+    private readonly IRecipeMapper _recipeMapper;
+    private readonly IComponentMapper _componentMapper;
+    private readonly IComponentSelectionRuleEngine _ruleEngine;
     private CosmeticType _currentCosmeticType;
     private bool _isInitialized;
     private string _searchString;
