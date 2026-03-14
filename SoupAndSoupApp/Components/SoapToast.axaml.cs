@@ -11,6 +11,8 @@ namespace SoupAndSoupApp.Components;
 
 public partial class SoapToast : UserControl
 {
+    private const int ToastDisplayDurationMs = 2000;
+
     public static readonly StyledProperty<UiNotification?> NotificationProperty =
         AvaloniaProperty.Register<SoapToast, UiNotification?>(nameof(Notification));
 
@@ -59,7 +61,7 @@ public partial class SoapToast : UserControl
         {
             try
             {
-                await Task.Delay(2000, token);
+                await Task.Delay(ToastDisplayDurationMs, token);
                 if (!token.IsCancellationRequested)
                 {
                     IsToastVisible = false;

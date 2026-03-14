@@ -9,6 +9,8 @@ namespace SoupAndSoupApp.Models;
 
 public class RecipeModel : BaseModel, IDisposable
 {
+    private static readonly TimeSpan DirtyTrackingThrottle = TimeSpan.FromMilliseconds(200);
+
     public bool IsPhotoChanged => !string.IsNullOrEmpty(ImagePathString);
 
     public string Description
@@ -51,7 +53,7 @@ public class RecipeModel : BaseModel, IDisposable
 
         Changed
             .Where(x => !_suppressIsDirty && x.PropertyName != nameof(IsDirty))
-            .Throttle(TimeSpan.FromMilliseconds(200))
+            .Throttle(DirtyTrackingThrottle)
             .ObserveOn(RxApp.MainThreadScheduler)
             .Subscribe(_ => { IsDirty = true; })
             .DisposeWith(_disposables);

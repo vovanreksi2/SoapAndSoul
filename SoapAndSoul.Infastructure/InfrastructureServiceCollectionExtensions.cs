@@ -8,6 +8,7 @@ public static class InfrastructureServiceCollectionExtensions
 {
     public static IServiceCollection ConfigureInfraSoapAndSoul(this IServiceCollection services, IConfiguration configuration)
     {
+        services.Configure<AzureBlobStorageSettings>(configuration.GetSection("AzureBlobStorage"));
         return services;
     }
 

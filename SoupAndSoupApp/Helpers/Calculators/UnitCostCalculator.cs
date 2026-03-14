@@ -1,14 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using DynamicData;
+using Microsoft.Extensions.Logging;
 using SoupAndSoupApp.Models;
 
 namespace SoupAndSoupApp.Helpers.Calculators;
 
 public class UnitCostCalculator : IUnitCostCalculator
 {
+    private readonly ILogger<UnitCostCalculator> _logger;
+
+    public UnitCostCalculator(ILogger<UnitCostCalculator> logger)
+    {
+        _logger = logger;
+    }
+
     private const decimal ArrangeAmountOfUseForm = 100m;
     private const decimal DropsInMilliliters = 20;
 
@@ -92,10 +99,11 @@ public class UnitCostCalculator : IUnitCostCalculator
 
     private ComponentModel? GetCachedComponentById(SourceCache<ComponentModel, int>  cachedComponents, int id)
     {
-        if (cachedComponents.Lookup(id).HasValue)
-            return cachedComponents.Lookup(id).Value;
+        var lookup = cachedComponents.Lookup(id);
+        if (lookup.HasValue)
+            return lookup.Value;
 
-        Debug.WriteLine($"Component with ID {id} not found in cache.");
+        _logger.LogWarning("Component with ID {componentId} not found in cache", id);
         return null;
     }
 

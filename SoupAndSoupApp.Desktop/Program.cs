@@ -2,10 +2,12 @@
 using Avalonia;
 using Avalonia.ReactiveUI;
 using Azure.Monitor.OpenTelemetry.Exporter;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using SoupAndSoup.Data;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -97,7 +99,14 @@ internal class Program
         var host = hostBuilder.Build();
         using (host)
         {
-            host.Start();  
+            using (var scope = host.Services.CreateScope())
+            {
+                var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<SoapAndSoulContext>>();
+                using var ctx = factory.CreateDbContext();
+                ctx.Database.Migrate();
+            }
+
+            host.Start();
 
             BuildAvaloniaApp(host)
                 .StartWithClassicDesktopLifetime(args);

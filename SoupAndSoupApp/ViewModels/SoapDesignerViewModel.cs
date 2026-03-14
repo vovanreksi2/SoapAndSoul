@@ -38,6 +38,9 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
     public const string NoImage_Receipt = "Assets/No_Receipt_Photo.png";
     public const string NoImage_Component_Image = "Assets/No_Component_Photo.png";
 
+    private static readonly TimeSpan SearchDebounceDelay = TimeSpan.FromMilliseconds(300);
+    private const int FuzzyMatchThreshold = 60;
+
     public ICommand NewReceiptCommand { get; private set; }
     public ReactiveCommand<RecipeModel, Unit> DeleteReceiptCommand { get; private set; }
 
@@ -103,9 +106,6 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
         {
             if (_searchString == value) return;
             this.RaiseAndSetIfChanged(ref _searchString, value.Trim());
-
-            _cachedRecipes.Connect()
-                .AutoRefreshOnObservable(_ => Observable.Return(Unit.Default)); 
         }
     }
     
@@ -232,7 +232,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
                 .DisposeWith(Disposables);
 
             this.WhenAnyValue(x => x.SearchString)
-                .Throttle(TimeSpan.FromMilliseconds(300)) // debounce optional
+                .Throttle(SearchDebounceDelay)
                 .DistinctUntilChanged()
                 .Subscribe(_ => _cachedRecipes.Refresh())
                 .DisposeWith(Disposables);
@@ -427,12 +427,12 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
 
             if (!isDeleteSuccess)
             {
-                LogError("Failed to delete recipe with ID {recipeId}, Name: {recipeName}", recipeModel.Id, recipeModel.Name);
+                _logger.LogError("Failed to delete recipe with ID {recipeId}, Name: {recipeName}", recipeModel.Id, recipeModel.Name);
                 return;
             }
 
             await DeleteImageAsync(recipeModel);
-            LogError("Success for delete recipe with ID {recipeId}, Name: {recipeName}", recipeModel.Id, recipeModel.Name);
+            _logger.LogInformation("Success for delete recipe with ID {recipeId}, Name: {recipeName}", recipeModel.Id, recipeModel.Name);
         }
 
         _cachedRecipes.Remove(recipeModel.Id);
@@ -446,7 +446,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
         if (group is null)
         {
             NotifyResult(false, DomainNotificationType.ErrorWhileSaving);
-            LogError($"No group found for type {parameter}");
+            _logger.LogWarning("No group found for type {componentType}", parameter);
             return;
         }
 
@@ -464,7 +464,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
             var component = await MapComponentModelAsync(newlySavedComponent);
             _cachedComponents.AddOrUpdate(component);
 
-            LogError("Success for save component with ID {componentId}, Name: {componentName}", component.Id, component.Name);
+            _logger.LogInformation("Success for save component with ID {componentId}, Name: {componentName}", component.Id, component.Name);
 
             return true;
         },
@@ -474,7 +474,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
     {
         if (model is null)
         {
-            LogError("Attempted to edit a null component model.");
+            _logger.LogWarning("Attempted to edit a null component model.");
             return;
         }
 
@@ -482,7 +482,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
         if (group is null)
         {
             NotifyResult(false, DomainNotificationType.ErrorWhileSaving);
-            LogError($"No group found for type {model.Type}");
+            _logger.LogWarning("No group found for type {componentType}", model.Type);
             return;
         }
 
@@ -490,7 +490,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
             await _dialogService.ShowAddEditComponentDialogAsync(true, group.ComponentType, model);
         if (editedComponentDto is null)
         {
-            LogError("Component edit dialog cancelled for component ID {componentId}", model.Id);
+            _logger.LogInformation("Component edit dialog cancelled for component ID {componentId}", model.Id);
             return; // User cancelled the dialog
         }
 
@@ -505,7 +505,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
                 // Update the cached component with the new values
                 await UpdateCachedComponentAsync(updatedComponent);
 
-                LogError($"Success for save component with ID {model.Id}");
+                _logger.LogInformation("Success for save component with ID {componentId}", model.Id);
                 return true;
             },
             async () => await _blobStorageService.DeleteBlobAsync(editedComponentDto.ImagePath));
@@ -517,14 +517,14 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
         
         if (!result)
         {
-            LogError("Failed to delete component with ID {componentId}, Name: {componentName}", component.Id, component.Name);
+            _logger.LogError("Failed to delete component with ID {componentId}, Name: {componentName}", component.Id, component.Name);
             return;
         }
 
         ComponentGroups.FirstOrDefault(_ => _.ComponentType.Type == component.Type)?.Components.Remove(component);
         _cachedComponents.Remove(component.Id);
         
-        LogError("Success for delete component with ID {componentId}, Name: {componentName}", component.Id, component.Name);
+        _logger.LogInformation("Success for delete component with ID {componentId}, Name: {componentName}", component.Id, component.Name);
 
         await DeleteImageAsync(component);
     }
@@ -538,7 +538,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
 
         if (isSuccess) return result;
 
-        LogError("Failed to save new component{componentName} of type {componentType}.", component.Name, type);
+        _logger.LogError("Failed to save new component {componentName} of type {componentType}", component.Name, type);
         return result;
     }    
 
@@ -548,7 +548,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
         NotifyResult(result, DomainNotificationType.ComponentUpdated);
         if (result) return true;
 
-        LogError("Failed to save component: componentId {componentId}, {componentName} of type {componentType}.", component.Id, component.Name, type);
+        _logger.LogError("Failed to save component: componentId {componentId}, {componentName} of type {componentType}", component.Id, component.Name, type);
         return false;
     }
     private async Task UpdateCachedComponentAsync(Component updatedComponent)
@@ -575,7 +575,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
         var isSaveSuccess = await SavePreviouslySelectedRecipeAsync(oldValue, componentsByRecipe);
         if (!isSaveSuccess)
         {
-            LogError("Failed to save previously selected recipe, aborting selection change.");
+            _logger.LogError("Failed to save previously selected recipe, aborting selection change.");
             SelectedRecipe = oldValue; 
             return;
         }
@@ -591,7 +591,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
 
         if (newValue == null)
         {
-            LogError("New value is null, cannot update components.");
+            _logger.LogWarning("New value is null, cannot update components.");
             return;
         }
 
@@ -632,7 +632,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
     {
         if (oldRecipe == null)
         {
-            LogError("Old recipe is null, nothing to save.");
+            _logger.LogInformation("Old recipe is null, nothing to save.");
             return true; // Nothing to save
         }
 
@@ -675,7 +675,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
     {
         if (inputRecipe == null)
         {
-            LogError("Input recipe is null, cannot save.");
+            _logger.LogWarning("Input recipe is null, cannot save.");
             return false;
         }
 
@@ -691,7 +691,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
         var updateResult = await SaveUpdatedRecipe(recipe);
 
         NotifyResult(updateResult, DomainNotificationType.RecipeUpdated);
-        LogError($"Success for save recipe with ID {inputRecipe.Id}");
+        _logger.LogInformation("Success for save recipe with ID {recipeId}", inputRecipe.Id);
 
         return updateResult;
     }
@@ -704,7 +704,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
         }
         catch (Exception exception)
         {
-            LogError("Failed to create new recipe with NAME {recipeName}", recipe.Name, exception);
+            _logger.LogError(exception, "Failed to create new recipe with NAME {recipeName}", recipe.Name);
             return false;
         }
     }
@@ -716,7 +716,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
         }
         catch (Exception exception)
         {
-            LogError("Failed to update recipe with NAME {recipeName} and ID {recipeId}.", recipe.Name, recipe.Id);
+            _logger.LogError(exception, "Failed to update recipe with NAME {recipeName} and ID {recipeId}", recipe.Name, recipe.Id);
             return false;
         }
     }
@@ -777,13 +777,13 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
     {
         if (SelectedRecipe == null)
         {
-            Debug.WriteLine("Selected receipt is null, cannot calculate unit cost.");
+            _logger.LogWarning("Selected recipe is null, cannot calculate unit cost.");
             return;
         }
 
         if (!components.Any())
         {
-            Debug.WriteLine("No components found to calculate unit cost.");
+            _logger.LogWarning("No components found to calculate unit cost.");
 
             SelectedRecipe.UnitCost = 0;
             return;
@@ -801,17 +801,17 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
         }
         catch (Exception ex)
         {
-            LogError("Failed: {message}", ex.Message);
+            _logger.LogError(ex, "Failed: {message}", ex.Message);
 
             try
             {
                 var result = await rollbackTask();
                 if (!result)
-                    LogError("Rollback transaction is failed: {message}", ex.Message);
+                    _logger.LogError(ex, "Rollback transaction is failed: {message}", ex.Message);
             }
             catch (Exception e)
             {
-                LogError("Rollback transaction is failed: {message}", ex.Message);
+                _logger.LogError(e, "Rollback transaction is failed: {message}", e.Message);
             }
 
             return false;
@@ -823,7 +823,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
 
         var uploadResult = await UploadComponentImageAsync(newComponentDto.ImagePath);
         if (uploadResult is null)
-            LogError("Failed to upload component image by {imagePath} for component {componentName}",
+            _logger.LogError("Failed to upload component image by {imagePath} for component {componentName}",
                 newComponentDto.ImagePath, newComponentDto.Name);
         else
             newComponentDto.ImagePath = uploadResult;
@@ -832,7 +832,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
     {
         var uploadResult = await UploadComponentImageAsync(NewImagePath);
         if (uploadResult is null)
-            LogError("Failed to upload component image by {imagePath} for component {componentName}",
+            _logger.LogError("Failed to upload component image by {imagePath} for component {componentName}",
                 NewImagePath, recipe.Name);
         else
             recipe.ImagePathString = uploadResult;
@@ -845,7 +845,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
     {
         if (string.IsNullOrEmpty(imagePath) || !File.Exists(imagePath))
         {
-            LogError("File not found on local machine. FilePath: {localFilePath}", imagePath);
+            _logger.LogWarning("File not found on local machine. FilePath: {localFilePath}", imagePath);
             return Task.FromResult<string?>(null);
         }
         var ext = Path.GetExtension(imagePath);
@@ -859,7 +859,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
     {
         if (string.IsNullOrEmpty(localImagePath) || !File.Exists(localImagePath))
         {
-            LogError("File not found on local machine. FilePath: {localFilePath}", localImagePath);
+            _logger.LogWarning("File not found on local machine. FilePath: {localFilePath}", localImagePath);
             return null;
         }
 
@@ -879,15 +879,15 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
     {
         if (string.IsNullOrEmpty(baseModel.ImagePathString))
         {
-            LogError("Component with ID {componentId} has no image to delete. Name: {componentName}", baseModel.Id, baseModel.Name);
+            _logger.LogInformation("Component with ID {componentId} has no image to delete. Name: {componentName}", baseModel.Id, baseModel.Name);
             return;
         }
 
         var deleteResult = await _blobStorageService.DeleteBlobAsync(baseModel.ImagePathString);
-        LogError(deleteResult
-                ? "Image deleted successfully for component with ID {componentId}, Name: {componentName}"
-                : "Failed to delete image for component with ID {componentId}, Name: {componentName}",
-            baseModel.Id, baseModel.Name);
+        if (deleteResult)
+            _logger.LogInformation("Image deleted successfully for component with ID {componentId}, Name: {componentName}", baseModel.Id, baseModel.Name);
+        else
+            _logger.LogError("Failed to delete image for component with ID {componentId}, Name: {componentName}", baseModel.Id, baseModel.Name);
     }
 
 
@@ -1031,14 +1031,14 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
         var imageUrl = baseModel.ImagePathString;
         if (string.IsNullOrEmpty(imageUrl))
         {
-            LogError("Image URL is null or empty for component ID {componentId}. Using default image.", baseModel.Id);
+            _logger.LogWarning("Image URL is null or empty for component ID {componentId}. Using default image.", baseModel.Id);
             return ImageHelper.LoadFromResource(defaultImageUrl);
         }
 
         var imageBitmap = await DownloadImageFromBlobAsync(imageUrl);
         if (imageBitmap is not null) return imageBitmap;
 
-        LogError("Could not found or download component ID {componentId}. Using default image.", baseModel.Id);
+        _logger.LogWarning("Could not find or download component ID {componentId}. Using default image.", baseModel.Id);
         return ImageHelper.LoadFromResource(defaultImageUrl);
     }
 
@@ -1101,17 +1101,13 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
         return firstChar >= 'A' && firstChar <= 'z';
     }
     
-    private static void LogError(string message, params object[] data)
-    {
-        Debug.WriteLine(message);
-    }
-
     private ComponentModel? GetCachedComponentById(int id)
     {
-        if (_cachedComponents.Lookup(id).HasValue)
-            return _cachedComponents.Lookup(id).Value;
+        var lookup = _cachedComponents.Lookup(id);
+        if (lookup.HasValue)
+            return lookup.Value;
 
-        Debug.WriteLine($"Component with ID {id} not found in cache.");
+        _logger.LogWarning("Component with ID {componentId} not found in cache", id);
         return null;
     }
 
@@ -1139,8 +1135,8 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
         var contains = recipe.Name.Contains(searchString, StringComparison.OrdinalIgnoreCase) ||
                        recipe.Description.Contains(searchString, StringComparison.OrdinalIgnoreCase);
 
-        var fuzzyScore = Fuzz.PartialRatio(searchString, recipe.Name.ToLowerInvariant()) > 60 ||
-                         Fuzz.PartialRatio(searchString, recipe.Description.ToLowerInvariant()) > 60;
+        var fuzzyScore = Fuzz.PartialRatio(searchString, recipe.Name.ToLowerInvariant()) > FuzzyMatchThreshold ||
+                         Fuzz.PartialRatio(searchString, recipe.Description.ToLowerInvariant()) > FuzzyMatchThreshold;
 
         return contains || fuzzyScore;
     }
