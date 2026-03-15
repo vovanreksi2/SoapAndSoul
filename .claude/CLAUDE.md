@@ -55,12 +55,29 @@ All projects target `net10.0`. `Directory.Build.props` enforces `Nullable=enable
 `SoupAndSoupApp.Desktop/Program.cs` uses `Host.CreateDefaultBuilder` (GenericHost). Database migration (`Database.Migrate()`) runs once at startup in `Program.cs`. Services are wired via extension methods:
 
 - `MainServiceCollectionExtensions.AddSoapAndSoulAppServices()` — UI, ViewModels, dialogs, caching, calculators, mappers, coordinators, rule engine, image service
-- `DatabaseServiceCollectionExtensions.ConfigureSoapAndSoulApp()` — `SoapAndSoulContext` factory (Singleton), repositories, data services
+- `DatabaseServiceCollectionExtensions.AddSoupAndSoulDbServices()` — `SoapAndSoulContext` factory (Singleton), repositories, data services
 - `InfrastructureServiceCollectionExtensions.AddInfraSoapAndSoulServices()` — Azure Blob Storage, `InstrumentationOpenTelemetry`
 
 OpenTelemetry (tracing, metrics, logging) is configured inline in `Program.cs` with `AddSource("SoapAndSoul")`. Azure Monitor connection string resolves from: `config["AzureMonitor:ConnectionString"]` → `config["APPLICATIONINSIGHTS_CONNECTION_STRING"]` → environment variable.
 
 After the host is built, `IServiceProvider` is passed into `App` via `app.InjectServiceProvider(host.Services)` in the `AfterSetup` callback. `App.axaml.cs` resolves `MainWindow`/`MainViewModel` from the container. Browser and Android targets skip GenericHost entirely.
+
+### ViewModel Hierarchy
+
+```
+MainViewModel (Singleton) — shell, navigation between cosmetic types
+  └─ SoapDesignerViewModel (Transient, one per cosmetic type) — central VM, SourceCache pipelines
+       ├─ RecipeListViewModel — recipe list, selection
+       ├─ RecipeEditorViewModel — recipe editing, auto-save, component pipeline
+       └─ ComponentLibraryViewModel — component grid, grouped by type
+```
+
+`MainViewModel` creates `SoapDesignerViewModel` instances via `IDesignerViewModelFactory`. Each designer VM owns its sub-VMs and shares a `SourceCache<ComponentModel, int>` between the editor and library views.
+
+### DI Lifetimes
+
+- **Singleton:** `MainWindow`, `MainViewModel`, all data services (`IRecipeService`, etc.), `MeasureTypeCache`, `IDialogService`, `INotificationService`, `IActiveViewModelRegistry`
+- **Transient:** `SoapDesignerViewModel`, all coordinators (`RecipeCoordinator`, `ComponentCoordinator`, `DesignerDataLoader`)
 
 ### MVVM Pattern
 
@@ -111,6 +128,19 @@ Save triggers:
 - **`RecipeModel`** — Contains `SourceCache<ComponentByRecipeModel, int> SelectedComponents` for reactive per-recipe ingredient tracking. Implements `IDisposable` with `CompositeDisposable`
 - **`ComponentModel`** — Includes `IncreaseAmountCommand`/`DecreaseAmountCommand`, `IsInCurrentRecipe` state, and image properties via `IImageService`
 - **`ComponentByRecipeModel`** — Lightweight model representing a component selection within a recipe (ComponentId, Amount, Component reference)
+
+### View Hierarchy
+
+```
+MainWindow.axaml
+  ├─ Navigation sidebar (Soap / Parfum icons)
+  └─ ContentControl → SoapDesignerView.axaml
+       ├─ RecipeListView (left panel)
+       ├─ RecipeEditorView (center)
+       └─ ComponentLibraryView (right, grouped by ComponentType)
+```
+
+Custom controls: `SoapToast` (auto-dismiss notifications), `ImagePickerControl`, `EditableTextBlock`, `IngredientItemsControl`, `RecipeMetricsUserControl`.
 
 ### Dialog Service
 
