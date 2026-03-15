@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
+using DynamicData;
 using SoupAndSoupApp.Models;
 using ComponentType = SoupAndSoupApp.Models.ComponentType;
+using static SoupAndSoupApp.Helpers.Rules.SelectionRuleHelpers;
 
 namespace SoupAndSoupApp.Helpers.Rules;
 
@@ -13,18 +15,27 @@ public class FormSelectionRule : IComponentSelectionRule
 {
     public bool CanHandle(ComponentType type) => type == ComponentType.Form;
 
-    public void Apply(ComponentModel component, IReadOnlyCollection<ComponentModel> selectedComponents)
+    public void Apply(ComponentByRecipeModel added, SourceCache<ComponentByRecipeModel, int> selections,
+        SourceCache<ComponentModel, int> masterComponents)
     {
-        DeselectOthers(selectedComponents, component, ComponentType.Form);
+        var addedComponent = ResolveComponent(added, masterComponents);
+        if (addedComponent is null) return;
 
-        var craftingBase = selectedComponents.FirstOrDefault(c => c.Type == ComponentType.CraftingBase);
-        craftingBase?.AmountInRecipe = component.SuggestedAmount;
-    }
+        // Deselect other Forms — remove from recipe selections
+        var otherForms = selections.Items
+            .Where(s =>
+            {
+                var comp = ResolveComponent(s, masterComponents);
+                return comp?.Type == ComponentType.Form && s.ComponentId != added.ComponentId;
+            })
+            .ToList();
+        selections.RemoveKeys(otherForms.Select(f => f.ComponentId));
 
-    private static void DeselectOthers(IEnumerable<ComponentModel> components, ComponentModel current, ComponentType type)
-    {
-        foreach (var c in components.Where(c => c.Type == type && c.Id != current.Id))
-            c.IsSelected = false;
+        // Set CraftingBase amount to the Form's suggested amount
+        var craftingBase = selections.Items
+            .FirstOrDefault(s => ResolveComponent(s, masterComponents)?.Type == ComponentType.CraftingBase);
+        if (craftingBase != null)
+            craftingBase.Amount = addedComponent.SuggestedAmount;
     }
 }
 
@@ -36,12 +47,23 @@ public class EssentialOilSelectionRule : IComponentSelectionRule
 {
     public bool CanHandle(ComponentType type) => type == ComponentType.EssentialOil;
 
-    public void Apply(ComponentModel component, IReadOnlyCollection<ComponentModel> selectedComponents)
+    public void Apply(ComponentByRecipeModel added, SourceCache<ComponentByRecipeModel, int> selections,
+        SourceCache<ComponentModel, int> masterComponents)
     {
-        foreach (var c in selectedComponents.Where(c => c.Type == ComponentType.FragranceOil && c.Id != component.Id))
-            c.IsSelected = false;
+        var addedComponent = ResolveComponent(added, masterComponents);
+        if (addedComponent is null) return;
 
-        component.AmountInRecipe = component.SuggestedAmount;
+        // Deselect all FragranceOils
+        var fragranceOils = selections.Items
+            .Where(s =>
+            {
+                var comp = ResolveComponent(s, masterComponents);
+                return comp?.Type == ComponentType.FragranceOil && s.ComponentId != added.ComponentId;
+            })
+            .ToList();
+        selections.RemoveKeys(fragranceOils.Select(f => f.ComponentId));
+
+        added.Amount = addedComponent.SuggestedAmount;
     }
 }
 
@@ -53,12 +75,23 @@ public class FragranceOilSelectionRule : IComponentSelectionRule
 {
     public bool CanHandle(ComponentType type) => type == ComponentType.FragranceOil;
 
-    public void Apply(ComponentModel component, IReadOnlyCollection<ComponentModel> selectedComponents)
+    public void Apply(ComponentByRecipeModel added, SourceCache<ComponentByRecipeModel, int> selections,
+        SourceCache<ComponentModel, int> masterComponents)
     {
-        foreach (var c in selectedComponents.Where(c => c.Type == ComponentType.EssentialOil && c.Id != component.Id))
-            c.IsSelected = false;
+        var addedComponent = ResolveComponent(added, masterComponents);
+        if (addedComponent is null) return;
 
-        component.AmountInRecipe = component.SuggestedAmount;
+        // Deselect all EssentialOils
+        var essentialOils = selections.Items
+            .Where(s =>
+            {
+                var comp = ResolveComponent(s, masterComponents);
+                return comp?.Type == ComponentType.EssentialOil && s.ComponentId != added.ComponentId;
+            })
+            .ToList();
+        selections.RemoveKeys(essentialOils.Select(f => f.ComponentId));
+
+        added.Amount = addedComponent.SuggestedAmount;
     }
 }
 
@@ -70,12 +103,17 @@ public class CraftingBaseSelectionRule : IComponentSelectionRule
 {
     public bool CanHandle(ComponentType type) => type == ComponentType.CraftingBase;
 
-    public void Apply(ComponentModel component, IReadOnlyCollection<ComponentModel> selectedComponents)
+    public void Apply(ComponentByRecipeModel added, SourceCache<ComponentByRecipeModel, int> selections,
+        SourceCache<ComponentModel, int> masterComponents)
     {
-        var form = selectedComponents.FirstOrDefault(c => c.Type == ComponentType.Form);
-        component.AmountInRecipe = form != null && component.IsSelected
-            ? form.SuggestedAmount
-            : component.SuggestedAmount;
+        var addedComponent = ResolveComponent(added, masterComponents);
+        if (addedComponent is null) return;
+
+        var form = selections.Items
+            .FirstOrDefault(s => ResolveComponent(s, masterComponents)?.Type == ComponentType.Form);
+
+        var formComponent = form is not null ? ResolveComponent(form, masterComponents) : null;
+        added.Amount = formComponent?.SuggestedAmount ?? addedComponent.SuggestedAmount;
     }
 }
 
@@ -95,8 +133,32 @@ public class DefaultAmountSelectionRule : IComponentSelectionRule
 
     public bool CanHandle(ComponentType type) => HandledTypes.Contains(type);
 
-    public void Apply(ComponentModel component, IReadOnlyCollection<ComponentModel> selectedComponents)
+    public void Apply(ComponentByRecipeModel added, SourceCache<ComponentByRecipeModel, int> selections,
+        SourceCache<ComponentModel, int> masterComponents)
     {
-        component.AmountInRecipe = component.SuggestedAmount;
+        var addedComponent = ResolveComponent(added, masterComponents);
+        if (addedComponent is null) return;
+
+        added.Amount = addedComponent.SuggestedAmount;
+    }
+}
+
+/// <summary>
+/// Shared helpers for all selection rules.
+/// </summary>
+internal static class SelectionRuleHelpers
+{
+    /// <summary>
+    /// Returns the resolved <see cref="ComponentModel"/> for a selection entry,
+    /// preferring the inline reference and falling back to the master cache lookup.
+    /// Returns <c>null</c> when the component cannot be found in either source.
+    /// </summary>
+    internal static ComponentModel? ResolveComponent(
+        ComponentByRecipeModel selection,
+        SourceCache<ComponentModel, int> masterComponents)
+    {
+        if (selection.Component is not null) return selection.Component;
+        var lookup = masterComponents.Lookup(selection.ComponentId);
+        return lookup.HasValue ? lookup.Value : null;
     }
 }

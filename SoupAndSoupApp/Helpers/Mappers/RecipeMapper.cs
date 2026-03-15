@@ -39,6 +39,16 @@ public class RecipeMapper : IRecipeMapper
 
         result.RecipeComponents = recipe.RecipeComponents.Select(MapToComponentByRecipeModel);
 
+        // Populate SelectedComponents SourceCache from DB data
+        foreach (var rc in recipe.RecipeComponents)
+        {
+            var componentByRecipe = MapToComponentByRecipeModel(rc);
+            var masterLookup = cachedComponents.Lookup(rc.ComponentId);
+            if (masterLookup.HasValue)
+                componentByRecipe.Component = masterLookup.Value;
+            result.SelectedComponents.AddOrUpdate(componentByRecipe);
+        }
+
         result.ImagePathString = recipe.Images.FirstOrDefault()?.ImageUrl ?? string.Empty;
         result.ImagePath = await _imageService.LoadImageOrDefaultAsync(result.ImagePathString, result.Id, noImageUrl);
 
@@ -49,8 +59,7 @@ public class RecipeMapper : IRecipeMapper
         return result;
     }
 
-    public Recipe MapToEntity(RecipeModel recipe, IEnumerable<ComponentModel> componentsByRecipe,
-        CosmeticType cosmeticType, string noImageUrl)
+    public Recipe MapToEntity(RecipeModel recipe, CosmeticType cosmeticType, string noImageUrl)
     {
         var result = new Recipe
         {
@@ -60,7 +69,8 @@ public class RecipeMapper : IRecipeMapper
             PreparationTime = TimeSpan.FromMinutes((int)recipe.PreparationTime),
             CosmeticTypeId = (int)cosmeticType,
             Description = recipe.Description,
-            RecipeComponents = componentsByRecipe.Select(MapToRecipeComponent).ToList(),
+            RecipeComponents = recipe.SelectedComponents.Items
+                .Select(MapToRecipeComponent).ToList(),
         };
 
         if (!string.IsNullOrEmpty(recipe.ImagePathString) && recipe.ImagePathString != noImageUrl)
@@ -76,17 +86,18 @@ public class RecipeMapper : IRecipeMapper
             Amount = recipeComponent.Amount
         };
 
-    public ComponentByRecipeModel MapToComponentByRecipeModel(ComponentModel component) =>
+    public ComponentByRecipeModel MapToComponentByRecipeModel(ComponentByRecipeModel selection) =>
         new()
         {
-            ComponentId = component.Id,
-            Amount = component.AmountInRecipe
+            ComponentId = selection.ComponentId,
+            Amount = selection.Amount,
+            Component = selection.Component
         };
 
-    public RecipeComponent MapToRecipeComponent(ComponentModel component) =>
+    public RecipeComponent MapToRecipeComponent(ComponentByRecipeModel selection) =>
         new()
         {
-            ComponentId = component.Id,
-            Amount = component.AmountInRecipe
+            ComponentId = selection.ComponentId,
+            Amount = selection.Component?.AmountInRecipe ?? selection.Amount
         };
 }

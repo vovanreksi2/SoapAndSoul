@@ -1,15 +1,11 @@
-﻿using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
-using Avalonia.Platform.Storage;
-using ReactiveUI;
+using Microsoft.Extensions.DependencyInjection;
+using SoupAndSoupApp.Helpers.Navigation;
 
 namespace SoupAndSoupApp;
 
@@ -22,7 +18,7 @@ public partial class ImagePickerControl : UserControl
         get => GetValue(ImageSourceProperty);
         set => SetValue(ImageSourceProperty, value);
     }
-    
+
     public static readonly StyledProperty<string> NewImagePathProperty =
         AvaloniaProperty.Register<ImagePickerControl, string>(nameof(NewImagePath));
     public string NewImagePath
@@ -31,14 +27,18 @@ public partial class ImagePickerControl : UserControl
         set => SetValue(NewImagePathProperty, value);
     }
 
+    private readonly IFilePickerService _filePickerService;
+
     public ImagePickerControl()
     {
         InitializeComponent();
 
+        _filePickerService = App.Services?.GetRequiredService<IFilePickerService>()
+            ?? new FilePickerService();
+
         var button = this.FindControl<Button>("MainButton");
         if (button != null)
-            button.Click += async (_, e) => await Button_OnClick(e);
-
+            button.Click += async (_, _) => await OnPickImageAsync();
     }
 
     private void InitializeComponent()
@@ -46,30 +46,10 @@ public partial class ImagePickerControl : UserControl
         AvaloniaXamlLoader.Load(this);
     }
 
-    private async Task Button_OnClick(RoutedEventArgs e)
+    private async Task OnPickImageAsync()
     {
-        var ownerWindow = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
-        if (ownerWindow == null)
-            return;
-
-        var storageProvider = ownerWindow.StorageProvider;
-        var options = new FilePickerOpenOptions
-        {
-            Title = "Select an Image",
-            FileTypeFilter = new List<FilePickerFileType>
-            {
-                new ("Images")
-                {
-                    Patterns = new[] { "*.png", "*.jpg", "*.jpeg" }
-                }
-            }
-        };
-
-        var result = await storageProvider.OpenFilePickerAsync(options);
-        if (result.FirstOrDefault() is { } file)
-        {
-            NewImagePath = file.Path.LocalPath;
-        }
+        var path = await _filePickerService.PickImageAsync();
+        if (path is not null)
+            NewImagePath = path;
     }
-
 }

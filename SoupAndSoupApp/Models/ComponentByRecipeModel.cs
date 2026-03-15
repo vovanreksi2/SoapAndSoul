@@ -11,6 +11,11 @@ public class ComponentByRecipeModel: ReactiveObject
         get => _amount;
         set => this.RaiseAndSetIfChanged(ref _amount, value);
     }
- 
+
+    /// <summary>
+    /// Reference to the master component data. Populated when the recipe is active.
+    /// </summary>
+    public ComponentModel? Component { get; set; }
+
     private decimal _amount;
 }

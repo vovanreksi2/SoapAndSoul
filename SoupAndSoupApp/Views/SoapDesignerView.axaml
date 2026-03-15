@@ -193,7 +193,7 @@
                     <Button
                         Margin="40,0,0,0"
                         Classes="MainRecipe button-mainColor"
-                        Command="{Binding NewRecipeCommand}"
+                        Command="{Binding RecipeList.NewRecipeCommand}"
                         Content="+ Новий Рецепт" />
                 </WrapPanel>
 
@@ -201,7 +201,7 @@
                     Grid.Row="1"
                     Grid.Column="0"
                     Margin="0,30,0,0"
-                    Text="{Binding SearchString}" />
+                    Text="{Binding RecipeList.SearchString}" />
 
                 <ListBox
                     Grid.Row="2"
@@ -209,8 +209,8 @@
                     Margin="0,20,0,0"
                     Classes="LbRecipes"
                     ItemTemplate="{StaticResource RecipeItemTemplate}"
-                    ItemsSource="{Binding Recipes}"
-                    SelectedItem="{Binding SelectedRecipe}" />
+                    ItemsSource="{Binding RecipeList.Recipes}"
+                    SelectedItem="{Binding RecipeList.SelectedRecipe}" />
 
             </Grid>
         </Border>
@@ -240,14 +240,14 @@
                         FontSize="25"
                         FontWeight="Bold"
                         Foreground="{StaticResource PrimaryAccentColorDarkest}"
-                        Text="{Binding SelectedRecipe.Name}" />
+                        Text="{Binding RecipeList.SelectedRecipe.Name}" />
 
                     <soupAndSoupApp:ImagePickerControl
                         Grid.Row="1"
-                        ImageSource="{Binding SelectedRecipe.ImagePath}"
-                        NewImagePath="{Binding NewImagePath, Mode=OneWayToSource}" />
+                        ImageSource="{Binding RecipeList.SelectedRecipe.ImagePath}"
+                        NewImagePath="{Binding RecipeEditor.NewImagePath, Mode=OneWayToSource}" />
 
-                    <DockPanel Grid.Row="2" DataContext="{Binding SelectedRecipe}">
+                    <DockPanel Grid.Row="2" DataContext="{Binding RecipeList.SelectedRecipe}">
 
                         <Grid
                             ColumnDefinitions="* * *"
@@ -291,7 +291,7 @@
                         <ItemsControl
                             Margin="0,10"
                             ItemTemplate="{StaticResource ComponentByRecipeItemTemplate}"
-                            ItemsSource="{Binding ComponentsByRecipe}" />
+                            ItemsSource="{Binding RecipeEditor.ComponentsByRecipe}" />
                     </StackPanel>
                 </Grid>
 
@@ -306,7 +306,7 @@
                         Margin="0,30,0,0"
                         AllowAutoHide="True">
 
-                        <ItemsControl ItemsSource="{Binding ComponentGroups}">
+                        <ItemsControl ItemsSource="{Binding ComponentLibrary.ComponentGroups}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
 

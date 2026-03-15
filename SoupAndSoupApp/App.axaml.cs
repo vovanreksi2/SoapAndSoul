@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
@@ -8,6 +7,8 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using SoapAndSoul.Infrastructure;
+using SoupAndSoupApp.Helpers;
 using SoupAndSoupApp.Helpers.Autosave;
 using SoupAndSoupApp.ViewModels;
 using SoupAndSoupApp.Views;
@@ -17,11 +18,10 @@ namespace SoupAndSoupApp;
 public class App : Application
 {
     private const int DelayAfterSaveMilliseconds = 2000;
-    private static readonly ActivitySource ActivitySource = new("SoupAndSoupApp");
 
     private MainWindow _mainWindow;
     private MainViewModel _mainViewModel;
-    
+
     private IServiceProvider _serviceProvider;
     private ILogger<App> _logger;
 
@@ -29,6 +29,8 @@ public class App : Application
     {
         AvaloniaXamlLoader.Load(this);
     }
+
+    public static IServiceProvider? Services => (Current as App)?._serviceProvider;
 
     public void InjectServiceProvider(IServiceProvider serviceProvider)
     {
@@ -38,15 +40,13 @@ public class App : Application
         _mainViewModel = _serviceProvider.GetRequiredService<MainViewModel>();
        
         _logger = _serviceProvider.GetRequiredService<ILogger<App>>();
-        
-        // Test logging functionality
+
         _logger.LogInformation("Application started successfully - ServiceProvider injected");
-        
-        // Test ActivitySource functionality
-        using var activity = ActivitySource.StartActivity("AppStartup", ActivityKind.Internal);
+
+        var instrumentation = _serviceProvider.GetRequiredService<InstrumentationOpenTelemetry>();
+        using var activity = instrumentation.ActivitySource.StartActivity("AppStartup");
         activity?.SetTag("operation", "service_provider_injection");
         activity?.SetTag("app.name", "SoupAndSoupApp");
-        _logger.LogInformation("Test activity created for App startup");
     }
 
     public override void OnFrameworkInitializationCompleted()

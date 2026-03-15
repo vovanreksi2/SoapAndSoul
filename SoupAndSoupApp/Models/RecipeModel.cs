@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Windows.Input;
+using DynamicData;
 using ReactiveUI;
 
 namespace SoupAndSoupApp.Models;
@@ -39,7 +40,16 @@ public class RecipeModel : BaseModel, IDisposable
 
     public ICommand? DeleteRecipeCommand { get; set; }
 
+    /// <summary>
+    /// Legacy property used during DB loading. Populated from DB RecipeComponents.
+    /// </summary>
     public IEnumerable<ComponentByRecipeModel> RecipeComponents { get; set; }
+
+    /// <summary>
+    /// Per-recipe selection state. This is the source of truth for which components
+    /// are in this recipe and their amounts. Keyed by ComponentId.
+    /// </summary>
+    public SourceCache<ComponentByRecipeModel, int> SelectedComponents { get; } = new(x => x.ComponentId);
 
     public bool IsDirty { get; set; }
 

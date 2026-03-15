@@ -13,10 +13,9 @@ public interface IRecipeMapper
     Task<RecipeModel> MapToModelAsync(Recipe recipe, ICommand deleteRecipeCommand,
         SourceCache<ComponentModel, int> cachedComponents, string noImageUrl);
 
-    Recipe MapToEntity(RecipeModel recipe, IEnumerable<ComponentModel> componentsByRecipe,
-        CosmeticType cosmeticType, string noImageUrl);
+    Recipe MapToEntity(RecipeModel recipe, CosmeticType cosmeticType, string noImageUrl);
 
     ComponentByRecipeModel MapToComponentByRecipeModel(RecipeComponent recipeComponent);
-    ComponentByRecipeModel MapToComponentByRecipeModel(ComponentModel component);
-    RecipeComponent MapToRecipeComponent(ComponentModel component);
+    ComponentByRecipeModel MapToComponentByRecipeModel(ComponentByRecipeModel selection);
+    RecipeComponent MapToRecipeComponent(ComponentByRecipeModel selection);
 }

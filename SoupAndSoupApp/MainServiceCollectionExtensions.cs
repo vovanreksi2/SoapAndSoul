@@ -9,6 +9,7 @@ using SoupAndSoupApp.Helpers.Images;
 using SoupAndSoupApp.Helpers.Mappers;
 using SoupAndSoupApp.Helpers.Navigation;
 using SoupAndSoupApp.Helpers.Notifications;
+using SoupAndSoupApp.Helpers.Coordinators;
 using SoupAndSoupApp.Helpers.Rules;
 using SoupAndSoupApp.ViewModels;
 using SoupAndSoupApp.Views;
@@ -38,6 +39,7 @@ public static class MainServiceCollectionExtensions
         services.AddSingleton<AddIngredientDialogViewModel>();
 
         services.AddSingleton<IDialogService, DialogService>();
+        services.AddSingleton<IFilePickerService, FilePickerService>();
 
         services.AddSingleton<IDesignerViewModelFactory, DesignerViewModelFactory>();
         services.AddSingleton<IActiveViewModelRegistry, ActiveViewModelRegistry>();
@@ -61,6 +63,11 @@ public static class MainServiceCollectionExtensions
         services.AddSingleton<IComponentSelectionRule, CraftingBaseSelectionRule>();
         services.AddSingleton<IComponentSelectionRule, DefaultAmountSelectionRule>();
         services.AddSingleton<IComponentSelectionRuleEngine, ComponentSelectionRuleEngine>();
+
+        // Coordinators
+        services.AddTransient<RecipeCoordinator>();
+        services.AddTransient<ComponentCoordinator>();
+        services.AddTransient<DesignerDataLoader>();
 
         services.AddInfraSoapAndSoulServices();
 

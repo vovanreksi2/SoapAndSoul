@@ -194,7 +194,9 @@
                 Height="{StaticResource IngredientCheckBoxHeight}"
                 Margin="0,0,20,30"
                 Classes="IngredientCheckBox"
-                IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                Command="{Binding ToggleInRecipeCommand}"
+                CommandParameter="{Binding}"
+                IsChecked="{Binding IsInCurrentRecipe, Mode=OneWay}"
                 Template="{StaticResource IngredientCBControlTemplate}" />
         </DataTemplate>
 

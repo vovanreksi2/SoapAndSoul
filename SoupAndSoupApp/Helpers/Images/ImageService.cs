@@ -113,8 +113,9 @@ public class ImageService : IImageService
         if (stream.CanSeek)
             stream.Position = 0;
 
-        var memoryStream = new MemoryStream();
-        stream.CopyTo(memoryStream);
+        using var memoryStream = new MemoryStream();
+        using (stream)
+            stream.CopyTo(memoryStream);
         memoryStream.Position = 0;
 
         return new Bitmap(memoryStream);

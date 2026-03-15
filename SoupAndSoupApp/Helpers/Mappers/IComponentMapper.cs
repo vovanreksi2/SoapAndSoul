@@ -10,7 +10,7 @@ namespace SoupAndSoupApp.Helpers.Mappers;
 public interface IComponentMapper
 {
     Task<ComponentModel> MapToModelAsync(Component component, ICommand editCommand,
-        ICommand deleteCommand, string noImageUrl);
+        ICommand deleteCommand, ICommand toggleInRecipeCommand, string noImageUrl);
 
     Component MapToEntity(NewComponentDto dto, ComponentType type,
         CosmeticType cosmeticType, int? existingId = null);

@@ -2,7 +2,6 @@ using System.Collections.ObjectModel;
 using System.Windows.Input;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using SoupAndSoupApp.Models;
 
@@ -58,16 +57,10 @@ public partial class IngredientItemsControl : UserControl
     public IngredientItemsControl()
     {
         InitializeComponent();
-        IngredientsProperty.Changed.AddClassHandler<IngredientItemsControl>((x, e) => x.OnIngredientsChanged(e));
     }
 
     private void InitializeComponent()
     {
         AvaloniaXamlLoader.Load(this);
     }
-
-    private void OnIngredientsChanged(AvaloniaPropertyChangedEventArgs e)
-    {
-    }
- 
 }

@@ -22,7 +22,7 @@ public class ComponentMapper : IComponentMapper
     }
 
     public async Task<ComponentModel> MapToModelAsync(Component component, ICommand editCommand,
-        ICommand deleteCommand, string noImageUrl)
+        ICommand deleteCommand, ICommand toggleInRecipeCommand, string noImageUrl)
     {
         var componentType = (ComponentType)component.ComponentTypeId;
 
@@ -38,6 +38,7 @@ public class ComponentMapper : IComponentMapper
 
             DeleteCommand = deleteCommand,
             EditCommand = editCommand,
+            ToggleInRecipeCommand = toggleInRecipeCommand,
             ShowAmountInButton = componentType != ComponentType.Form,
             Type = componentType,
 

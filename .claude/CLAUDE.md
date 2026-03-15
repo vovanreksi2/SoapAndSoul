@@ -29,7 +29,7 @@ There are no test projects currently in this repository.
 
 | Project | Purpose |
 |---|---|
-| `SoupAndSoupApp` | Core UI library: Views (AXAML), ViewModels, Helpers |
+| `SoupAndSoupApp` | Core UI library: Views (AXAML), ViewModels, Helpers, Coordinators |
 | `SoupAndSoupApp.Desktop` | Desktop entry point (WinExe); hosts `IHost` and boots Avalonia |
 | `SoupAndSoupApp.Browser` | WebAssembly target |
 | `SoupAndSoupApp.Android` | Android target |
@@ -38,23 +38,23 @@ There are no test projects currently in this repository.
 
 Note: the infrastructure folder on disk is `SoapAndSoul.Infastructure` (typo), but the csproj and namespace use the correct spelling `SoapAndSoul.Infrastructure`.
 
-All projects target `net8.0`. `Directory.Build.props` enforces `Nullable=enable` and pins `AvaloniaVersion=11.1.0` globally (though individual csproj files override to 11.3.1).
+All projects target `net10.0`. `Directory.Build.props` enforces `Nullable=enable` and pins `AvaloniaVersion=11.3.9`.
 
 ### Key Dependencies
 
-- **Avalonia 11.3.1** with compiled bindings (`AvaloniaUseCompiledBindingsByDefault=true`)
+- **Avalonia 11.3.9** with compiled bindings (`AvaloniaUseCompiledBindingsByDefault=true`)
 - **ReactiveUI** via `Avalonia.ReactiveUI` — MVVM framework
 - **DynamicData** — reactive collection management (`SourceCache` pipelines)
 - **FuzzySharp** — fuzzy string matching (used for search)
 - **Material.Icons.Avalonia** — icon set
-- **EF Core 9.0.6** with SQL Server provider
+- **EF Core 10.0.5** with SQL Server provider
 - **OpenTelemetry** with Azure Monitor exporter
 
 ### Startup & Dependency Injection
 
-`SoupAndSoupApp.Desktop/Program.cs` uses `Host.CreateDefaultBuilder` (GenericHost). Services are wired via extension methods:
+`SoupAndSoupApp.Desktop/Program.cs` uses `Host.CreateDefaultBuilder` (GenericHost). Database migration (`Database.Migrate()`) runs once at startup in `Program.cs`. Services are wired via extension methods:
 
-- `MainServiceCollectionExtensions.AddSoapAndSoulAppServices()` — UI, ViewModels, dialogs, caching, calculators
+- `MainServiceCollectionExtensions.AddSoapAndSoulAppServices()` — UI, ViewModels, dialogs, caching, calculators, mappers, coordinators, rule engine, image service
 - `DatabaseServiceCollectionExtensions.ConfigureSoapAndSoulApp()` — `SoapAndSoulContext` factory (Singleton), repositories, data services
 - `InfrastructureServiceCollectionExtensions.AddInfraSoapAndSoulServices()` — Azure Blob Storage, `InstrumentationOpenTelemetry`
 
@@ -67,8 +67,27 @@ After the host is built, `IServiceProvider` is passed into `App` via `app.Inject
 - ViewModels inherit `ViewModelBase` → `ReactiveObject` (ReactiveUI) with a `CompositeDisposable Disposables` for subscription lifetimes
 - Views are plain `UserControl`/`Window` subclasses (not `ReactiveUserControl<T>`) with `x:DataType` for compiled bindings
 - DataContext is assigned externally via DI or property setting
-- `SoapDesignerViewModel` is the central VM — uses `DynamicData.SourceCache` for reactive in-memory stores with filter/sort/group pipelines
-- `RecipeModel` auto-tracks dirty state via `this.Changed.Throttle(200ms)` with `BeginInit()`/`EndInit()` to suppress during loading
+- `SoapDesignerViewModel` is the central VM — uses `DynamicData.SourceCache` for reactive in-memory stores with filter/sort/group pipelines, but delegates business logic to coordinators (see below)
+- `RecipeModel` auto-tracks dirty state via `this.Changed.Throttle(DirtyTrackingThrottle)` with `BeginInit()`/`EndInit()` to suppress during loading
+
+### Coordinator Pattern
+
+`SoapDesignerViewModel` delegates domain operations to three transient coordinators, keeping the VM focused on reactive pipelines and UI state:
+
+- **`RecipeCoordinator`** — Recipe CRUD, save, delete, entity-to-model mapping via `IRecipeMapper`, image synchronization with compensating transactions
+- **`ComponentCoordinator`** — Component add/edit/delete, applies `IComponentSelectionRuleEngine` for default amounts, manages cache updates with compensating transactions on failure
+- **`DesignerDataLoader`** — Bulk loading of component types, components, and recipes at initialization with OpenTelemetry activity tagging
+
+### Mappers and Rule Engine
+
+- **`IRecipeMapper` / `RecipeMapper`** — Maps between `Recipe` entities and `RecipeModel` view models
+- **`IComponentMapper` / `ComponentMapper`** — Maps between `Component` entities and `ComponentModel` view models
+- **`IComponentSelectionRuleEngine`** — Chain-of-responsibility pattern using `IComponentSelectionRule` implementations. Five concrete rules (`FormSelectionRule`, `EssentialOilSelectionRule`, `FragranceOilSelectionRule`, `CraftingBaseSelectionRule`, `DefaultAmountSelectionRule`) determine default amounts when adding a component to a recipe based on component type
+
+### Helper Utilities
+
+- **`DesignerActivityHelper`** — Static helper providing `RunWithActivity()` for OpenTelemetry spans, `ExecuteCompensatingTransaction()` for execute/rollback patterns, and `NotifyResult()` for converting success/failure to toast notifications
+- **`IImageService` / `ImageService`** — Extracted blob upload/download/delete operations for component and recipe images
 
 ### Auto-Save
 
@@ -80,13 +99,18 @@ Save triggers:
 
 ### Data Layer
 
-- `SoapAndSoulContext` calls `Database.Migrate()` in its constructor (auto-migrate on every instantiation)
 - Generic `RepositoryBase<T>` wraps every operation in a fresh `DbContext` via `IDbContextFactory` (safe for Singleton services)
 - All services (`IRecipeService`, `IComponentService`, `IComponentTypeService`, `IMeasureTypesService`) are Singleton-lifetime
 - `Recipe` and `Component` entities use `IsActive` soft-delete query filter
 - `RecipeComponent` is an explicit many-to-many join table with composite PK `(RecipeId, ComponentId)`
 - `ComponentType` has many-to-many relationships with both `MeasureType` (use/buy) and `CosmeticType` via explicit join tables
 - Seed data is defined in `SeedData` with Ukrainian strings
+
+### Key Models
+
+- **`RecipeModel`** — Contains `SourceCache<ComponentByRecipeModel, int> SelectedComponents` for reactive per-recipe ingredient tracking. Implements `IDisposable` with `CompositeDisposable`
+- **`ComponentModel`** — Includes `IncreaseAmountCommand`/`DecreaseAmountCommand`, `IsInCurrentRecipe` state, and image properties via `IImageService`
+- **`ComponentByRecipeModel`** — Lightweight model representing a component selection within a recipe (ComponentId, Amount, Component reference)
 
 ### Dialog Service
 
@@ -99,11 +123,12 @@ Save triggers:
 ### Configuration & Secrets
 
 Local development uses `appsettings.Development.json`:
-- `ConnectionStrings:DefaultConnection` — SQL Server LocalDB (`SoapAndSoulDb_new`)
+- `DatabaseSettings:ConnectionString` — SQL Server LocalDB (`SoapAndSoulDb_new`)
 - `DatabaseSettings:IsAzureDb` — `false` for local, `true` for Azure SQL
 - `AzureMonitor:ConnectionString` — Application Insights
+- `AzureBlobStorageSettings:SasToken` — Azure Blob Storage SAS token (placeholder in config, real value in user secrets)
 
-Sensitive values (production connection strings, instrumentation keys) are stored in user secrets (`dotnet user-secrets`), not committed. UserSecretsId: `5a75ae89-60d3-4708-8ccf-376375e1647b`.
+Sensitive values (production connection strings, SAS tokens, instrumentation keys) are stored in user secrets (`dotnet user-secrets`), not committed. UserSecretsId: `5a75ae89-60d3-4708-8ccf-376375e1647b`.
 
 ### Domain
 

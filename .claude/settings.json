@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /d/Code/SoupAndSoupApp -name *Tests* -o -name *Test*)",
+      "Bash(grep -E \"\\\\.csproj$|/Tests/|/Test/\")"
+    ]
+  }
+}
