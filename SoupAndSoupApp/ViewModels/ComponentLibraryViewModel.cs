@@ -85,7 +85,7 @@ public class ComponentLibraryViewModel : ViewModelBase
                 };
 
                 group.Cache.Connect()
-                    .AutoRefreshOnObservable(_ => _.WhenAnyPropertyChanged())
+                    .AutoRefresh(c => c.Name)
                     .Sort(SortExpressionComparer<ComponentModel>
                         .Ascending(c => IsLatin(c.Name))
                         .ThenByAscending(c => c.Name))

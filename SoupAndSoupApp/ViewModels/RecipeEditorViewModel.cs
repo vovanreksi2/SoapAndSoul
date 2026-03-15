@@ -32,7 +32,12 @@ public class RecipeEditorViewModel : ViewModelBase, IAutoSaveCandidate
 
     public ReadOnlyObservableCollection<ComponentModel> ComponentsByRecipe => _componentsByRecipe;
 
-    public bool IsDirty { get; set; }
+    private bool _isDirty;
+    public bool IsDirty
+    {
+        get => _isDirty;
+        set => this.RaiseAndSetIfChanged(ref _isDirty, value);
+    }
 
     public RecipeModel? SelectedRecipe { get; set; }
 

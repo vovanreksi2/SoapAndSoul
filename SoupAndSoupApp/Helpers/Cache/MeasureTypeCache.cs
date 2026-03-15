@@ -1,24 +1,17 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using SoupAndSoup.Data.Services;
 using SoupAndSoupApp.Models;
 
 namespace SoupAndSoupApp.Helpers.Cache;
 
-public class MeasureTypeCache: MemoryCache<MeasureTypeModel>
+public class MeasureTypeCache(IMeasureTypesService measureTypesService) : MemoryCache<MeasureTypeModel>
 {
-    private readonly IMeasureTypesService _measureTypesService;
-
-    public MeasureTypeCache(IMeasureTypesService measureTypesService)
-    {
-        _measureTypesService = measureTypesService;
-    }
- 
     public Task<MeasureTypeModel> GetOrAddAsync(int id)
     {
         return GetOrAddAsync(id.ToString(), async () =>
         {
-            var result = await _measureTypesService.GetByIdAsync(id);
+            var result = await measureTypesService.GetByIdAsync(id);
             if (result is null)
                 throw new ArgumentException($"UseMeasureType with id {id} not found.");
 

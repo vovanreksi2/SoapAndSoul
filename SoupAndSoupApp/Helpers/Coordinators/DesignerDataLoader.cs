@@ -13,31 +13,14 @@ using CosmeticType = SoupAndSoupApp.Models.CosmeticType;
 
 namespace SoupAndSoupApp.Helpers.Coordinators;
 
-public class DesignerDataLoader
+public class DesignerDataLoader(
+    IRecipeService recipeService,
+    IComponentService componentService,
+    IComponentTypeService componentTypeService,
+    RecipeCoordinator recipeCoordinator,
+    ComponentCoordinator componentCoordinator,
+    ILogger<DesignerDataLoader> logger)
 {
-    private readonly IRecipeService _recipeService;
-    private readonly IComponentService _componentService;
-    private readonly IComponentTypeService _componentTypeService;
-    private readonly RecipeCoordinator _recipeCoordinator;
-    private readonly ComponentCoordinator _componentCoordinator;
-    private readonly ILogger<DesignerDataLoader> _logger;
-
-    public DesignerDataLoader(
-        IRecipeService recipeService,
-        IComponentService componentService,
-        IComponentTypeService componentTypeService,
-        RecipeCoordinator recipeCoordinator,
-        ComponentCoordinator componentCoordinator,
-        ILogger<DesignerDataLoader> logger)
-    {
-        _recipeService = recipeService;
-        _componentService = componentService;
-        _componentTypeService = componentTypeService;
-        _recipeCoordinator = recipeCoordinator;
-        _componentCoordinator = componentCoordinator;
-        _logger = logger;
-    }
-
     public Task LoadComponentTypesAsync(
         ActivitySource activitySource,
         CosmeticType cosmeticType,
@@ -49,7 +32,7 @@ public class DesignerDataLoader
             nameof(LoadComponentTypesAsync),
             async () =>
             {
-                var componentTypes = await _componentTypeService.GetAllAsync((int)cosmeticType);
+                var componentTypes = await componentTypeService.GetAllAsync((int)cosmeticType);
 
                 cachedComponentTypes.Clear();
                 foreach (var type in componentTypes)
@@ -58,7 +41,7 @@ public class DesignerDataLoader
                 foreach (var type in cachedComponentTypes)
                     cachedComponents.AddOrUpdate(CreateButtonComponent(type.Key));
             },
-            _logger,
+            logger,
             ("componentTypes.count", cachedComponents.Count), ("cosmetic.type", cosmeticType));
     }
 
@@ -74,18 +57,18 @@ public class DesignerDataLoader
             nameof(LoadComponentsAsync),
             async () =>
             {
-                var components = await _componentService.GetAllAsync((int)cosmeticType);
+                var components = await componentService.GetAllAsync((int)cosmeticType);
 
                 var mapped = await Task.WhenAll(components.Select(async c =>
                 {
                     try
                     {
-                        return await _componentCoordinator.MapComponentModelAsync(
+                        return await componentCoordinator.MapComponentModelAsync(
                             c, editCommand, deleteCommand, toggleCommand, noImageUrl);
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Failed to map component {ComponentId} during bulk load", c.Id);
+                        logger.LogError(ex, "Failed to map component {ComponentId} during bulk load", c.Id);
                         return null;
                     }
                 }));
@@ -93,7 +76,7 @@ public class DesignerDataLoader
                 foreach (var model in mapped.OfType<ComponentModel>())
                     cachedComponents.AddOrUpdate(model);
             },
-            _logger,
+            logger,
             ("components.count", cachedComponents.Count),
             ("cosmetic.type", cosmeticType));
     }
@@ -111,17 +94,17 @@ public class DesignerDataLoader
             nameof(LoadRecipesAsync),
             async () =>
             {
-                var recipes = await _recipeService.GetAllAsync((int)cosmeticType);
+                var recipes = await recipeService.GetAllAsync((int)cosmeticType);
 
                 var mapped = await Task.WhenAll(recipes.Select(async r =>
                 {
                     try
                     {
-                        return await _recipeCoordinator.MapFromEntityAsync(r, deleteRecipeCommand, cachedComponents, noImageUrl);
+                        return await recipeCoordinator.MapFromEntityAsync(r, deleteRecipeCommand, cachedComponents, noImageUrl);
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Failed to map recipe {RecipeId} during bulk load", r.Id);
+                        logger.LogError(ex, "Failed to map recipe {RecipeId} during bulk load", r.Id);
                         return null;
                     }
                 }));
@@ -129,7 +112,7 @@ public class DesignerDataLoader
                 foreach (var recipeModel in mapped.OfType<RecipeModel>())
                     cachedRecipes.AddOrUpdate(recipeModel);
             },
-            _logger,
+            logger,
             ("cosmetic.type", cosmeticType));
     }
 

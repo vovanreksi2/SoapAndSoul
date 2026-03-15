@@ -10,30 +10,31 @@ using SoupAndSoupApp.Models;
 
 namespace SoupAndSoupApp.Helpers.Images;
 
-public class ImageService : IImageService
+public class ImageService(IAzureBlobStorageService blobStorageService, ILogger<ImageService> logger) : IImageService
 {
     private static readonly string[] ValidExtensions = [".jpg", ".jpeg", ".png"];
-
-    private readonly IAzureBlobStorageService _blobStorageService;
-    private readonly ILogger<ImageService> _logger;
-
-    public ImageService(IAzureBlobStorageService blobStorageService, ILogger<ImageService> logger)
-    {
-        _blobStorageService = blobStorageService;
-        _logger = logger;
-    }
+    private static readonly byte[] PngMagicBytes = [0x89, 0x50, 0x4E, 0x47];
+    private static readonly byte[] JpegMagicBytes = [0xFF, 0xD8, 0xFF];
+    private const long MaxImageSizeBytes = 10 * 1024 * 1024; // 10 MB
 
     public Task<string?> UploadImageAsync(string localImagePath)
     {
         if (string.IsNullOrEmpty(localImagePath) || !File.Exists(localImagePath))
         {
-            _logger.LogWarning("File not found on local machine. FilePath: {LocalFilePath}", localImagePath);
+            logger.LogWarning("File not found on local machine. FilePath: {LocalFilePath}", localImagePath);
             return Task.FromResult<string?>(null);
         }
+
+        var fileInfo = new FileInfo(localImagePath);
+        if (fileInfo.Length > MaxImageSizeBytes)
+            throw new InvalidOperationException($"Image file exceeds the maximum allowed size of {MaxImageSizeBytes / 1024 / 1024} MB.");
 
         var ext = Path.GetExtension(localImagePath);
         if (!IsValidExtension(ext))
             throw new InvalidOperationException("Unsupported image extension.");
+
+        if (!HasValidMagicBytes(localImagePath))
+            throw new InvalidOperationException("Image file content does not match a supported format (JPEG or PNG).");
 
         var photoName = $"{Guid.NewGuid()}{ext}";
         return UploadImageToBlobAsync(photoName, localImagePath);
@@ -43,7 +44,7 @@ public class ImageService : IImageService
     {
         if (string.IsNullOrEmpty(blobName)) return null;
 
-        var stream = await _blobStorageService.DownloadBlobAsync(blobName);
+        var stream = await blobStorageService.DownloadBlobAsync(blobName);
         return stream is null ? null : GetBitmapFromStream(stream);
     }
 
@@ -51,15 +52,15 @@ public class ImageService : IImageService
     {
         if (string.IsNullOrEmpty(model.ImagePathString))
         {
-            _logger.LogInformation("Entity with ID {EntityId} has no image to delete. Name: {EntityName}", model.Id, model.Name);
+            logger.LogInformation("Entity with ID {EntityId} has no image to delete. Name: {EntityName}", model.Id, model.Name);
             return;
         }
 
-        var deleteResult = await _blobStorageService.DeleteBlobAsync(model.ImagePathString);
+        var deleteResult = await blobStorageService.DeleteBlobAsync(model.ImagePathString);
         if (deleteResult)
-            _logger.LogInformation("Image deleted successfully for entity with ID {EntityId}, Name: {EntityName}", model.Id, model.Name);
+            logger.LogInformation("Image deleted successfully for entity with ID {EntityId}, Name: {EntityName}", model.Id, model.Name);
         else
-            _logger.LogError("Failed to delete image for entity with ID {EntityId}, Name: {EntityName}", model.Id, model.Name);
+            logger.LogError("Failed to delete image for entity with ID {EntityId}, Name: {EntityName}", model.Id, model.Name);
     }
 
     public async Task UpdateComponentImageAsync(NewComponentDto dto)
@@ -68,7 +69,7 @@ public class ImageService : IImageService
 
         var uploadResult = await UploadImageAsync(dto.ImagePath);
         if (uploadResult is null)
-            _logger.LogError("Failed to upload component image by {ImagePath} for component {ComponentName}",
+            logger.LogError("Failed to upload component image by {ImagePath} for component {ComponentName}",
                 dto.ImagePath, dto.Name);
         else
             dto.ImagePath = uploadResult;
@@ -78,7 +79,7 @@ public class ImageService : IImageService
     {
         var uploadResult = await UploadImageAsync(newImagePath);
         if (uploadResult is null)
-            _logger.LogError("Failed to upload recipe image by {ImagePath} for recipe {RecipeName}",
+            logger.LogError("Failed to upload recipe image by {ImagePath} for recipe {RecipeName}",
                 newImagePath, recipe.Name);
         else
             recipe.ImagePathString = uploadResult;
@@ -88,14 +89,14 @@ public class ImageService : IImageService
     {
         if (string.IsNullOrEmpty(imageUrl))
         {
-            _logger.LogWarning("Image URL is null or empty for entity ID {EntityId}. Using default image.", entityId);
+            logger.LogWarning("Image URL is null or empty for entity ID {EntityId}. Using default image.", entityId);
             return ImageHelper.LoadFromResource(defaultImageUrl);
         }
 
         var imageBitmap = await DownloadImageAsync(imageUrl);
         if (imageBitmap is not null) return imageBitmap;
 
-        _logger.LogWarning("Could not find or download image for entity ID {EntityId}. Using default image.", entityId);
+        logger.LogWarning("Could not find or download image for entity ID {EntityId}. Using default image.", entityId);
         return ImageHelper.LoadFromResource(defaultImageUrl);
     }
 
@@ -125,16 +126,33 @@ public class ImageService : IImageService
     {
         if (string.IsNullOrEmpty(localImagePath) || !File.Exists(localImagePath))
         {
-            _logger.LogWarning("File not found on local machine. FilePath: {LocalFilePath}", localImagePath);
+            logger.LogWarning("File not found on local machine. FilePath: {LocalFilePath}", localImagePath);
             return null;
         }
 
         await using var stream = File.OpenRead(localImagePath);
-        var success = await _blobStorageService.UploadBlobAsync(blobName, stream);
+        var success = await blobStorageService.UploadBlobAsync(blobName, stream);
 
         return success ? blobName : null;
     }
 
     private static bool IsValidExtension(string ext) =>
         ValidExtensions.Contains(ext.ToLower());
+
+    private static bool HasValidMagicBytes(string filePath)
+    {
+        using var fs = File.OpenRead(filePath);
+        Span<byte> buffer = stackalloc byte[4];
+        var read = fs.Read(buffer);
+        if (read < 3) return false;
+
+        if (buffer[0] == JpegMagicBytes[0] && buffer[1] == JpegMagicBytes[1] && buffer[2] == JpegMagicBytes[2])
+            return true;
+
+        if (read >= 4 && buffer[0] == PngMagicBytes[0] && buffer[1] == PngMagicBytes[1]
+                      && buffer[2] == PngMagicBytes[2] && buffer[3] == PngMagicBytes[3])
+            return true;
+
+        return false;
+    }
 }

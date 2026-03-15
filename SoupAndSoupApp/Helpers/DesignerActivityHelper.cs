@@ -20,19 +20,19 @@ public static class DesignerActivityHelper
         {
             return await executeTask();
         }
-        catch (Exception ex)
+        catch (Exception originalEx)
         {
-            logger.LogError(ex, "Failed: {message}", ex.Message);
+            logger.LogError(originalEx, "Operation failed: {message}", originalEx.Message);
 
             try
             {
                 var result = await rollbackTask();
                 if (!result)
-                    logger.LogError(ex, "Rollback transaction is failed: {message}", ex.Message);
+                    logger.LogError("Rollback did not confirm success after original failure: {message}", originalEx.Message);
             }
-            catch (Exception e)
+            catch (Exception rollbackEx)
             {
-                logger.LogError(e, "Rollback transaction is failed: {message}", e.Message);
+                logger.LogError(rollbackEx, "Rollback also failed after original error: {originalMessage}", originalEx.Message);
             }
 
             return false;

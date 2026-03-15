@@ -46,7 +46,7 @@ public class DialogService : IDialogService
         });
     }
 
-    public async Task<NewComponentDto> ShowAddEditComponentDialogAsync(bool isEditMode, ComponentTypeModel componentType, ComponentModel? component = null)
+    public async Task<NewComponentDto?> ShowAddEditComponentDialogAsync(bool isEditMode, ComponentTypeModel componentType, ComponentModel? component = null)
     {
         _tcs = new TaskCompletionSource<NewComponentDto?>();
 

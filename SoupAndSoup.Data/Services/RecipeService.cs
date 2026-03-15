@@ -1,12 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using SoupAndSoup.Data.Models;
 
 namespace SoupAndSoup.Data.Services;
- 
-public class RecipeService : RepositoryBase<Recipe>, IRecipeService
-{
-    public RecipeService(IDbContextFactory<SoapAndSoulContext> contextFactory) : base(contextFactory) { }
 
+public class RecipeService(IDbContextFactory<SoapAndSoulContext> contextFactory)
+    : RepositoryBase<Recipe>(contextFactory), IRecipeService
+{
     public override Task<Recipe?> GetByIdAsync(int id) =>
         UseContextAsync((context, dbSet) => dbSet
                 .Include(r => r.RecipeComponents)
@@ -22,10 +21,10 @@ public class RecipeService : RepositoryBase<Recipe>, IRecipeService
                 .Where(r => r.CosmeticTypeId == cosmeticType)
                 .Include(r => r.RecipeComponents)
                     .ThenInclude(ri => ri.Component)
-                    .ThenInclude(i => i.Images)
                 .Include(r => r.Images)
+                .AsSplitQuery()
                 .AsQueryable();
-                       
+
             if (noTracking)
                 query = query.AsNoTracking();
 
@@ -67,7 +66,7 @@ public class RecipeService : RepositoryBase<Recipe>, IRecipeService
         UseContextAsync(async (context, dbSet) =>
         {
             var entity = await dbSet.FindAsync(id);
-            if (entity is null )
+            if (entity is null)
                 return false;
 
             entity.IsActive = false;

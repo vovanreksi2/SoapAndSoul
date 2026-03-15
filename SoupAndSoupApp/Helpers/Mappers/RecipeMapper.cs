@@ -12,17 +12,8 @@ using CosmeticType = SoupAndSoupApp.Models.CosmeticType;
 
 namespace SoupAndSoupApp.Helpers.Mappers;
 
-public class RecipeMapper : IRecipeMapper
+public class RecipeMapper(IUnitCostCalculator unitCostCalc, IImageService imageService) : IRecipeMapper
 {
-    private readonly IUnitCostCalculator _unitCostCalc;
-    private readonly IImageService _imageService;
-
-    public RecipeMapper(IUnitCostCalculator unitCostCalc, IImageService imageService)
-    {
-        _unitCostCalc = unitCostCalc;
-        _imageService = imageService;
-    }
-
     public async Task<RecipeModel> MapToModelAsync(Recipe recipe, ICommand deleteRecipeCommand,
         SourceCache<ComponentModel, int> cachedComponents, string noImageUrl)
     {
@@ -50,9 +41,9 @@ public class RecipeMapper : IRecipeMapper
         }
 
         result.ImagePathString = recipe.Images.FirstOrDefault()?.ImageUrl ?? string.Empty;
-        result.ImagePath = await _imageService.LoadImageOrDefaultAsync(result.ImagePathString, result.Id, noImageUrl);
+        result.ImagePath = await imageService.LoadImageOrDefaultAsync(result.ImagePathString, result.Id, noImageUrl);
 
-        result.UnitCost = _unitCostCalc.CalculateUnitCost(result.RecipeComponents, cachedComponents);
+        result.UnitCost = unitCostCalc.CalculateUnitCost(result.RecipeComponents, cachedComponents);
 
         result.EndInit();
 

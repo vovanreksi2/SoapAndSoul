@@ -12,37 +12,20 @@ using CosmeticType = SoupAndSoupApp.Models.CosmeticType;
 
 namespace SoupAndSoupApp.Helpers.Coordinators;
 
-public class RecipeCoordinator
+public class RecipeCoordinator(
+    IRecipeService recipeService,
+    IRecipeMapper recipeMapper,
+    IImageService imageService,
+    IAzureBlobStorageService blobStorageService,
+    INotificationService notificationService,
+    ILogger<RecipeCoordinator> logger)
 {
-    private readonly IRecipeService _recipeService;
-    private readonly IRecipeMapper _recipeMapper;
-    private readonly IImageService _imageService;
-    private readonly IAzureBlobStorageService _blobStorageService;
-    private readonly INotificationService _notificationService;
-    private readonly ILogger<RecipeCoordinator> _logger;
-
-    public RecipeCoordinator(
-        IRecipeService recipeService,
-        IRecipeMapper recipeMapper,
-        IImageService imageService,
-        IAzureBlobStorageService blobStorageService,
-        INotificationService notificationService,
-        ILogger<RecipeCoordinator> logger)
-    {
-        _recipeService = recipeService;
-        _recipeMapper = recipeMapper;
-        _imageService = imageService;
-        _blobStorageService = blobStorageService;
-        _notificationService = notificationService;
-        _logger = logger;
-    }
-
     public async Task<bool> SavePreviouslySelectedRecipeAsync(
         RecipeModel? oldRecipe, bool isDirty, string newImagePath, CosmeticType cosmeticType, string noImageUrl)
     {
         if (oldRecipe is null)
         {
-            _logger.LogInformation("Old recipe is null, nothing to save.");
+            logger.LogInformation("Old recipe is null, nothing to save.");
             return true;
         }
 
@@ -50,7 +33,7 @@ public class RecipeCoordinator
 
         var isSuccessTransaction = await DesignerActivityHelper.ExecuteCompensatingTransaction(async () =>
             {
-                await _imageService.UpdateRecipeImageAsync(oldRecipe, newImagePath);
+                await imageService.UpdateRecipeImageAsync(oldRecipe, newImagePath);
 
                 var isSaveSuccess = await AddOrUpdateRecipeAsync(oldRecipe, cosmeticType, noImageUrl);
                 if (!isSaveSuccess) return false;
@@ -58,8 +41,8 @@ public class RecipeCoordinator
                 oldRecipe.IsDirty = false;
                 return true;
             },
-            async () => await _blobStorageService.DeleteBlobAsync(oldRecipe.ImagePathString),
-            _logger);
+            async () => await blobStorageService.DeleteBlobAsync(oldRecipe.ImagePathString),
+            logger);
 
         return isSuccessTransaction;
     }
@@ -73,17 +56,17 @@ public class RecipeCoordinator
     {
         if (!recipeModel.IsNew)
         {
-            var isDeleteSuccess = await _recipeService.SoftDelete(recipeModel.Id);
-            DesignerActivityHelper.NotifyResult(isDeleteSuccess, DomainNotificationType.RecipeDeleted, _notificationService);
+            var isDeleteSuccess = await recipeService.SoftDelete(recipeModel.Id);
+            DesignerActivityHelper.NotifyResult(isDeleteSuccess, DomainNotificationType.RecipeDeleted, notificationService);
 
             if (!isDeleteSuccess)
             {
-                _logger.LogError("Failed to delete recipe with ID {recipeId}, Name: {recipeName}", recipeModel.Id, recipeModel.Name);
+                logger.LogError("Failed to delete recipe with ID {recipeId}, Name: {recipeName}", recipeModel.Id, recipeModel.Name);
                 return false;
             }
 
-            await _imageService.DeleteImageAsync(recipeModel);
-            _logger.LogInformation("Success for delete recipe with ID {recipeId}, Name: {recipeName}", recipeModel.Id, recipeModel.Name);
+            await imageService.DeleteImageAsync(recipeModel);
+            logger.LogInformation("Success for delete recipe with ID {recipeId}, Name: {recipeName}", recipeModel.Id, recipeModel.Name);
         }
 
         return true;
@@ -93,32 +76,32 @@ public class RecipeCoordinator
         Recipe recipe, System.Windows.Input.ICommand deleteRecipeCommand,
         DynamicData.SourceCache<ComponentModel, int> cachedComponents, string noImageUrl)
     {
-        return _recipeMapper.MapToModelAsync(recipe, deleteRecipeCommand, cachedComponents, noImageUrl);
+        return recipeMapper.MapToModelAsync(recipe, deleteRecipeCommand, cachedComponents, noImageUrl);
     }
 
     public Recipe MapToEntity(RecipeModel recipe, CosmeticType cosmeticType, string noImageUrl)
     {
-        return _recipeMapper.MapToEntity(recipe, cosmeticType, noImageUrl);
+        return recipeMapper.MapToEntity(recipe, cosmeticType, noImageUrl);
     }
 
     private async Task<bool> AddOrUpdateRecipeAsync(RecipeModel inputRecipe, CosmeticType cosmeticType, string noImageUrl)
     {
-        var recipe = _recipeMapper.MapToEntity(inputRecipe, cosmeticType, noImageUrl);
+        var recipe = recipeMapper.MapToEntity(inputRecipe, cosmeticType, noImageUrl);
 
         if (inputRecipe.IsNew)
         {
             var saveResult = await PersistRecipeAsync(
-                async () => { var r = await _recipeService.CreateAsync(recipe); return r is not null && r.Id > 0; },
+                async () => { var r = await recipeService.CreateAsync(recipe); return r is not null && r.Id > 0; },
                 "Failed to create new recipe with NAME {recipeName}", recipe.Name);
-            DesignerActivityHelper.NotifyResult(saveResult, DomainNotificationType.RecipeCreated, _notificationService);
+            DesignerActivityHelper.NotifyResult(saveResult, DomainNotificationType.RecipeCreated, notificationService);
             return saveResult;
         }
 
         var updateResult = await PersistRecipeAsync(
-            () => _recipeService.UpdateAsync(recipe),
+            () => recipeService.UpdateAsync(recipe),
             "Failed to update recipe with NAME {recipeName} and ID {recipeId}", recipe.Name, recipe.Id);
-        DesignerActivityHelper.NotifyResult(updateResult, DomainNotificationType.RecipeUpdated, _notificationService);
-        _logger.LogInformation("Success for save recipe with ID {recipeId}", inputRecipe.Id);
+        DesignerActivityHelper.NotifyResult(updateResult, DomainNotificationType.RecipeUpdated, notificationService);
+        logger.LogInformation("Success for save recipe with ID {recipeId}", inputRecipe.Id);
 
         return updateResult;
     }
@@ -131,7 +114,7 @@ public class RecipeCoordinator
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, errorTemplate, args);
+            logger.LogError(exception, errorTemplate, args);
             return false;
         }
     }

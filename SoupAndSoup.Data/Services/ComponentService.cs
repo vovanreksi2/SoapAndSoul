@@ -1,12 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using SoupAndSoup.Data.Models;
 
 namespace SoupAndSoup.Data.Services;
 
-public class ComponentService : RepositoryBase<Component>, IComponentService
+public class ComponentService(IDbContextFactory<SoapAndSoulContext> contextFactory)
+    : RepositoryBase<Component>(contextFactory), IComponentService
 {
-    public ComponentService(IDbContextFactory<SoapAndSoulContext> contextFactory) : base(contextFactory) { }
-
     public override Task<Component?> GetByIdAsync(int id) =>
         UseContextAsync((context, dbSet) =>
             dbSet
@@ -19,7 +18,7 @@ public class ComponentService : RepositoryBase<Component>, IComponentService
         UseContextAsync((context, dbSet) => dbSet
             .Where(i => i.ComponentType.CosmeticTypes.Any(c => c.Id == cosmeticType))
             .Include(i => i.ComponentType)
-                .ThenInclude(i=> i.CosmeticTypes)
+                .ThenInclude(i => i.CosmeticTypes)
             .Include(i => i.Images)
             .AsNoTracking()
             .AsSplitQuery()
@@ -28,7 +27,7 @@ public class ComponentService : RepositoryBase<Component>, IComponentService
 
     public override Task<bool> UpdateAsync(Component entity)
     {
-        if (entity is null) throw new ArgumentNullException(nameof(entity));
+        ArgumentNullException.ThrowIfNull(entity);
 
         return UseContextAsync(async (context, dbSet) =>
         {

@@ -146,11 +146,12 @@ namespace SoupAndSoupApp.ViewModels
                 x => x.SuggestedAmount,
                 (name, price, amount, useMeasure, buyMeasure, typical) =>
                     !string.IsNullOrWhiteSpace(name) &&
-                    price > 0 &&
-                    amount > 0 &&
+                    name.Length <= 200 &&
+                    price > 0 && price <= 999_999.99m &&
+                    amount > 0 && amount <= 99_999.99m &&
                     useMeasure is not null &&
                     buyMeasure is not null &&
-                    typical > 0));
+                    typical > 0 && typical <= 99_999.99m));
 
             CancelCommand = ReactiveCommand.CreateFromTask(CancelAsync);
 

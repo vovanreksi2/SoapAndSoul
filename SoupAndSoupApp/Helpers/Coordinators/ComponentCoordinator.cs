@@ -18,37 +18,16 @@ using CosmeticType = SoupAndSoupApp.Models.CosmeticType;
 
 namespace SoupAndSoupApp.Helpers.Coordinators;
 
-public class ComponentCoordinator
+public class ComponentCoordinator(
+    IComponentService componentService,
+    IComponentMapper componentMapper,
+    IDialogService dialogService,
+    IImageService imageService,
+    IAzureBlobStorageService blobStorageService,
+    IUnitCostCalculator unitCostCalc,
+    INotificationService notificationService,
+    ILogger<ComponentCoordinator> logger)
 {
-    private readonly IComponentService _componentService;
-    private readonly IComponentMapper _componentMapper;
-    private readonly IDialogService _dialogService;
-    private readonly IImageService _imageService;
-    private readonly IAzureBlobStorageService _blobStorageService;
-    private readonly IUnitCostCalculator _unitCostCalc;
-    private readonly INotificationService _notificationService;
-    private readonly ILogger<ComponentCoordinator> _logger;
-
-    public ComponentCoordinator(
-        IComponentService componentService,
-        IComponentMapper componentMapper,
-        IDialogService dialogService,
-        IImageService imageService,
-        IAzureBlobStorageService blobStorageService,
-        IUnitCostCalculator unitCostCalc,
-        INotificationService notificationService,
-        ILogger<ComponentCoordinator> logger)
-    {
-        _componentService = componentService;
-        _componentMapper = componentMapper;
-        _dialogService = dialogService;
-        _imageService = imageService;
-        _blobStorageService = blobStorageService;
-        _unitCostCalc = unitCostCalc;
-        _notificationService = notificationService;
-        _logger = logger;
-    }
-
     public async Task AddComponentAsync(
         ComponentGroup? group,
         SourceCache<ComponentModel, int> cachedComponents,
@@ -57,23 +36,23 @@ public class ComponentCoordinator
     {
         if (group is null)
         {
-            DesignerActivityHelper.NotifyResult(false, DomainNotificationType.ErrorWhileSaving, _notificationService);
-            _logger.LogWarning("No group found for component type");
+            DesignerActivityHelper.NotifyResult(false, DomainNotificationType.ErrorWhileSaving, notificationService);
+            logger.LogWarning("No group found for component type");
             return;
         }
 
-        var dto = await _dialogService.ShowAddEditComponentDialogAsync(false, group.ComponentType);
+        var dto = await dialogService.ShowAddEditComponentDialogAsync(false, group.ComponentType);
         if (dto is null) return;
 
         await ExecuteComponentSaveAsync(dto, async () =>
         {
-            var dbComponent = _componentMapper.MapToEntity(dto, group.ComponentType.Type, cosmeticType);
+            var dbComponent = componentMapper.MapToEntity(dto, group.ComponentType.Type, cosmeticType);
             var saved = await SaveNewComponentAsync(dbComponent, group.ComponentType.Type);
             if (saved is null) return false;
 
-            var model = await _componentMapper.MapToModelAsync(saved, editCommand, deleteCommand, toggleCommand, noImageUrl);
+            var model = await componentMapper.MapToModelAsync(saved, editCommand, deleteCommand, toggleCommand, noImageUrl);
             cachedComponents.AddOrUpdate(model);
-            _logger.LogInformation("Success for save component with ID {componentId}, Name: {componentName}", model.Id, model.Name);
+            logger.LogInformation("Success for save component with ID {componentId}, Name: {componentName}", model.Id, model.Name);
             return true;
         });
     }
@@ -87,31 +66,31 @@ public class ComponentCoordinator
     {
         if (model is null)
         {
-            _logger.LogWarning("Attempted to edit a null component model.");
+            logger.LogWarning("Attempted to edit a null component model.");
             return;
         }
 
         if (group is null)
         {
-            DesignerActivityHelper.NotifyResult(false, DomainNotificationType.ErrorWhileSaving, _notificationService);
-            _logger.LogWarning("No group found for type {componentType}", model.Type);
+            DesignerActivityHelper.NotifyResult(false, DomainNotificationType.ErrorWhileSaving, notificationService);
+            logger.LogWarning("No group found for type {componentType}", model.Type);
             return;
         }
 
-        var dto = await _dialogService.ShowAddEditComponentDialogAsync(true, group.ComponentType, model);
+        var dto = await dialogService.ShowAddEditComponentDialogAsync(true, group.ComponentType, model);
         if (dto is null)
         {
-            _logger.LogInformation("Component edit dialog cancelled for component ID {componentId}", model.Id);
+            logger.LogInformation("Component edit dialog cancelled for component ID {componentId}", model.Id);
             return;
         }
 
         await ExecuteComponentSaveAsync(dto, async () =>
         {
-            var updatedComponent = _componentMapper.MapToEntity(dto, group.ComponentType.Type, cosmeticType, model.Id);
+            var updatedComponent = componentMapper.MapToEntity(dto, group.ComponentType.Type, cosmeticType, model.Id);
             if (!await SaveExistingComponentAsync(updatedComponent, group.ComponentType.Type)) return false;
 
             await UpdateCachedComponentAsync(updatedComponent, model, cachedComponents, noImageUrl);
-            _logger.LogInformation("Success for save component with ID {componentId}", model.Id);
+            logger.LogInformation("Success for save component with ID {componentId}", model.Id);
             return true;
         });
     }
@@ -121,11 +100,11 @@ public class ComponentCoordinator
         return DesignerActivityHelper.ExecuteCompensatingTransaction(
             async () =>
             {
-                await _imageService.UpdateComponentImageAsync(dto);
+                await imageService.UpdateComponentImageAsync(dto);
                 return await persistAndUpdate();
             },
-            async () => await _blobStorageService.DeleteBlobAsync(dto.ImagePath),
-            _logger);
+            async () => await blobStorageService.DeleteBlobAsync(dto.ImagePath),
+            logger);
     }
 
     public async Task DeleteComponentAsync(
@@ -134,12 +113,12 @@ public class ComponentCoordinator
         RecipeModel? selectedRecipe,
         ComponentGroup? group)
     {
-        var result = await _componentService.SoftDeleteAsync(component.Id);
-        DesignerActivityHelper.NotifyResult(result, DomainNotificationType.ComponentDeleted, _notificationService);
+        var result = await componentService.SoftDeleteAsync(component.Id);
+        DesignerActivityHelper.NotifyResult(result, DomainNotificationType.ComponentDeleted, notificationService);
 
         if (!result)
         {
-            _logger.LogError("Failed to delete component with ID {componentId}, Name: {componentName}", component.Id, component.Name);
+            logger.LogError("Failed to delete component with ID {componentId}, Name: {componentName}", component.Id, component.Name);
             return;
         }
 
@@ -147,9 +126,9 @@ public class ComponentCoordinator
         group?.Components.Remove(component);
         cachedComponents.Remove(component.Id);
 
-        _logger.LogInformation("Success for delete component with ID {componentId}, Name: {componentName}", component.Id, component.Name);
+        logger.LogInformation("Success for delete component with ID {componentId}, Name: {componentName}", component.Id, component.Name);
 
-        await _imageService.DeleteImageAsync(component);
+        await imageService.DeleteImageAsync(component);
     }
 
     public decimal CalculateUnitCost(SourceCache<ComponentModel, int> cachedComponents)
@@ -159,36 +138,36 @@ public class ComponentCoordinator
             .ToList();
 
         return selectedComponents.Any()
-            ? _unitCostCalc.CalculateUnitCost(selectedComponents)
+            ? unitCostCalc.CalculateUnitCost(selectedComponents)
             : 0;
     }
 
     private async Task<Component?> SaveNewComponentAsync(Component component, ComponentType type)
     {
-        var result = await _componentService.CreateAsync(component);
+        var result = await componentService.CreateAsync(component);
         var isSuccess = result is not null && result.Id > 0;
-        DesignerActivityHelper.NotifyResult(isSuccess, DomainNotificationType.ComponentCreated, _notificationService);
+        DesignerActivityHelper.NotifyResult(isSuccess, DomainNotificationType.ComponentCreated, notificationService);
 
         if (isSuccess) return result;
 
-        _logger.LogError("Failed to save new component {componentName} of type {componentType}", component.Name, type);
+        logger.LogError("Failed to save new component {componentName} of type {componentType}", component.Name, type);
         return result;
     }
 
     private async Task<bool> SaveExistingComponentAsync(Component component, ComponentType type)
     {
-        var result = await _componentService.UpdateAsync(component);
-        DesignerActivityHelper.NotifyResult(result, DomainNotificationType.ComponentUpdated, _notificationService);
+        var result = await componentService.UpdateAsync(component);
+        DesignerActivityHelper.NotifyResult(result, DomainNotificationType.ComponentUpdated, notificationService);
         if (result) return true;
 
-        _logger.LogError("Failed to save component: componentId {componentId}, {componentName} of type {componentType}", component.Id, component.Name, type);
+        logger.LogError("Failed to save component: componentId {componentId}, {componentName} of type {componentType}", component.Id, component.Name, type);
         return false;
     }
 
     public Task<ComponentModel> MapComponentModelAsync(
         Component component, ICommand editCommand, ICommand deleteCommand, ICommand toggleCommand, string noImageUrl)
     {
-        return _componentMapper.MapToModelAsync(component, editCommand, deleteCommand, toggleCommand, noImageUrl);
+        return componentMapper.MapToModelAsync(component, editCommand, deleteCommand, toggleCommand, noImageUrl);
     }
 
     private async Task UpdateCachedComponentAsync(
@@ -199,7 +178,7 @@ public class ComponentCoordinator
     {
         if (!cachedComponents.Lookup(updatedComponent.Id).HasValue) return;
 
-        var remapped = await _componentMapper.MapToModelAsync(
+        var remapped = await componentMapper.MapToModelAsync(
             updatedComponent,
             existingModel.EditCommand,
             existingModel.DeleteCommand,

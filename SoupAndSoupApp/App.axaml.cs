@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -20,6 +21,7 @@ public class App : Application
     private const int DelayAfterSaveMilliseconds = 2000;
     private static readonly TimeSpan AutoSaveTimeout = TimeSpan.FromSeconds(10);
 
+    private bool _isClosing;
     private MainWindow _mainWindow;
     private MainViewModel _mainViewModel;
 
@@ -76,10 +78,13 @@ public class App : Application
     
     private async void MainWindowOnClosing(object? sender, WindowClosingEventArgs e)
     {
+        if (_isClosing) return;
+
         e.Cancel = true;
 
         if (sender is not MainWindow mainWindow) return;
 
+        _isClosing = true;
         try
         {
             var saveSuccessful = await SaveAllWithAutoSaveCandidates();
@@ -93,6 +98,7 @@ public class App : Application
                     ForceCloseWindow(mainWindow);
                     return;
                 case false:
+                    _isClosing = false;
                     e.Cancel = true;
                     break;
             }
@@ -100,7 +106,7 @@ public class App : Application
         catch (Exception exception)
         {
             _logger.LogError(exception, "Error during auto-save on window close");
-            
+            _isClosing = false;
             e.Cancel = true;
         }
     }
@@ -124,8 +130,12 @@ public class App : Application
         var tasks = autoSaveCandidates.Select(_ => _.SaveIfNeededAsync());
         var saveAllTask = Task.WhenAll(tasks);
 
-        var completedTask = await Task.WhenAny(saveAllTask, Task.Delay(AutoSaveTimeout));
-        if (completedTask != saveAllTask)
+        using var cts = new CancellationTokenSource(AutoSaveTimeout);
+        try
+        {
+            await saveAllTask.WaitAsync(cts.Token);
+        }
+        catch (OperationCanceledException)
         {
             _logger.LogWarning("Auto-save timed out after {Timeout}", AutoSaveTimeout);
             return false;
@@ -142,7 +152,7 @@ public class App : Application
 
     private void ForceCloseWindow(object? sender)
     {
-        var mainWindow = sender as MainWindow;
+        if (sender is not MainWindow mainWindow) return;
         mainWindow.Closing -= MainWindowOnClosing; // Unsubscribe from the event to prevent recursion
         mainWindow.Close();
     }

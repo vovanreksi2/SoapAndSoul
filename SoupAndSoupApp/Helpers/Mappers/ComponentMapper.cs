@@ -10,17 +10,8 @@ using CosmeticType = SoupAndSoupApp.Models.CosmeticType;
 
 namespace SoupAndSoupApp.Helpers.Mappers;
 
-public class ComponentMapper : IComponentMapper
+public class ComponentMapper(MeasureTypeCache measureTypeCache, IImageService imageService) : IComponentMapper
 {
-    private readonly MeasureTypeCache _measureTypeCache;
-    private readonly IImageService _imageService;
-
-    public ComponentMapper(MeasureTypeCache measureTypeCache, IImageService imageService)
-    {
-        _measureTypeCache = measureTypeCache;
-        _imageService = imageService;
-    }
-
     public async Task<ComponentModel> MapToModelAsync(Component component, ICommand editCommand,
         ICommand deleteCommand, ICommand toggleInRecipeCommand, string noImageUrl)
     {
@@ -44,13 +35,13 @@ public class ComponentMapper : IComponentMapper
 
             BuyMeasureTypeId = component.BuyMeasureTypeId,
             UseMeasureTypeId = component.UseMeasureTypeId,
-            BuyMeasureTypeShortTitle = (await _measureTypeCache.GetOrAddAsync(component.BuyMeasureTypeId)).ShortTitle,
-            UseMeasureTypeShortTitle = (await _measureTypeCache.GetOrAddAsync(component.UseMeasureTypeId)).ShortTitle,
+            BuyMeasureTypeShortTitle = (await measureTypeCache.GetOrAddAsync(component.BuyMeasureTypeId)).ShortTitle,
+            UseMeasureTypeShortTitle = (await measureTypeCache.GetOrAddAsync(component.UseMeasureTypeId)).ShortTitle,
 
             ImagePathString = component.Images.FirstOrDefault()?.ImageUrl,
         };
 
-        result.ImagePath = await _imageService.LoadImageOrDefaultAsync(result.ImagePathString, result.Id, noImageUrl);
+        result.ImagePath = await imageService.LoadImageOrDefaultAsync(result.ImagePathString, result.Id, noImageUrl);
 
         return result;
     }
