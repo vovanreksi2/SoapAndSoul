@@ -44,7 +44,7 @@ public class ImageService : IImageService
         if (string.IsNullOrEmpty(blobName)) return null;
 
         var stream = await _blobStorageService.DownloadBlobAsync(blobName);
-        return stream == null ? null : GetBitmapFromStream(stream);
+        return stream is null ? null : GetBitmapFromStream(stream);
     }
 
     public async Task DeleteImageAsync(BaseModel model)
@@ -107,7 +107,7 @@ public class ImageService : IImageService
 
     public Bitmap GetBitmapFromStream(Stream stream)
     {
-        if (stream == null || !stream.CanRead)
+        if (stream is null || !stream.CanRead)
             throw new ArgumentException("Stream is not valid or readable.");
 
         if (stream.CanSeek)

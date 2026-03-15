@@ -18,7 +18,13 @@ public class BaseModel : ReactiveObject
     public Bitmap ImagePath
     {
         get => _imagePath;
-        set => this.RaiseAndSetIfChanged(ref _imagePath, value);
+        set
+        {
+            var old = _imagePath;
+            this.RaiseAndSetIfChanged(ref _imagePath, value);
+            if (old is not null && !ReferenceEquals(old, value))
+                old.Dispose();
+        }
     }
 
 

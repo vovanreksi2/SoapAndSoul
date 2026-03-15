@@ -28,7 +28,7 @@ public class ComponentService : RepositoryBase<Component>, IComponentService
 
     public override Task<bool> UpdateAsync(Component entity)
     {
-        if (entity == null) throw new ArgumentNullException(nameof(entity));
+        if (entity is null) throw new ArgumentNullException(nameof(entity));
 
         return UseContextAsync(async (context, dbSet) =>
         {
@@ -54,7 +54,7 @@ public class ComponentService : RepositoryBase<Component>, IComponentService
         UseContextAsync(async (context, dbSet) =>
         {
             var entity = await dbSet.FindAsync(id);
-            if (entity == null)
+            if (entity is null)
                 return false;
 
             entity.IsActive = false;

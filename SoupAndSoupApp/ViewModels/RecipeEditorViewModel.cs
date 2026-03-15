@@ -42,7 +42,7 @@ public class RecipeEditorViewModel : ViewModelBase, IAutoSaveCandidate
         set
         {
             if (_newImagePath == value) return;
-            if (SelectedRecipe != null)
+            if (SelectedRecipe is not null)
                 SelectedRecipe.ImagePath = ImageHelper.LoadFromResource(value);
             this.RaiseAndSetIfChanged(ref _newImagePath, value);
         }
@@ -107,7 +107,7 @@ public class RecipeEditorViewModel : ViewModelBase, IAutoSaveCandidate
                 comp.AmountInRecipe = 0;
             }
 
-            if (newValue == null)
+            if (newValue is null)
             {
                 _logger.LogWarning("New value is null, cannot update components.");
                 return true;
@@ -116,7 +116,7 @@ public class RecipeEditorViewModel : ViewModelBase, IAutoSaveCandidate
             foreach (var selection in newValue.SelectedComponents.Items)
             {
                 var component = GetCachedComponentById(selection.ComponentId);
-                if (component == null) continue;
+                if (component is null) continue;
 
                 component.IsInCurrentRecipe = true;
                 component.AmountInRecipe = selection.Amount;
@@ -135,7 +135,7 @@ public class RecipeEditorViewModel : ViewModelBase, IAutoSaveCandidate
 
     public void ReCalculateUnitCost()
     {
-        if (SelectedRecipe == null)
+        if (SelectedRecipe is null)
         {
             _logger.LogWarning("Selected recipe is null, cannot calculate unit cost.");
             return;

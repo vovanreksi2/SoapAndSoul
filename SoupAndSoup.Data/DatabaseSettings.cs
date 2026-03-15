@@ -2,7 +2,7 @@
 
 public class DatabaseSettings
 {
-    public string ConnectionString { get; set; } = string.Empty;
-    public bool EnableSensitiveDataLogging { get; set; } = false;
-    public bool IsAzureDb { get; set; } 
+    public string ConnectionString { get; init; } = string.Empty;
+    public bool EnableSensitiveDataLogging { get; init; }
+    public bool IsAzureDb { get; init; }
 }

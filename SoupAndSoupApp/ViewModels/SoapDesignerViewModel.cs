@@ -27,7 +27,7 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
 {
     // Shared state — owned here, passed by reference to sub-VMs
     private readonly SourceCache<ComponentModel, int> _cachedComponents = new(c => c.Id);
-    private readonly Dictionary<ComponentType, ComponentTypeModel> _cachedComponentTypes = new();
+    private readonly Dictionary<ComponentType, ComponentTypeModel> _cachedComponentTypes = [];
 
     public RecipeListViewModel RecipeList { get; }
     public RecipeEditorViewModel RecipeEditor { get; }
@@ -76,12 +76,12 @@ public class SoapDesignerViewModel : ViewModelBase, IAutoSaveCandidate, IInitial
             loggerFactory.CreateLogger<ComponentLibraryViewModel>());
 
         RecipeList.WhenAnyValue(x => x.SelectedRecipe)
-            .Where(x => x != null)
+            .Where(x => x is not null)
             .SelectMany(async newValue =>
             {
                 var previousValue = RecipeList.PreviousSelectedRecipe;
                 var success = await RecipeEditor.HandleRecipeChangedAsync(newValue, previousValue);
-                if (!success && previousValue != null)
+                if (!success && previousValue is not null)
                     RecipeList.SelectedRecipe = previousValue;
                 else
                     RecipeEditor.SelectedRecipe = newValue;

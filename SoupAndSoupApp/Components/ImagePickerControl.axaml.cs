@@ -37,7 +37,7 @@ public partial class ImagePickerControl : UserControl
             ?? new FilePickerService();
 
         var button = this.FindControl<Button>("MainButton");
-        if (button != null)
+        if (button is not null)
             button.Click += async (_, _) => await OnPickImageAsync();
     }
 

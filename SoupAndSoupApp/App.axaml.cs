@@ -18,6 +18,7 @@ namespace SoupAndSoupApp;
 public class App : Application
 {
     private const int DelayAfterSaveMilliseconds = 2000;
+    private static readonly TimeSpan AutoSaveTimeout = TimeSpan.FromSeconds(10);
 
     private MainWindow _mainWindow;
     private MainViewModel _mainViewModel;
@@ -98,7 +99,7 @@ public class App : Application
         }
         catch (Exception exception)
         {
-            Console.WriteLine(exception);
+            _logger.LogError(exception, "Error during auto-save on window close");
             
             e.Cancel = true;
         }
@@ -107,26 +108,34 @@ public class App : Application
     private async Task<bool?> SaveAllWithAutoSaveCandidates()
     {
         var viewModelRegistry = _serviceProvider.GetService<IActiveViewModelRegistry>();
-        if (viewModelRegistry == null)
+        if (viewModelRegistry is null)
         {
-            Console.WriteLine("No active view model registry found.");
+            _logger.LogWarning("No active view model registry found");
             return null; // No candidates to save
         }
 
         var autoSaveCandidates = viewModelRegistry.GetActiveViewModels();
         if (autoSaveCandidates.All(saveCandidate => !saveCandidate.ShouldSave()))
         {
-            Console.WriteLine("At least one auto-save candidate returned null, indicating no save was needed.");
+            _logger.LogDebug("No auto-save candidates needed saving");
             return null; // No candidates to save
         }
 
         var tasks = autoSaveCandidates.Select(_ => _.SaveIfNeededAsync());
+        var saveAllTask = Task.WhenAll(tasks);
 
-        var resultTasks = await Task.WhenAll(tasks);
+        var completedTask = await Task.WhenAny(saveAllTask, Task.Delay(AutoSaveTimeout));
+        if (completedTask != saveAllTask)
+        {
+            _logger.LogWarning("Auto-save timed out after {Timeout}", AutoSaveTimeout);
+            return false;
+        }
+
+        var resultTasks = await saveAllTask;
         if (resultTasks.All(r => r)) return true; // All saves were successful
 
         // Handle the case where at least one save operation failed
-        Console.WriteLine("Some auto-save candidates could not be saved.");
+        _logger.LogWarning("Some auto-save candidates could not be saved");
 
         return false;
     }

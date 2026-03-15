@@ -90,7 +90,8 @@ public class ComponentLibraryViewModel : ViewModelBase
                         .Ascending(c => IsLatin(c.Name))
                         .ThenByAscending(c => c.Name))
                     .Bind(groupVm.Components)
-                    .Subscribe();
+                    .Subscribe()
+                    .DisposeWith(Disposables);
 
                 return groupVm;
             })
@@ -114,7 +115,7 @@ public class ComponentLibraryViewModel : ViewModelBase
     private void ToggleComponentInRecipe(ComponentModel component)
     {
         var selectedRecipe = _getSelectedRecipe();
-        if (selectedRecipe == null || component.IsButton) return;
+        if (selectedRecipe is null || component.IsButton) return;
 
         var selections = selectedRecipe.SelectedComponents;
         var existing = selections.Lookup(component.Id);
@@ -169,7 +170,7 @@ public class ComponentLibraryViewModel : ViewModelBase
 
     private async Task EditComponentAsync(ComponentModel? model)
     {
-        var group = model != null
+        var group = model is not null
             ? ComponentGroups.FirstOrDefault(g => g.ComponentType.Type == model.Type)
             : null;
         await _componentCoordinator.EditComponentAsync(

@@ -127,7 +127,7 @@ namespace SoupAndSoupApp.ViewModels
             SelectedUseMeasureType.WhenAnyValue(x => x.Selected)
                 .Subscribe(_ =>
                 {
-                    if (SelectedUseMeasureType.Selected == null) return;
+                    if (SelectedUseMeasureType.Selected is null) return;
 
                     SelectedBuyMeasureType.Selected = SelectedUseMeasureType.Selected.MeasureType == MeasureType.Drop
                         ? SelectedBuyMeasureType.MeasureTypes.FirstOrDefault(measureType => measureType.MeasureType == MeasureType.Milliliter)
@@ -148,8 +148,8 @@ namespace SoupAndSoupApp.ViewModels
                     !string.IsNullOrWhiteSpace(name) &&
                     price > 0 &&
                     amount > 0 &&
-                    useMeasure != null &&
-                    buyMeasure != null &&
+                    useMeasure is not null &&
+                    buyMeasure is not null &&
                     typical > 0));
 
             CancelCommand = ReactiveCommand.CreateFromTask(CancelAsync);
@@ -168,7 +168,7 @@ namespace SoupAndSoupApp.ViewModels
             Title = isEditMode ? $"Редагувати {componentType.ShortTitle}" : $"Додати {componentType.ShortTitle}";
             IsAmountVisible = !componentType.IsSingleSelected;
 
-            if (component != null)
+            if (component is not null)
             {
                 BuyPrice = component.BuyPrice;
                 BuyAmount = component.BuyAmount;

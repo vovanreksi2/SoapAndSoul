@@ -6,9 +6,9 @@ namespace SoupAndSoupApp.Helpers.Cache;
 
 public abstract class MemoryCache<T>
 {
-    private readonly Dictionary<string, T> _cache = new();
+    private readonly Dictionary<string, T> _cache = [];
     private readonly TimeSpan _ttl = TimeSpan.FromMinutes(10);
-    private readonly Dictionary<string, DateTime> _expiry = new();
+    private readonly Dictionary<string, DateTime> _expiry = [];
 
     public async Task<T> GetOrAddAsync(string key, Func<Task<T>> fetchFromDbAsync)
     {

@@ -40,7 +40,7 @@ public class RecipeCoordinator
     public async Task<bool> SavePreviouslySelectedRecipeAsync(
         RecipeModel? oldRecipe, bool isDirty, string newImagePath, CosmeticType cosmeticType, string noImageUrl)
     {
-        if (oldRecipe == null)
+        if (oldRecipe is null)
         {
             _logger.LogInformation("Old recipe is null, nothing to save.");
             return true;

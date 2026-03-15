@@ -71,6 +71,7 @@ public class RecipeModel : BaseModel, IDisposable
 
     public void Dispose()
     {
+        SelectedComponents.Dispose();
         CleanUp();
     }
 

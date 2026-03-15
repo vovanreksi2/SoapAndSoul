@@ -2,5 +2,5 @@ namespace SoupAndSoupApp.ExternalServices;
 
 public class AzureBlobStorageSettings
 {
-    public string SasUri { get; set; } = string.Empty;
+    public string SasUri { get; init; } = string.Empty;
 }

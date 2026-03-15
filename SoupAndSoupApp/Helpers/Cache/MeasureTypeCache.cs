@@ -19,7 +19,7 @@ public class MeasureTypeCache: MemoryCache<MeasureTypeModel>
         return GetOrAddAsync(id.ToString(), async () =>
         {
             var result = await _measureTypesService.GetByIdAsync(id);
-            if (result == null)
+            if (result is null)
                 throw new ArgumentException($"UseMeasureType with id {id} not found.");
 
             return new MeasureTypeModel(result);

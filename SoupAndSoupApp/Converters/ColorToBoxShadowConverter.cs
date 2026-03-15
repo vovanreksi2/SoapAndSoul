@@ -13,7 +13,7 @@ public class ColorToBoxShadowConverter : IValueConverter
             return null;
         
         double blurRadius = 0; // Default blur if no parameter or invalid
-        if (parameter == null)
+        if (parameter is null)
             return new BoxShadows(new BoxShadow
             {
                 OffsetX = 0,

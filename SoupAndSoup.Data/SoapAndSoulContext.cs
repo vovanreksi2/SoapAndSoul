@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Reflection;
+using Microsoft.EntityFrameworkCore;
 using SoupAndSoup.Data.Models;
 
 namespace SoupAndSoup.Data;
@@ -18,161 +19,15 @@ public class SoapAndSoulContext : DbContext
         : base(options)
     {
     }
-     
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // Index on Recipe.Name for fast searching
-        modelBuilder.Entity<Recipe>(entity =>
-        {
-            entity.HasIndex(r => r.Name);
-            entity.HasQueryFilter(r => r.IsActive);
-        });
-
-        modelBuilder.Entity<Component>(entity =>
-        {
-            // Indexes on Component.Name and Component.ComponentTypeID
-            entity.HasIndex(i => i.Name);
-            entity.HasIndex(i => i.ComponentTypeId);
-            entity.HasIndex(i => i.UseMeasureTypeId);
-
-            entity.HasQueryFilter(i => i.IsActive); // Filter for active components
-
-            // Relationship: Component -> ComponentTypesForUse
-            entity.HasOne(i => i.ComponentType)
-                .WithMany(it => it.Components)
-                .HasForeignKey(i => i.ComponentTypeId);
-
-            // Relationship: Component -> UseMeasureTypes
-            entity.HasOne(i=>i.UseMeasureType)
-                .WithMany(at => at.ComponentsUsingAsUseMeasureType)
-                .HasForeignKey(i => i.UseMeasureTypeId)
-                .OnDelete(DeleteBehavior.NoAction);
-
-            // Relationship: Component -> BuyMeasureTypes
-            entity.HasOne(i=>i.BuyMeasureType)
-                .WithMany(at => at.ComponentsUsingAsBuyMeasureType)
-                .HasForeignKey(i => i.BuyMeasureTypeId)
-                .OnDelete(DeleteBehavior.NoAction);
-        });
-
-        modelBuilder.Entity<RecipeComponent>(entity =>
-        {
-            // Composite primary key for RecipeComponent (many-to-many)
-            entity.HasKey(ri => new { RecipeID = ri.RecipeId, ComponentID = ri.ComponentId });
-
-            // Relationship: RecipeComponent -> Recipe
-            entity.HasOne(ri => ri.Recipe)
-                .WithMany(r => r.RecipeComponents)
-                .HasForeignKey(ri => ri.RecipeId);
-
-            // Relationship: RecipeComponent -> Component
-            entity.HasOne(ri => ri.Component)
-                .WithMany(i => i.RecipeComponents)
-                .HasForeignKey(ri => ri.ComponentId);
-        });
-
-        modelBuilder.Entity<ComponentType>(entity =>
-        {
-            // Relationship: ComponentTypesForUse -> UseMeasureType
-            entity.HasMany(i => i.UseMeasureTypes)
-                .WithMany(at => at.ComponentTypesForUse)
-                .UsingEntity<Dictionary<string, object>>(
-                    "ComponentTypeUseMeasureTypes",
-                    j => j
-                        .HasOne<MeasureType>()
-                        .WithMany()
-                        .HasForeignKey("MeasureTypesId")
-                        .OnDelete(DeleteBehavior.Restrict),
-                    j => j
-                        .HasOne<ComponentType>()
-                        .WithMany()
-                        .HasForeignKey("ComponentTypesId")
-                        .OnDelete(DeleteBehavior.Restrict),
-                    j =>
-                    {
-                        j.HasKey("ComponentTypesId", "MeasureTypesId"); 
-                        j.ToTable("ComponentTypeUseMeasureTypes");
-                    });
-
-            // Relationship: ComponentTypesForUse -> UseMeasureType
-            entity.HasMany(i => i.BuyMeasureTypes)
-                .WithMany(at => at.ComponentTypesForBuy)
-                .UsingEntity<Dictionary<string, object>>(
-                    "ComponentTypeBuyMeasureTypes",
-                    j => j
-                        .HasOne<MeasureType>()
-                        .WithMany()
-                        .HasForeignKey("MeasureTypesId")
-                        .OnDelete(DeleteBehavior.Restrict),
-                    j => j
-                        .HasOne<ComponentType>()
-                        .WithMany()
-                        .HasForeignKey("ComponentTypesId")
-                        .OnDelete(DeleteBehavior.Restrict),
-                    j =>
-                    {
-                        j.HasKey("ComponentTypesId", "MeasureTypesId"); 
-                        j.ToTable("ComponentTypeBuyMeasureTypes");
-                    });
-
-            // Relationship: ComponentTypesForUse -> CosmeticType 
-            entity.HasMany(i => i.CosmeticTypes)
-                .WithMany(at => at.ComponentTypes)
-                .UsingEntity<Dictionary<string, object>>(
-                    "ComponentTypeCosmeticTypes",
-                    j => j
-                        .HasOne<CosmeticType>()
-                        .WithMany()
-                        .HasForeignKey("CosmeticTypesId")
-                        .OnDelete(DeleteBehavior.Cascade),
-                    j => j
-                        .HasOne<ComponentType>()
-                        .WithMany()
-                        .HasForeignKey("ComponentTypesId")
-                        .OnDelete(DeleteBehavior.Cascade),
-                    j =>
-                    {
-                        j.HasKey("ComponentTypesId", "CosmeticTypesId");
-                        j.ToTable("ComponentTypeCosmeticTypes");
-                    });
-        });
-
-        // Index on Images by EntityType and EntityID for fast lookup
-        modelBuilder.Entity<RecipeImage>(entity =>
-        {
-            entity.HasKey(r => r.Id);
-            entity.HasIndex(r => r.RecipeId);
-
-            entity.HasOne(r => r.Recipe)
-                .WithMany(r => r.Images)
-                .HasForeignKey(r => r.RecipeId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        modelBuilder.Entity<ComponentImage>(entity =>
-        {
-            entity.HasKey(i => i.Id);
-            entity.HasIndex(i => i.ComponentId);
-
-            entity.HasOne(i => i.Component)
-                .WithMany(i => i.Images)
-                .HasForeignKey(i => i.ComponentId)
-                .IsRequired(false)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
+        modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
 
         SeedData(modelBuilder);
 
         base.OnModelCreating(modelBuilder);
     }
-
-//#if DEBUG
-//    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-//    {
-//        optionsBuilder.LogTo(message => Debug.WriteLine(message), LogLevel.Information);
-//        optionsBuilder.EnableSensitiveDataLogging();
-//    }
-//#endif
 
     private void SeedData(ModelBuilder modelBuilder)
     {
@@ -247,7 +102,5 @@ public class SoapAndSoulContext : DbContext
             new { ComponentTypesId = 9, CosmeticTypesId = 2 }, 
             new { ComponentTypesId = 10, CosmeticTypesId = 2 }
         );
-
-        base.OnModelCreating(modelBuilder); 
     }
 }

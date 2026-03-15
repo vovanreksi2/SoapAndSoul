@@ -13,7 +13,7 @@ public abstract class RepositoryBase<T> : IRepository<T> where T : class
 
     public virtual Task<T?> CreateAsync(T entity)
     {
-        if (entity == null) throw new ArgumentNullException(nameof(entity));
+        if (entity is null) throw new ArgumentNullException(nameof(entity));
 
         return UseContextAsync(async (context, dbSet) =>
         {
@@ -38,7 +38,7 @@ public abstract class RepositoryBase<T> : IRepository<T> where T : class
 
     public virtual Task<bool> UpdateAsync(T entity)
     {
-        if (entity == null) throw new ArgumentNullException(nameof(entity));
+        if (entity is null) throw new ArgumentNullException(nameof(entity));
 
         return UseContextAsync(async (context, dbSet) =>
         {
@@ -54,7 +54,7 @@ public abstract class RepositoryBase<T> : IRepository<T> where T : class
         return UseContextAsync(async (context, dbSet) =>
         {
             var entity = await dbSet.FindAsync(id);
-            if (entity == null) return false;
+            if (entity is null) return false;
 
             dbSet.Remove(entity);
             var result = await context.SaveChangesAsync();
@@ -64,10 +64,10 @@ public abstract class RepositoryBase<T> : IRepository<T> where T : class
 
     protected async Task<TResult> UseContextAsync<TResult>(Func<SoapAndSoulContext, DbSet<T>, Task<TResult>> func)
     {
-        if (func == null) throw new ArgumentNullException(nameof(func));
+        if (func is null) throw new ArgumentNullException(nameof(func));
 
         await using var context = await _contextFactory.CreateDbContextAsync();
-        if (context == null) throw new InvalidOperationException("Failed to create a database context.");
+        if (context is null) throw new InvalidOperationException("Failed to create a database context.");
 
         var dbSet = context.Set<T>();
         return await func(context, dbSet);

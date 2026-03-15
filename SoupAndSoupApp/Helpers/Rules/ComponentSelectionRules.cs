@@ -34,7 +34,7 @@ public class FormSelectionRule : IComponentSelectionRule
         // Set CraftingBase amount to the Form's suggested amount
         var craftingBase = selections.Items
             .FirstOrDefault(s => ResolveComponent(s, masterComponents)?.Type == ComponentType.CraftingBase);
-        if (craftingBase != null)
+        if (craftingBase is not null)
             craftingBase.Amount = addedComponent.SuggestedAmount;
     }
 }

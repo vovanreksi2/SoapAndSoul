@@ -6,7 +6,7 @@ namespace SoupAndSoupApp.Helpers.Autosave;
 
 public class ActiveViewModelRegistry : IActiveViewModelRegistry
 {
-    private readonly ConcurrentDictionary<IAutoSaveCandidate, byte> _activeViewModels = new();
+    private readonly ConcurrentDictionary<IAutoSaveCandidate, byte> _activeViewModels = [];
 
     public void Register(IAutoSaveCandidate viewModel)
     {
